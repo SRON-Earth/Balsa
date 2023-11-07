@@ -10,10 +10,10 @@
 typedef std::vector<double> DataPoint;
 
 /**
- * A label (e.g. 'cloud'/'no cloud' ) for a classification problem.
- * By convention, labels are represented as small unsigned integers.
+ * The unique consecutive ID of a DataPoint.
  */
-typedef uint8_t DataPointLabel;
+typedef std::size_t DataPointID;
+
 
 /**
  * A set of DataPoints.
@@ -21,11 +21,6 @@ typedef uint8_t DataPointLabel;
 class DataSet
 {
 public:
-
-  /**
-   * The unique consecutive ID of a DataPoint.
-   */
-  typedef std::size_t DataPointID;
 
   DataSet( unsigned int featureCount ):
   m_featureCount( featureCount )
@@ -95,7 +90,7 @@ public:
    * \pre The number of features in the point must match those in this dataset (dataPoint.size() == this->getFeatureCount()).
    * \return The unique consecutive ID of the point.
    */
-  DataSet::DataPointID appendDataPoint( const DataPoint &dataPoint, DataPointLabel label )
+  DataPointID appendDataPoint( const DataPoint &dataPoint, bool label )
   {
       // Add the datapoint to the dataset.
       auto id = m_dataSet.appendDataPoint( dataPoint );
@@ -127,7 +122,7 @@ public:
   /**
    * Returns the known label of a point.
    */
-  DataPointLabel getLabel( DataSet::DataPointID pointID ) const
+  bool getLabel( DataPointID pointID ) const
   {
       return m_dataSetLabels[ pointID ];
   }
@@ -135,7 +130,7 @@ public:
   /**
    * Returns a specific feature-value of a particular point.
    */
-  double getFeatureValue( DataSet::DataPointID pointID, unsigned int featureID ) const
+  double getFeatureValue( DataPointID pointID, unsigned int featureID ) const
   {
       return m_dataSet.getFeatureValue( pointID, featureID );
   }
@@ -144,7 +139,7 @@ public:
   {
       // Print all point IDs, features, and labels.
       auto featureCount = m_dataSet.getFeatureCount();
-      for ( DataSet::DataPointID pointID = 0; pointID < m_dataSet.size(); ++pointID )
+      for ( DataPointID pointID = 0; pointID < m_dataSet.size(); ++pointID )
       {
           std::cout << pointID;
           for ( unsigned int feature = 0; feature < featureCount; ++feature )
@@ -157,8 +152,8 @@ public:
 
 private:
 
-  DataSet                       m_dataSet      ; // The data points without their labels.
-  std::vector< DataPointLabel > m_dataSetLabels; // The labels of each point in the dataset.
+  DataSet             m_dataSet      ; // The data points without their labels.
+  std::vector< bool > m_dataSetLabels; // The labels of each point in the dataset.
 };
 
 /**
@@ -171,7 +166,7 @@ public:
   /**
    * Each entry in the FeatureIndex is a tuple of the feature value of a point, its known label, and its unique ID.
    */
-  typedef std::tuple< double, DataPointLabel, DataSet::DataPointID > Entry;
+  typedef std::tuple< double, bool, DataPointID > Entry;
 
   /**
    * Creates a FeatureIndex for the specified TrainingDataSet.
@@ -189,7 +184,7 @@ public:
           index.reserve( dataset.size() );
 
           // Create entries for each point in the dataset.
-          for ( DataSet::DataPointID pointID( 0 ), end( dataset.size() ); pointID < end; ++pointID )
+          for ( DataPointID pointID( 0 ), end( dataset.size() ); pointID < end; ++pointID )
           {
               index.push_back( Entry( dataset.getFeatureValue( pointID, feature ), dataset.getLabel( pointID ), pointID ) );
           }
@@ -202,6 +197,106 @@ public:
 private:
 
   std::vector< std::vector< Entry > > m_featureIndices;
+
+};
+
+
+/**
+ * Compute the Gini impurity of a set of totalCount points, where trueCount points are labeled 'true', and the rest is false.
+ */
+inline double giniImpurity( unsigned int trueCount, unsigned int totalCount )
+{
+    double t = trueCount;
+    auto T   = totalCount;
+    return ( 2 * t * ( 1.0 - ( t / T ) ) ) / T;
+}
+
+class TrainingTreeNode
+{
+public:
+
+  typedef std::shared_ptr<TrainingTreeNode> SharedPointer;
+
+  TrainingTreeNode( unsigned int totalPointCount, unsigned int trueCount ):
+  m_totalCount( totalPointCount ),
+  m_trueCount( trueCount )
+  {
+  }
+
+  /**
+   * Initializes the search for the optimal split.
+   */
+  void initializeOptimalSplitSearch()
+  {
+      // Reset the best split found so far.
+      m_bestSplitFeature   = 0;
+      m_bestSplitValue     = std::numeric_limits<double>::min();
+      m_bestSplitGiniIndex = std::numeric_limits<double>::max();
+  }
+
+  /**
+   * Instructs this node and its children that a particular feature will be traversed in-order now.
+   */
+  void startFeatureTraversal( unsigned int featureID )
+  {
+      // Start feature traversal in the children, if present.
+      if ( m_leftChild )
+      {
+          assert( m_rightChild );
+          m_leftChild->startFeatureTraversal( featureID );
+          m_rightChild->startFeatureTraversal( featureID );
+      }
+
+      // Register which feature is being traversed now, and reset traversal statistics.
+      m_currentFeature     = featureID;
+      m_trueCountLeftHalf  = 0;
+      m_trueCountRightHalf = m_trueCount;
+  }
+
+  /**
+   * Visit one point during the feature traversal phase.
+   */
+  void visitPoint( DataPointID, double featureValue, bool label )
+  {
+      // Update the traversal statistics.
+      if ( label )
+      {
+          ++m_trueCountLeftHalf;
+          --m_trueCountRightHalf;
+      }
+      ++m_totalCountLeftHalf;
+
+      // Compute the Gini index, assuming the split is made at this point.
+      auto totalCountRightHalf = m_totalCount - m_totalCountLeftHalf;
+      auto trueCountRightHalf  = m_trueCount - m_trueCountLeftHalf;
+      auto giniLeft  = giniImpurity( m_trueCountLeftHalf, m_totalCountLeftHalf );
+      auto giniRight = giniImpurity( trueCountRightHalf , totalCountRightHalf  );
+      auto giniTotal = ( giniLeft * m_totalCountLeftHalf + giniRight * totalCountRightHalf ) / m_totalCount;
+
+      // Save this split if it is the best one so far.
+      if ( giniTotal < m_bestSplitGiniIndex )
+      {
+          m_bestSplitFeature   = m_currentFeature;
+          m_bestSplitValue     = featureValue    ;
+          m_bestSplitGiniIndex = giniTotal       ;
+      }
+  }
+
+  SharedPointer m_leftChild         ;
+  SharedPointer m_rightChild        ;
+  unsigned int  m_splitFeatureID    ;
+  double        m_splitFeature      ;
+  bool          m_label             ; // Only valid for nodes that don't have children.
+  unsigned int  m_totalCount        ;
+  unsigned int  m_trueCount         ;
+  unsigned int  m_totalCountLeftHalf;
+  unsigned int  m_trueCountLeftHalf ;
+  unsigned int  m_trueCountRightHalf;
+  unsigned int  m_currentFeature    ; // The feature that is currently being traversed.
+
+  unsigned int m_bestSplitFeature  ;
+  double       m_bestSplitValue    ;
+  double       m_bestSplitGiniIndex;
 
 };
 
