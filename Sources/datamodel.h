@@ -1,6 +1,10 @@
 #ifndef DATAMODEL_H
 #define DATAMODEL_H
 
+#include <algorithm>
+#include <cassert>
+#include <limits>
+#include <memory>
 #include <vector>
 
 /**
