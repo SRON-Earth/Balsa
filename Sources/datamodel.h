@@ -328,9 +328,10 @@ private:
  */
 class FeatureIndex
 {
-  typedef std::tuple< double, bool, DataPointID > Entry;
-
 public:
+
+  typedef std::tuple< double, bool, DataPointID > Entry;
+  typedef std::vector< Entry > SingleFeatureIndex;
 
   FeatureIndex( const TrainingDataSet &dataset ):
   m_trueCount( 0 )
@@ -360,6 +361,24 @@ public:
       }
   }
 
+  SingleFeatureIndex::const_iterator featureBegin( unsigned int featureID ) const
+  {
+      return m_featureIndices[featureID].begin();
+  }
+
+  SingleFeatureIndex::const_iterator featureEnd( unsigned int featureID ) const
+  {
+      return m_featureIndices[featureID].end();
+  }
+
+  /**
+   * Returns the number of features.
+   */
+  unsigned int getFeatureCount() const
+  {
+      return m_featureIndices.size();
+  }
+
   /**
    * Returns the number of indexed points.
    */
@@ -379,7 +398,7 @@ public:
 private:
 
   unsigned int m_trueCount;
-  std::vector< std::vector< Entry > >  m_featureIndices;
+  std::vector< SingleFeatureIndex >  m_featureIndices;
 };
 
 /**
@@ -423,6 +442,10 @@ public:
       m_bestSplitFeature   = 0;
       m_bestSplitValue     = std::numeric_limits<double>::min();
       m_bestSplitGiniIndex = std::numeric_limits<double>::max();
+
+      // Initialize any children.
+      if ( m_leftChild  ) m_leftChild ->initializeOptimalSplitSearch();
+      if ( m_rightChild ) m_rightChild->initializeOptimalSplitSearch();
   }
 
   /**
@@ -459,9 +482,8 @@ public:
 
       // Compute the Gini index, assuming the split is made at this point.
       auto totalCountRightHalf = m_totalCount - m_totalCountLeftHalf;
-      auto trueCountRightHalf  = m_trueCount - m_trueCountLeftHalf;
-      auto giniLeft  = giniImpurity( m_trueCountLeftHalf, m_totalCountLeftHalf );
-      auto giniRight = giniImpurity( trueCountRightHalf , totalCountRightHalf  );
+      auto giniLeft  = giniImpurity( m_trueCountLeftHalf , m_totalCountLeftHalf );
+      auto giniRight = giniImpurity( m_trueCountRightHalf, totalCountRightHalf  );
       auto giniTotal = ( giniLeft * m_totalCountLeftHalf + giniRight * totalCountRightHalf ) / m_totalCount;
 
       // Save this split if it is the best one so far.
@@ -473,10 +495,34 @@ public:
       }
   }
 
+  /**
+   * Split the leaf nodes at the most optimal point, after all features have been traversed.
+   */
+  void split()
+  {
+      // If this is an interior node, split the children.
+      if ( m_leftChild )
+      {
+          assert( m_rightChild );
+          m_leftChild ->split();
+          m_rightChild->split();
+      }
+
+      // If this is a leaf node, split it at the optimal point.
+      else
+      {
+          // Re
+          m_splitValue = m_bestSplitValue;
+          m_splitFeatureID = m_bestSplitFeature;
+
+      }
+  }
+
   SharedPointer m_leftChild         ;
   SharedPointer m_rightChild        ;
   unsigned int  m_splitFeatureID    ;
   double        m_splitValue        ;
+
   bool          m_label             ; // Only valid for nodes that don't have children.
   unsigned int  m_totalCount        ;
   unsigned int  m_trueCount         ;
@@ -508,7 +554,33 @@ public:
       // Create a list of pointers from data points to their current parent nodes (all root, at first).
       std::vector< TrainingTreeNode * > pointParents( m_featureIndex.size(), &root );
 
-      
+      // EXPERIMENTAL CODE BELOW.
+
+      // Split the tree nodes until the limit is reached.
+      unsigned int LIMIT = 4;
+      for ( unsigned int depth = 0; depth < LIMIT; ++depth )
+      {
+          // Tell all nodes that a round of optimal split searching is starting.
+          root.initializeOptimalSplitSearch();
+
+          // Traverse all data points once for each feature, in order, so the tree nodes can find the best possible split for them.
+          for ( unsigned int featureID = 0; featureID < m_featureIndex.size(); ++featureID ) // TODO: random trees should not use all features.
+          {
+              // Tell the tree that traversal is starting for this feature.
+              root.startFeatureTraversal( featureID );
+
+              // Traverse all datapoints in order of this feature.
+              for ( auto it( m_featureIndex.featureBegin( featureID ) ), end( m_featureIndex.featureEnd( featureID ) ); it != end; ++it )
+              {
+                  // Let the parent node of the data point know that it is being traversed.
+                  auto &tuple = *it;
+                  auto featureValue = std::get<0>( tuple );
+                  auto label        = std::get<1>( tuple );
+                  auto pointID      = std::get<2>( tuple );
+                  pointParents[pointID]->visitPoint( pointID, featureValue, label );
+              }
+          }
+      }
 
       // Return a stripped version of the training tree.
       return root.finalize();
