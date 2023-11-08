@@ -163,51 +163,20 @@ private:
   std::vector< bool > m_dataSetLabels; // The labels of each point in the dataset.
 };
 
-/**
- * Trains a random binary forest classifier on a TrainingDataSet.
- */
-class BinaryRandomForestTrainer
-{
-public:
 
-  /**
-   * Each entry in the FeatureIndex is a tuple of the feature value of a point, its known label, and its unique ID.
-   */
+/**
+ * An index for traversing points in a dataset in order of each feature.
+ */
+class FeatureIndex
+{
   typedef std::tuple< double, bool, DataPointID > Entry;
 
-  /**
-   * Constructor.
-   */
-  BinaryRandomForestTrainer( TrainingDataSet::ConstSharedPointer dataset ):
-  m_dataSet( dataset )
-  {
-  }
+public:
 
-  /**
-   * Destructor.
-   */
-  virtual ~BinaryRandomForestTrainer()
-  {
-  }
-
-  /**
-   * Train a forest of random trees on the data.
-   */
-  void train()
-  {
-      // Build sorted indices for each feature.
-      buildFeatureIndices();
-
-
-  }
-
-private:
-
-  void buildFeatureIndices()
+  FeatureIndex( const TrainingDataSet &dataset )
   {
       // Create a sorted index for each feature.
       m_featureIndices.clear();
-      auto &dataset = *m_dataSet;
       m_featureIndices.reserve( dataset.getFeatureCount() );
       for ( unsigned int feature = 0; feature < dataset.getFeatureCount(); ++feature )
       {
@@ -227,8 +196,67 @@ private:
       }
   }
 
-  TrainingDataSet::ConstSharedPointer  m_dataSet       ;
+private:
+
   std::vector< std::vector< Entry > >  m_featureIndices;
+};
+
+class SingleTreeTrainer
+{
+public:
+  SingleTreeTrainer( const FeatureIndex &featureIndex ):
+  m_featureIndex( featureIndex )
+  {
+  }
+
+private:
+
+  const FeatureIndex &m_featureIndex;
+};
+
+/**
+ * Trains a random binary forest classifier on a TrainingDataSet.
+ */
+class BinaryRandomForestTrainer
+{
+public:
+
+  /**
+   * Constructor.
+   * \param dataset A const reference to a training dataset. Modifying the set after construction of the trainer invalidates the trainer.
+   * \param concurrentTrainers The maximum number of trees that may be trained concurrently.
+   */
+  BinaryRandomForestTrainer( TrainingDataSet::ConstSharedPointer dataset, unsigned int concurrentTrainers = 10 ):
+  m_dataSet( dataset ),
+  m_featureIndex( *dataset ),
+  m_trainerCount( concurrentTrainers )
+  {
+  }
+
+  /**
+   * Destructor.
+   */
+  virtual ~BinaryRandomForestTrainer()
+  {
+  }
+
+  /**
+   * Train a forest of random trees on the data.
+   */
+  void train()
+  {
+      // Create the specified number of (possibly) concurrent single-tree trainers.
+      m_treeTrainers.clear();
+      for ( unsigned int i = 0; i < m_trainerCount; ++i )
+          m_treeTrainers.push_back( SingleTreeTrainer( m_featureIndex ) );
+  }
+
+private:
+
+  TrainingDataSet::ConstSharedPointer  m_dataSet     ;
+  FeatureIndex                         m_featureIndex;
+  unsigned int                         m_trainerCount;
+  std::vector< SingleTreeTrainer    >  m_treeTrainers;
 
 };
 
