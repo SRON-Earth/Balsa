@@ -189,6 +189,22 @@ public:
   {
   }
 
+  std::vector< bool > classify( const DataSet &dataSet )
+  {
+      std::vector< bool > labels(dataSet.size());
+      for (std::size_t i = 0; i < dataSet.size(); ++i)
+      {
+        labels.at(i) = classify(dataSet, i);
+      }
+      return labels;
+  }
+
+  /**
+   * Return the classification of all data points in a data set.
+   * N.B. This is a naive implementation, suitable for testing and low-performance applications.
+   */
+  virtual bool classify( const DataSet &dataSet, DataPointID pointID ) = 0;
+
   /**
    * Return the classification of a data point.
    * N.B. This is a naive implementation, suitable for testing and low-performance applications.
@@ -221,6 +237,16 @@ public:
     m_leftChild ( leftChild  ),
     m_rightChild( rightChild )
     {
+    }
+
+    /**
+     * Implementation of base class method.
+     */
+    bool classify( const DataSet &dataSet, DataPointID pointID )
+    {
+        if ( dataSet.getFeatureValue( pointID, m_featureID ) < m_splitValue )
+            return m_leftChild->classify( dataSet, pointID );
+        return m_rightChild->classify( dataSet, pointID );
     }
 
     /**
@@ -264,6 +290,14 @@ public:
   DecisionTreeLeafNode( bool label ):
   m_label( label )
   {
+  }
+
+  /**
+   * Implementation of base class method.
+   */
+  bool classify( const DataSet &, DataPointID )
+  {
+      return m_label;
   }
 
   /**
