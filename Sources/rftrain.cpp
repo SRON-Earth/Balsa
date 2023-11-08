@@ -10,11 +10,11 @@ int main( int, char ** )
 {
     // Some constants for testing purposes.
     const unsigned int FEATURE_COUNT = 12;
-    const unsigned int TEST_SET_SIZE = 1000;
+    const unsigned int TEST_SET_SIZE = 100;
     const unsigned int SEED          = 123;
 
     // Create an empty training data set.
-    TrainingDataSet dataset( FEATURE_COUNT );
+    TrainingDataSet::SharedPointer dataset( new TrainingDataSet( FEATURE_COUNT ) );
 
     // Generate random datapoints.
     std::cout << "Generating random data..." << std::endl;
@@ -35,13 +35,13 @@ int main( int, char ** )
         bool label = label_distribution( generator );
 
         // Add the point and its label to the training set.
-        dataset.appendDataPoint( point, label );
+        dataset->appendDataPoint( point, label );
     }
-    std::cout << "Generated " << dataset.size() << " points with " << dataset.getFeatureCount() << " features." << std::endl;
+    std::cout << "Generated " << dataset->size() << " points with " << dataset->getFeatureCount() << " features." << std::endl;
 
-    // Create a feature index for fast, ordered traversal.
-    std::cout << "Building feature traversal index..." << std::endl;
-    FeatureIndex index( dataset );
+    // Train a random forest on the data.
+    BinaryRandomForestTrainer trainer( dataset );
+    trainer.train();
     std::cout << "Done." << std::endl;
 
     // Finish.

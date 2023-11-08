@@ -84,6 +84,9 @@ class TrainingDataSet
 {
 public:
 
+  typedef std::shared_ptr<const TrainingDataSet> ConstSharedPointer;
+  typedef std::shared_ptr<      TrainingDataSet> SharedPointer     ;
+
   TrainingDataSet( unsigned int featureCount ):
   m_dataSet( featureCount )
   {
@@ -161,9 +164,9 @@ private:
 };
 
 /**
- * An ordered (sorted) view on a TrainingDataSet, that allows fast, ordered traversal through the points.
+ * Trains a random binary forest classifier on a TrainingDataSet.
  */
-class FeatureIndex
+class BinaryRandomForestTrainer
 {
 public:
 
@@ -173,12 +176,38 @@ public:
   typedef std::tuple< double, bool, DataPointID > Entry;
 
   /**
-   * Creates a FeatureIndex for the specified TrainingDataSet.
-   * N.B. The index will not cover points that are appended to the dataset after this index is created.
+   * Constructor.
    */
-  FeatureIndex( const TrainingDataSet &dataset )
+  BinaryRandomForestTrainer( TrainingDataSet::ConstSharedPointer dataset ):
+  m_dataSet( dataset )
+  {
+  }
+
+  /**
+   * Destructor.
+   */
+  virtual ~BinaryRandomForestTrainer()
+  {
+  }
+
+  /**
+   * Train a forest of random trees on the data.
+   */
+  void train()
+  {
+      // Build sorted indices for each feature.
+      buildFeatureIndices();
+
+
+  }
+
+private:
+
+  void buildFeatureIndices()
   {
       // Create a sorted index for each feature.
+      m_featureIndices.clear();
+      auto &dataset = *m_dataSet;
       m_featureIndices.reserve( dataset.getFeatureCount() );
       for ( unsigned int feature = 0; feature < dataset.getFeatureCount(); ++feature )
       {
@@ -198,12 +227,10 @@ public:
       }
   }
 
-private:
-
-  std::vector< std::vector< Entry > > m_featureIndices;
+  TrainingDataSet::ConstSharedPointer  m_dataSet       ;
+  std::vector< std::vector< Entry > >  m_featureIndices;
 
 };
-
 
 /**
  * Compute the Gini impurity of a set of totalCount points, where trueCount points are labeled 'true', and the rest is false.
