@@ -18,6 +18,15 @@ typedef std::vector<double> DataPoint;
  */
 typedef std::size_t DataPointID;
 
+/**
+ * Compute the Gini impurity of a set of totalCount points, where trueCount points are labeled 'true', and the rest is false.
+ */
+inline double giniImpurity( unsigned int trueCount, unsigned int totalCount )
+{
+    double t = trueCount;
+    auto T   = totalCount;
+    return ( 2 * t * ( 1.0 - ( t / T ) ) ) / T;
+}
 
 /**
  * A set of DataPoints.
@@ -163,6 +172,122 @@ private:
   std::vector< bool > m_dataSetLabels; // The labels of each point in the dataset.
 };
 
+/**
+ * A node in a decision tree. N.B. this class is intended for evaluation purposes, not for training (see TrainingTreeNode).
+ */
+class DecisionTreeNode
+{
+public:
+
+  typedef std::shared_ptr<DecisionTreeNode> SharedPointer;
+
+  DecisionTreeNode()
+  {
+  }
+
+  virtual ~DecisionTreeNode()
+  {
+  }
+
+  /**
+   * Return the classification of a data point.
+   * N.B. This is a naive implementation, suitable for testing and low-performance applications.
+   */
+  virtual bool classify( const DataPoint &point ) = 0; // TODO: add efficient bulk classifier.
+
+
+  /**
+   * Print routine for testing purposes.
+   */
+  virtual void dump( unsigned int indent = 0 ) = 0;
+
+};
+
+/**
+ * An internal node in a decision tree.
+ */
+class DecisionTreeInternalNode: public DecisionTreeNode
+{
+public:
+
+  /**
+   * Constructor.
+   * \param featureID The feature on which the node splits the dataset.
+   * \param splitValue The value on which the node splits the dataset (x < splitValue is left half, x >= is right half).
+   */
+    DecisionTreeInternalNode( unsigned int featureID, double splitValue, DecisionTreeNode::SharedPointer leftChild, DecisionTreeNode::SharedPointer rightChild ):
+    m_featureID ( featureID  ),
+    m_splitValue( splitValue ),
+    m_leftChild ( leftChild  ),
+    m_rightChild( rightChild )
+    {
+    }
+
+    /**
+     * Implementation of base class method.
+     */
+    bool classify( const DataPoint &point )
+    {
+        if ( point[m_featureID] < m_splitValue ) return m_leftChild->classify( point );
+        return m_rightChild->classify( point );
+    }
+
+  virtual void dump( unsigned int indent )
+  {
+      auto tab = std::string( indent, ' ' );
+      std::cout << tab << "Feature #" << m_featureID << ", value = " <<  m_splitValue << std::endl;
+      std::cout << tab << "Left: " << std::endl;
+      m_leftChild->dump( indent + 1 );
+      std::cout << tab << "Right: " << std::endl;
+      m_rightChild->dump( indent + 1 );
+  }
+
+  private:
+
+    unsigned int                    m_featureID ;
+    double                          m_splitValue;
+    DecisionTreeNode::SharedPointer m_leftChild ;
+    DecisionTreeNode::SharedPointer m_rightChild;
+
+};
+
+/**
+ * Leaf node in a binary decision tree.
+ */
+class DecisionTreeLeafNode: public DecisionTreeNode
+{
+public:
+
+  /**
+   * Constructor.
+   */
+  DecisionTreeLeafNode( bool label ):
+  m_label( label )
+  {
+  }
+
+  /**
+   * Implementation of base class method.
+   */
+  bool classify( const DataPoint & )
+  {
+      return m_label;
+  }
+
+  /**
+   * Implementation of base class method.
+   */
+  virtual void dump( unsigned int indent )
+  {
+      auto tab = std::string( indent, ' ' );
+      std::cout << tab << ( m_label ? "TRUE" : "FALSE" ) << std::endl;
+  }
+
+private:
+
+  bool m_label;
+
+};
 
 /**
  * An index for traversing points in a dataset in order of each feature.
@@ -173,11 +298,13 @@ class FeatureIndex
 
 public:
 
-  FeatureIndex( const TrainingDataSet &dataset )
+  FeatureIndex( const TrainingDataSet &dataset ):
+  m_trueCount( 0 )
   {
       // Create a sorted index for each feature.
       m_featureIndices.clear();
       m_featureIndices.reserve( dataset.getFeatureCount() );
+
       for ( unsigned int feature = 0; feature < dataset.getFeatureCount(); ++feature )
       {
           // Create the index for this feature, and give it enough capacity.
@@ -185,91 +312,45 @@ public:
           auto &index = *m_featureIndices.rbegin();
           index.reserve( dataset.size() );
 
-          // Create entries for each point in the dataset.
+          // Create entries for each point in the dataset, and count the 'true' labels.
+          m_trueCount = 0;
           for ( DataPointID pointID( 0 ), end( dataset.size() ); pointID < end; ++pointID )
           {
-              index.push_back( Entry( dataset.getFeatureValue( pointID, feature ), dataset.getLabel( pointID ), pointID ) );
+              bool label = dataset.getLabel( pointID );
+              if ( label ) ++m_trueCount;
+              index.push_back( Entry( dataset.getFeatureValue( pointID, feature ), label,  pointID ) );
           }
 
-          // Sort the index by feature value (the rest of the fields don't matter..
+          // Sort the index by feature value (the rest of the fields don't matter).
           std::sort( index.begin(), index.end() );
       }
   }
 
+  /**
+   * Returns the number of indexed points.
+   */
+  std::size_t size() const
+  {
+      return m_featureIndices[0].size();
+  }
+
+  /**
+   * Returns the number of points labeled 'true'.
+   */
+  unsigned int getTrueCount() const
+  {
+      return m_trueCount;
+  }
+
 private:
 
+  unsigned int m_trueCount;
   std::vector< std::vector< Entry > >  m_featureIndices;
 };
 
-class SingleTreeTrainer
-{
-public:
-  SingleTreeTrainer( const FeatureIndex &featureIndex ):
-  m_featureIndex( featureIndex )
-  {
-  }
-
-private:
-
-  const FeatureIndex &m_featureIndex;
-};
-
 /**
- * Trains a random binary forest classifier on a TrainingDataSet.
+ * A node in a decision tree, with special annotations for the training process.
  */
-class BinaryRandomForestTrainer
-{
-public:
-
-  /**
-   * Constructor.
-   * \param dataset A const reference to a training dataset. Modifying the set after construction of the trainer invalidates the trainer.
-   * \param concurrentTrainers The maximum number of trees that may be trained concurrently.
-   */
-  BinaryRandomForestTrainer( TrainingDataSet::ConstSharedPointer dataset, unsigned int concurrentTrainers = 10 ):
-  m_dataSet( dataset ),
-  m_featureIndex( *dataset ),
-  m_trainerCount( concurrentTrainers )
-  {
-  }
-
-  /**
-   * Destructor.
-   */
-  virtual ~BinaryRandomForestTrainer()
-  {
-  }
-
-  /**
-   * Train a forest of random trees on the data.
-   */
-  void train()
-  {
-      // Create the specified number of (possibly) concurrent single-tree trainers.
-      m_treeTrainers.clear();
-      for ( unsigned int i = 0; i < m_trainerCount; ++i )
-          m_treeTrainers.push_back( SingleTreeTrainer( m_featureIndex ) );
-  }
-
-private:
-
-  TrainingDataSet::ConstSharedPointer  m_dataSet     ;
-  FeatureIndex                         m_featureIndex;
-  unsigned int                         m_trainerCount;
-  std::vector< SingleTreeTrainer    >  m_treeTrainers;
-
-};
-
-/**
- * Compute the Gini impurity of a set of totalCount points, where trueCount points are labeled 'true', and the rest is false.
- */
-inline double giniImpurity( unsigned int trueCount, unsigned int totalCount )
-{
-    double t = trueCount;
-    auto T   = totalCount;
-    return ( 2 * t * ( 1.0 - ( t / T ) ) ) / T;
-}
-
 class TrainingTreeNode
 {
 public:
@@ -280,6 +361,23 @@ public:
   m_totalCount( totalPointCount ),
   m_trueCount( trueCount )
   {
+  }
+
+  /**
+   * Returns a stripped, non-training decision tree.
+   */
+  DecisionTreeNode::SharedPointer finalize()
+  {
+      // Build an internal node or a leaf node.
+      if ( m_leftChild )
+      {
+          assert( m_rightChild );
+          return DecisionTreeNode::SharedPointer( new DecisionTreeInternalNode( m_splitFeatureID, m_splitValue, m_leftChild->finalize(), m_rightChild->finalize() ) );
+      }
+      else
+      {
+          return DecisionTreeNode::SharedPointer( new DecisionTreeLeafNode( m_label ) );
+      }
   }
 
   /**
@@ -344,7 +442,7 @@ public:
   SharedPointer m_leftChild         ;
   SharedPointer m_rightChild        ;
   unsigned int  m_splitFeatureID    ;
-  double        m_splitFeature      ;
+  double        m_splitValue        ;
   bool          m_label             ; // Only valid for nodes that don't have children.
   unsigned int  m_totalCount        ;
   unsigned int  m_trueCount         ;
@@ -356,6 +454,92 @@ public:
   unsigned int m_bestSplitFeature  ;
   double       m_bestSplitValue    ;
   double       m_bestSplitGiniIndex;
+
+};
+
+class SingleTreeTrainer
+{
+public:
+
+  SingleTreeTrainer( const FeatureIndex &featureIndex ):
+  m_featureIndex( featureIndex )
+  {
+  }
+
+  DecisionTreeNode::SharedPointer train()
+  {
+      // Create an empty training tree.
+      TrainingTreeNode root( m_featureIndex.size(), m_featureIndex.getTrueCount() );
+
+      // Create a list of pointers from data points to their current parent nodes (all root, at first).
+      std::vector< TrainingTreeNode * > pointParents( m_featureIndex.size(), &root );
+
+      
+
+      // Return a stripped version of the training tree.
+      return root.finalize();
+  }
+
+private:
+
+  const FeatureIndex &m_featureIndex;
+};
+
+/**
+ * Trains a random binary forest classifier on a TrainingDataSet.
+ */
+class BinaryRandomForestTrainer
+{
+public:
+
+  /**
+   * Constructor.
+   * \param dataset A const reference to a training dataset. Modifying the set after construction of the trainer invalidates the trainer.
+   * \param concurrentTrainers The maximum number of trees that may be trained concurrently.
+   */
+  BinaryRandomForestTrainer( TrainingDataSet::ConstSharedPointer dataset, unsigned int treeCount = 1, unsigned int concurrentTrainers = 1 ):
+  m_dataSet( dataset ),
+  m_featureIndex( *dataset ),
+  m_trainerCount( concurrentTrainers ),
+  m_treeCount( treeCount )
+  {
+  }
+
+  /**
+   * Destructor.
+   */
+  virtual ~BinaryRandomForestTrainer()
+  {
+  }
+
+  /**
+   * Train a forest of random trees on the data.
+   */
+  void train()
+  {
+      // Create the specified number of (possibly) concurrent single-tree trainers.
+      m_treeTrainers.clear();
+      for ( unsigned int i = 0; i < m_trainerCount; ++i )
+          m_treeTrainers.push_back( SingleTreeTrainer( m_featureIndex ) );
+
+      // Let the trainers train the trees.
+      // TODO: launch concurrent trainers.
+      auto treesToTrain = m_treeCount;
+      while ( treesToTrain-- )
+      {
+          // EXPERIMENTAL.
+          auto tree = m_treeTrainers[0].train();
+          tree->dump();
+      }
+  }
+
+private:
+
+  TrainingDataSet::ConstSharedPointer  m_dataSet     ;
+  FeatureIndex                         m_featureIndex;
+  unsigned int                         m_trainerCount;
+  unsigned int                         m_treeCount   ;
+  std::vector< SingleTreeTrainer    >  m_treeTrainers;
 
 };
 
