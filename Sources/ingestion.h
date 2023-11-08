@@ -20,7 +20,7 @@ T read(std::istream &stream)
     return result;
 }
 
-TrainingDataSet loadTrainingDataSet(const std::string &filename)
+TrainingDataSet::SharedPointer loadTrainingDataSet(const std::string &filename)
 {
     std::ifstream stream(filename, std::ios::binary);
     assert(stream.good());
@@ -34,21 +34,21 @@ TrainingDataSet loadTrainingDataSet(const std::string &filename)
         assert(formatString.at(i) == 'f');
     assert(formatString.back() == 'B');
 
-    TrainingDataSet dataset(featureCount);
-    DataPoint point(featureCount);
+    TrainingDataSet::SharedPointer dataset(new TrainingDataSet(featureCount));
     while (stream.good())
     {
+        DataPoint point(featureCount);
         for (unsigned int i = 0; i < featureCount; ++i)
         {
-            point[i] = read<float>(stream);
+            point.at(i) = read<float>(stream);
         }
 
-        DataPointLabel label = read<DataPointLabel>(stream);
+        const bool label = (read<std::uint8_t>(stream) != 0);
 
         if (stream.eof())
             break;
 
-        dataset.appendDataPoint(point, label);
+        dataset->appendDataPoint(point, label);
     }
 
     return dataset;
