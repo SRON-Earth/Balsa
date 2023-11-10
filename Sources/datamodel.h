@@ -1,6 +1,7 @@
 #ifndef DATAMODEL_H
 #define DATAMODEL_H
 
+#include <iomanip>
 #include <algorithm>
 #include <cassert>
 #include <limits>
@@ -261,7 +262,7 @@ public:
   virtual void dump( unsigned int indent )
   {
       auto tab = std::string( indent, ' ' );
-      std::cout << tab << "Feature #" << m_featureID << ", value = " <<  m_splitValue << std::endl;
+      std::cout << tab << "Feature #" << m_featureID << ", split value = " << std::setprecision( 17 ) <<  m_splitValue << std::endl;
       std::cout << tab << "Left: " << std::endl;
       m_leftChild->dump( indent + 1 );
       std::cout << tab << "Right: " << std::endl;
@@ -543,10 +544,8 @@ public:
   /**
    * Visit one point during the feature traversal phase.
    */
-  void visitPoint( DataPointID pointID, double featureValue, bool label )
+  void visitPoint( DataPointID, double featureValue, bool label )
   {
-      std::cout << "Visiting feature value " << featureValue << " datapoint " << pointID <<  " in node " << getPath() << std::endl;
-
       // This must never be called on internal nodes.
       assert( !m_leftChild  );
       assert( !m_rightChild );
@@ -559,8 +558,6 @@ public:
           auto giniLeft  = giniImpurity( m_trueCountLeftHalf , m_totalCountLeftHalf );
           auto giniRight = giniImpurity( m_trueCountRightHalf, totalCountRightHalf  );
           auto giniTotal = ( giniLeft * m_totalCountLeftHalf + giniRight * totalCountRightHalf ) / m_totalCount;
-          std::cout << "Gini left " << giniLeft << " right " << giniRight << " total " << giniTotal << std::endl;
-          std::cout << "True counts left right: " << m_trueCountLeftHalf << "  " << m_trueCountRightHalf << std::endl;
 
           // Save this split if it is the best one so far.
           if ( giniTotal < m_bestSplitGiniIndex )
@@ -591,7 +588,6 @@ public:
       // If this is an interior node, split the children and quit.
       if ( m_leftChild )
       {
-          std::cout << "Splitting interior node recursively." << std::endl;
           assert( m_rightChild );
           m_leftChild ->split();
           m_rightChild->split();
@@ -599,21 +595,18 @@ public:
       }
 
       // Assert that this is a leaf node.
-      std::cout << "Considering split on leaf node on Feature #" << m_bestSplitFeature << " at value " << m_bestSplitValue << std::endl;
-      assert( !m_leftChild  );
+       assert( !m_leftChild  );
       assert( !m_rightChild );
 
       // Do not split if this node is completely pure.
       // N.B. the purity cutoff can be made more flexible.
       if ( m_trueCount == 0 || m_trueCount == m_totalCount )
       {
-          std::cout << "Rejecting split because node is pure." << std::endl;
-          return;
+           return;
       }
 
       // Split this node at the best point that was found.
-      std::cout << "Accepting split." << std::endl;
-      m_splitValue     = m_bestSplitValue;
+       m_splitValue     = m_bestSplitValue;
       m_splitFeatureID = m_bestSplitFeature;
       m_leftChild .reset( new TrainingTreeNode( this ) );
       m_rightChild.reset( new TrainingTreeNode( this ) );
@@ -678,24 +671,18 @@ public:
       for ( unsigned int depth = 0; depth < LIMIT; ++depth )
       {
           // Tell all nodes that a round of optimal split searching is starting.
-          std::cout << "INITIALIZE SPLIT SEARCH" << std::endl;
           root.initializeOptimalSplitSearch();
-          root.dump();
 
           // Register all points with their respective parent nodes.
-          std::cout << "REGISTER POINTS" << std::endl; 
           for ( DataPointID pointID( 0 ), end( pointParents.size() ); pointID < end; ++pointID )
           {
               pointParents[pointID] = pointParents[pointID]->registerPoint( pointID, m_dataSet );
           }
-          root.dump();
 
           // Traverse all data points once for each feature, in order, so the tree nodes can find the best possible split for them.
-          std:: cout << "Traversing all features..." << std::endl;
           for ( unsigned int featureID = 0; featureID < m_featureIndex.getFeatureCount(); ++featureID ) // TODO: random trees should not use all features.
           {
               // Tell the tree that traversal is starting for this feature.
-              std:: cout << "TRAVERSE FEATURE #" << featureID <<  "..." << std::endl;
               root.startFeatureTraversal( featureID );
 
               // Traverse all datapoints in order of this feature.
@@ -708,14 +695,10 @@ public:
                   auto pointID      = std::get<2>( tuple );
                   pointParents[pointID]->visitPoint( pointID, featureValue, label );
               }
-
-              root.dump();
           }
 
           // Allow all leaf nodes to split, if necessary.
-          std::cout << "SPLIT" << std::endl;
           root.split();
-          root.dump();
       }
 
       // Return a stripped version of the training tree.

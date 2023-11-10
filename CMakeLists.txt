@@ -6,7 +6,7 @@ set( CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" )
 
 # Set project language details.
 project( randomforest CXX )
-set( CMAKE_CXX_STANDARD 17 )
+set( CMAKE_CXX_STANDARD 23 )
 
 # Set build type.
 if(NOT CMAKE_BUILD_TYPE)
