@@ -410,18 +410,19 @@ public:
 
   typedef std::shared_ptr<TrainingTreeNode> SharedPointer;
 
-  TrainingTreeNode():
-  m_splitFeatureID    ( 0     ),
-  m_splitValue        ( 0     ),
-  m_totalCount        ( 0     ),
-  m_trueCount         ( 0     ),
-  m_totalCountLeftHalf( 0     ),
-  m_trueCountLeftHalf ( 0     ),
-  m_trueCountRightHalf( 0     ),
-  m_currentFeature    ( 0     ),
-  m_bestSplitFeature  ( 0     ),
-  m_bestSplitValue    ( 0     ),
-  m_bestSplitGiniIndex( 0     )
+  TrainingTreeNode( TrainingTreeNode *parent = nullptr ):
+  m_parent            ( parent ),
+  m_splitFeatureID    ( 0      ),
+  m_splitValue        ( 0      ),
+  m_totalCount        ( 0      ),
+  m_trueCount         ( 0      ),
+  m_totalCountLeftHalf( 0      ),
+  m_trueCountLeftHalf ( 0      ),
+  m_trueCountRightHalf( 0      ),
+  m_currentFeature    ( 0      ),
+  m_bestSplitFeature  ( 0      ),
+  m_bestSplitValue    ( 0      ),
+  m_bestSplitGiniIndex( 0      )
   {
   }
 
@@ -442,9 +443,37 @@ public:
       }
 
       // Defer the registration to the correct child.
+      // N.B. The comparison must be strictly-less. DO NOT change to <=, or the algorithm will break.
       if ( dataset.getFeatureValue( pointID, m_splitFeatureID ) < m_splitValue ) return m_leftChild->registerPoint( pointID, dataset );
       return m_rightChild->registerPoint( pointID, dataset );
   }
+
+  // Debug
+  void dump( unsigned int indent = 0 )
+  {
+
+      auto tab = std::string( indent, ' ' );
+      std::cout << tab << "Node:" << std::endl
+                << tab << "m_totalCount         = " << m_totalCount         << std::endl
+                << tab << "m_trueCount          = " << m_trueCount          << std::endl
+                << tab << "m_totalCountLeftHalf = " << m_totalCountLeftHalf << std::endl
+                << tab << "m_trueCountLeftHalf  = " << m_trueCountLeftHalf  << std::endl
+                << tab << "m_trueCountRightHalf = " << m_trueCountRightHalf << std::endl
+                << tab << "m_currentFeature     = " << m_currentFeature     << std::endl
+                << tab << "m_bestSplitFeature   = " << m_bestSplitFeature   << std::endl
+                << tab << "m_bestSplitValue     = " << m_bestSplitValue     << std::endl
+                << tab << "m_bestSplitGiniIndex = " << m_bestSplitGiniIndex << std::endl;
+
+      if ( m_leftChild )
+      {
+          std::cout << tab << "Split feature #" << m_splitFeatureID << ", value = " <<  m_splitValue << std::endl;
+          std::cout << tab << "Left: " << std::endl;
+          m_leftChild->dump( indent + 1 );
+          std::cout << tab << "Right: " << std::endl;
+          m_rightChild->dump( indent + 1 );
+      }
+  }
+
 
   /**
    * Returns a stripped, non-training decision tree.
@@ -503,22 +532,46 @@ public:
           m_rightChild->startFeatureTraversal( featureID );
       }
 
-      // Register which feature is being traversed now, and reset traversal statistics.
-      m_currentFeature     = featureID;
-      m_trueCountLeftHalf  = 0;
-      m_trueCountRightHalf = m_trueCount;
+      // Reset the feature traversal statistics.
+      m_lastVisitedValue    = std::numeric_limits<double>::min(); // Arbitrary.
+      m_totalCountLeftHalf  = 0          ;
+      m_trueCountLeftHalf   = 0          ;
+      m_trueCountRightHalf  = m_trueCount;
+      m_currentFeature      = featureID  ;
   }
 
   /**
    * Visit one point during the feature traversal phase.
    */
-  void visitPoint( DataPointID, double featureValue, bool label )
+  void visitPoint( DataPointID pointID, double featureValue, bool label )
   {
+      std::cout << "Visiting feature value " << featureValue << " datapoint " << pointID <<  " in node " << getPath() << std::endl;
+
       // This must never be called on internal nodes.
       assert( !m_leftChild  );
       assert( !m_rightChild );
 
-      // Update the traversal statistics.
+      // If this is the start of a block of previously unseen feature values, calculate what the gain of a split would be.
+      if ( ( featureValue != m_lastVisitedValue ) && ( m_totalCountLeftHalf > 0 ) )
+      {
+          // Compute the Gini gain, assuming a split is made at this point.
+          auto totalCountRightHalf = m_totalCount - m_totalCountLeftHalf;
+          auto giniLeft  = giniImpurity( m_trueCountLeftHalf , m_totalCountLeftHalf );
+          auto giniRight = giniImpurity( m_trueCountRightHalf, totalCountRightHalf  );
+          auto giniTotal = ( giniLeft * m_totalCountLeftHalf + giniRight * totalCountRightHalf ) / m_totalCount;
+          std::cout << "Gini left " << giniLeft << " right " << giniRight << " total " << giniTotal << std::endl;
+          std::cout << "True counts left right: " << m_trueCountLeftHalf << "  " << m_trueCountRightHalf << std::endl;
+
+          // Save this split if it is the best one so far.
+          if ( giniTotal < m_bestSplitGiniIndex )
+          {
+              m_bestSplitFeature   = m_currentFeature;
+              m_bestSplitValue     = featureValue    ;
+              m_bestSplitGiniIndex = giniTotal       ;
+          }
+      }
+
+      // Count this point and its label. The point now belongs to the 'left half' of the pass for this feature.
       if ( label )
       {
           ++m_trueCountLeftHalf;
@@ -526,19 +579,8 @@ public:
       }
       ++m_totalCountLeftHalf;
 
-      // Compute the Gini index, assuming the split is made at this point.
-      auto totalCountRightHalf = m_totalCount - m_totalCountLeftHalf;
-      auto giniLeft  = giniImpurity( m_trueCountLeftHalf , m_totalCountLeftHalf );
-      auto giniRight = giniImpurity( m_trueCountRightHalf, totalCountRightHalf  );
-      auto giniTotal = ( giniLeft * m_totalCountLeftHalf + giniRight * totalCountRightHalf ) / m_totalCount;
-
-      // Save this split if it is the best one so far.
-      if ( giniTotal < m_bestSplitGiniIndex )
-      {
-          m_bestSplitFeature   = m_currentFeature;
-          m_bestSplitValue     = featureValue    ;
-          m_bestSplitGiniIndex = giniTotal       ;
-      }
+      // Update the last visited value. This is necessary to detect the end of a block during the visit of the next point.
+      m_lastVisitedValue = featureValue;
   }
 
   /**
@@ -557,36 +599,59 @@ public:
       }
 
       // Assert that this is a leaf node.
-      std::cout << "Splitting leaf node on Feature #" << m_bestSplitFeature << " at value " << m_bestSplitValue << std::endl;
+      std::cout << "Considering split on leaf node on Feature #" << m_bestSplitFeature << " at value " << m_bestSplitValue << std::endl;
       assert( !m_leftChild  );
       assert( !m_rightChild );
 
       // Do not split if this node is completely pure.
       // N.B. the purity cutoff can be made more flexible.
-      if ( m_trueCount == m_totalCount ) return;
+      if ( m_trueCount == 0 || m_trueCount == m_totalCount )
+      {
+          std::cout << "Rejecting split because node is pure." << std::endl;
+          return;
+      }
 
       // Split this node at the best point that was found.
+      std::cout << "Accepting split." << std::endl;
       m_splitValue     = m_bestSplitValue;
       m_splitFeatureID = m_bestSplitFeature;
-      m_leftChild .reset( new TrainingTreeNode() );
-      m_rightChild.reset( new TrainingTreeNode() );
+      m_leftChild .reset( new TrainingTreeNode( this ) );
+      m_rightChild.reset( new TrainingTreeNode( this ) );
   }
 
-  SharedPointer m_leftChild         ; // Null for leaf nodes.
-  SharedPointer m_rightChild        ; // Null for leaf nodes.
-  unsigned int  m_splitFeatureID    ; // The ID of the feature at which this node is split. Only valid for internal nodes.
-  double        m_splitValue        ; // The value at which this node is split, along the specified feature.
-  unsigned int  m_totalCount        ; // Total number of points in this node.
-  unsigned int  m_trueCount         ; // Total number of points labeled 'true' in this node.
+  /**
+   * Returns the path of this node from the root (debug purposes).
+   */
+  std::string getPath() const
+  {
+      if ( !m_parent ) return "root";
+      return m_parent->getPath() + ( m_parent->isLeftChild( this ) ? ".L" : ".R" );
+  }
+
+private:
+
+  bool isLeftChild( const TrainingTreeNode *node ) const
+  {
+      return m_leftChild.get() == node;
+  }
+
+  TrainingTreeNode *m_parent            ;
+  SharedPointer     m_leftChild         ; // Null for leaf nodes.
+  SharedPointer     m_rightChild        ; // Null for leaf nodes.
+  unsigned int      m_splitFeatureID    ; // The ID of the feature at which this node is split. Only valid for internal nodes.
+  double            m_splitValue        ; // The value at which this node is split, along the specified feature.
+  unsigned int      m_totalCount        ; // Total number of points in this node.
+  unsigned int      m_trueCount         ; // Total number of points labeled 'true' in this node.
 
   // Statistics used during traversal:
-  unsigned int  m_totalCountLeftHalf; // Total number of points that have been visited during traversal of the current feature.
-  unsigned int  m_trueCountLeftHalf ; // Totol number of visited points labeled 'true'.
-  unsigned int  m_trueCountRightHalf; // Remaining unvisited points labeled 'true'.
-  unsigned int  m_currentFeature    ; // The feature that is currently being traversed.
-  unsigned int  m_bestSplitFeature  ; // Best feature for splitting found so far.
-  double        m_bestSplitValue    ; // Best value to split at found so far.
-  double        m_bestSplitGiniIndex; // Gini-index of the best split point found so far (lowest index).
+  double            m_lastVisitedValue  ;
+  unsigned int      m_totalCountLeftHalf; // Total number of points that have been visited during traversal of the current feature.
+  unsigned int      m_trueCountLeftHalf ; // Totol number of visited points labeled 'true'.
+  unsigned int      m_trueCountRightHalf; // Remaining unvisited points labeled 'true'.
+  unsigned int      m_currentFeature    ; // The feature that is currently being traversed.
+  unsigned int      m_bestSplitFeature  ; // Best feature for splitting found so far.
+  double            m_bestSplitValue    ; // Best value to split at found so far.
+  double            m_bestSplitGiniIndex; // Gini-index of the best split point found so far (lowest index).
 
 };
 
@@ -609,24 +674,28 @@ public:
       std::vector< TrainingTreeNode * > pointParents( m_featureIndex.size(), &root );
 
       // Split all leaf nodes in the tree until the depth limit is reached.
-      unsigned int LIMIT = 4;
+      unsigned int LIMIT = 100;
       for ( unsigned int depth = 0; depth < LIMIT; ++depth )
       {
           // Tell all nodes that a round of optimal split searching is starting.
+          std::cout << "INITIALIZE SPLIT SEARCH" << std::endl;
           root.initializeOptimalSplitSearch();
+          root.dump();
 
           // Register all points with their respective parent nodes.
+          std::cout << "REGISTER POINTS" << std::endl; 
           for ( DataPointID pointID( 0 ), end( pointParents.size() ); pointID < end; ++pointID )
           {
               pointParents[pointID] = pointParents[pointID]->registerPoint( pointID, m_dataSet );
           }
+          root.dump();
 
           // Traverse all data points once for each feature, in order, so the tree nodes can find the best possible split for them.
           std:: cout << "Traversing all features..." << std::endl;
           for ( unsigned int featureID = 0; featureID < m_featureIndex.getFeatureCount(); ++featureID ) // TODO: random trees should not use all features.
           {
               // Tell the tree that traversal is starting for this feature.
-              std:: cout << "Traversing feature #" << featureID <<  "..." << std::endl;
+              std:: cout << "TRAVERSE FEATURE #" << featureID <<  "..." << std::endl;
               root.startFeatureTraversal( featureID );
 
               // Traverse all datapoints in order of this feature.
@@ -639,16 +708,17 @@ public:
                   auto pointID      = std::get<2>( tuple );
                   pointParents[pointID]->visitPoint( pointID, featureValue, label );
               }
+
+              root.dump();
           }
 
           // Allow all leaf nodes to split, if necessary.
-          std::cout << "Before split" << std::endl;
+          std::cout << "SPLIT" << std::endl;
           root.split();
-          std::cout << "After split" << std::endl;
+          root.dump();
       }
 
       // Return a stripped version of the training tree.
-      std::cout << "Finalizing.." << std::endl;
       return root.finalize();
   }
 
