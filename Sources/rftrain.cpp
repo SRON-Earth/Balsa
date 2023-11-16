@@ -14,7 +14,7 @@ int main( int, char ** )
     // auto dataSet = loadTrainingDataSet("training_data_100_points_7_features.ds");
     std::cout << "Ingesting data..." << std::endl;
     auto start = std::chrono::system_clock::now();
-    auto dataSet = loadTrainingDataSet("largeset.ds");
+    auto dataSet = loadTrainingDataSet("training_data_100_points_7_features.ds");
     auto end = std::chrono::system_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::seconds>( end - start );
     std::cout << "Dataset loaded: " << dataSet->size() << " points. (" << elapsed.count() << " seconds)." << std::endl;

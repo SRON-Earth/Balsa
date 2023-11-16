@@ -1,6 +1,8 @@
 #ifndef DATAMODEL_H
 #define DATAMODEL_H
 
+#include <iostream>
+#include <fstream>
 #include <random>
 #include <iomanip>
 #include <algorithm>
@@ -174,6 +176,21 @@ private:
   std::vector< bool > m_dataSetLabels; // The labels of each point in the dataset.
 };
 
+// Forward declarations.
+class DecisionTreeNode;
+class DecisionTreeInternalNode;
+class DecisionTreeLeafNode;
+
+/**
+ * A Visitor for decision trees.
+ */
+class DecisionTreeVisitor
+{
+public:
+  virtual void accept( const DecisionTreeInternalNode & ) {}
+  virtual void accept( const DecisionTreeLeafNode     & ) {}
+};
+
 /**
  * A node in a decision tree. N.B. this class is intended for evaluation purposes, not for training (see TrainingTreeNode).
  */
@@ -210,19 +227,24 @@ public:
    * Return the classification of all data points in a data set.
    * N.B. This is a naive implementation, suitable for testing and low-performance applications.
    */
-  virtual bool classify( const DataSet &dataSet, DataPointID pointID ) = 0;
+  virtual bool classify( const DataSet &dataSet, DataPointID pointID ) const = 0;
 
   /**
    * Return the classification of a data point.
    * N.B. This is a naive implementation, suitable for testing and low-performance applications.
    */
-  virtual bool classify( const DataPoint &point ) = 0; // TODO: add efficient bulk classifier.
+  virtual bool classify( const DataPoint &point ) const = 0; // TODO: add efficient bulk classifier.
 
 
   /**
    * Print routine for testing purposes.
    */
   virtual void dump( unsigned int indent = 0 ) = 0;
+
+  /**
+   * Visitor pattern implementation.
+   */
+  virtual void visit( DecisionTreeVisitor &visitor ) = 0;
 
 };
 
@@ -238,54 +260,94 @@ public:
    * \param featureID The feature on which the node splits the dataset.
    * \param splitValue The value on which the node splits the dataset (x < splitValue is left half, x >= is right half).
    */
-    DecisionTreeInternalNode( unsigned int featureID, double splitValue, DecisionTreeNode::SharedPointer leftChild, DecisionTreeNode::SharedPointer rightChild ):
-    m_featureID ( featureID  ),
-    m_splitValue( splitValue ),
-    m_leftChild ( leftChild  ),
-    m_rightChild( rightChild )
-    {
-    }
+  DecisionTreeInternalNode( unsigned int featureID, double splitValue, DecisionTreeNode::SharedPointer leftChild, DecisionTreeNode::SharedPointer rightChild ):
+  m_featureID ( featureID  ),
+  m_splitValue( splitValue ),
+  m_leftChild ( leftChild  ),
+  m_rightChild( rightChild )
+  {
+  }
 
-    /**
-     * Implementation of base class method.
-     */
-    bool classify( const DataSet &dataSet, DataPointID pointID )
-    {
-        if ( dataSet.getFeatureValue( pointID, m_featureID ) < m_splitValue )
-            return m_leftChild->classify( dataSet, pointID );
-        return m_rightChild->classify( dataSet, pointID );
-    }
+  /**
+   * Visitor pattern implementation.
+   */
+  virtual void visit( DecisionTreeVisitor &visitor )
+  {
+      return visitor.accept( *this );
+  }
 
-    /**
-     * Implementation of base class method.
-     */
-    bool classify( const DataPoint &point )
-    {
-        if ( point[m_featureID] < m_splitValue ) return m_leftChild->classify( point );
-        return m_rightChild->classify( point );
-    }
+  /**
+   * Returns the left child of this node.
+   */
+  DecisionTreeNode::SharedPointer getLeftChild() const
+  {
+      return m_leftChild;
+  }
 
-    unsigned int getNodeCount() const
-    {
-        return m_leftChild->getNodeCount() + m_rightChild->getNodeCount();
-    }
+  /**
+   * Returns the right child of this node.
+   */
+  DecisionTreeNode::SharedPointer getRightChild() const
+  {
+      return m_rightChild;
+  }
 
-    virtual void dump( unsigned int indent )
-    {
-        auto tab = std::string( indent, ' ' );
-        std::cout << tab << "Feature #" << m_featureID << ", split value = " << std::setprecision( 17 ) <<  m_splitValue << std::endl;
-        std::cout << tab << "Left:" << std::endl;
-        m_leftChild->dump( indent + 1 );
-        std::cout << tab << "Right:" << std::endl;
-        m_rightChild->dump( indent + 1 );
-    }
+  /**
+   * Returns the ID of the feature at which this node splits.
+   */
+  unsigned int getSplitFeature() const
+  {
+      return m_featureID;
+  }
 
-  private:
+  /**
+   * Returns the value at which this node splits.
+   */
+  double getSplitValue() const
+  {
+      return m_splitValue;
+  }
 
-    unsigned int                    m_featureID ;
-    double                          m_splitValue;
-    DecisionTreeNode::SharedPointer m_leftChild ;
-    DecisionTreeNode::SharedPointer m_rightChild;
+  /**
+   * Implementation of base class method.
+   */
+  bool classify( const DataSet &dataSet, DataPointID pointID ) const
+  {
+      if ( dataSet.getFeatureValue( pointID, m_featureID ) < m_splitValue )
+          return m_leftChild->classify( dataSet, pointID );
+      return m_rightChild->classify( dataSet, pointID );
+  }
+
+  /**
+   * Implementation of base class method.
+   */
+  bool classify( const DataPoint &point ) const
+  {
+      if ( point[m_featureID] < m_splitValue ) return m_leftChild->classify( point );
+      return m_rightChild->classify( point );
+  }
+
+  unsigned int getNodeCount() const
+  {
+      return m_leftChild->getNodeCount() + m_rightChild->getNodeCount();
+  }
+
+  virtual void dump( unsigned int indent )
+  {
+      auto tab = std::string( indent, ' ' );
+      std::cout << tab << "Feature #" << m_featureID << ", split value = " << std::setprecision( 17 ) <<  m_splitValue << std::endl;
+      std::cout << tab << "Left:" << std::endl;
+      m_leftChild->dump( indent + 1 );
+      std::cout << tab << "Right:" << std::endl;
+      m_rightChild->dump( indent + 1 );
+  }
+
+private:
+
+  unsigned int                    m_featureID ;
+  double                          m_splitValue;
+  DecisionTreeNode::SharedPointer m_leftChild ;
+  DecisionTreeNode::SharedPointer m_rightChild;
 
 };
 
@@ -305,24 +367,40 @@ public:
   }
 
   /**
-   * Implementation of base class method.
+   * Visitor pattern implementation.
    */
-  bool classify( const DataSet &, DataPointID )
+  virtual void visit( DecisionTreeVisitor &visitor )
   {
-      return m_label;
+      return visitor.accept( *this );
   }
 
   /**
    * Implementation of base class method.
    */
-  bool classify( const DataPoint & )
+  bool classify( const DataSet &, DataPointID ) const
   {
-      return m_label;
+      return getLabel();
+  }
+
+  /**
+   * Implementation of base class method.
+   */
+  bool classify( const DataPoint & ) const
+  {
+      return getLabel();
   }
 
   unsigned int getNodeCount() const
   {
       return 1;
+  }
+
+  /**
+   * Returns the label of (all points in) this node.
+   */
+  bool getLabel() const
+  {
+      return m_label;
   }
 
   /**
@@ -338,6 +416,82 @@ private:
 
   bool m_label;
 
+};
+
+/**
+ * Saves decision trees to a file.
+ */
+class DecisionTreeWriter: public DecisionTreeVisitor
+{
+public:
+
+  /**
+   * Creates an open file for writing trees.
+   */
+  DecisionTreeWriter( const std::string &filename ):
+  m_file( filename, std::ios::binary )
+  {
+  }
+
+  ~DecisionTreeWriter()
+  {
+      close();
+  }
+
+  void accept( const DecisionTreeInternalNode &node )
+  {
+      // Wrile the 'internal node' marker, the members, and the children.
+      m_file << 'i' << static_cast<unsigned char>( node.getSplitFeature() );
+      write( node.getSplitValue()   );
+      node.getLeftChild ()->visit( *this );
+      node.getRightChild()->visit( *this );
+  }
+
+  void accept( const DecisionTreeLeafNode &node )
+  {
+      // Write the 'leaf node' marker and the label.
+      m_file << 'l' << ( node.getLabel() ? 'T' : 'F' );
+  }
+
+  void close()
+  {
+      m_file.flush();
+      if ( m_file.is_open() ) m_file.close();
+  }
+
+private:
+
+  void write( double value )
+  {
+      // Write the value in native endian order.
+      char *i = reinterpret_cast<char *>( &value );
+      char *end = i + sizeof( double );
+      for( ; i < end; ++i )
+      {
+          m_file << *i;
+      }
+  }
+
+  void write( unsigned int value )
+  {
+      // Write as 4-byte unsigned int.
+      uint32_t v = value;
+      char *i = reinterpret_cast<char *>( &v );
+      char *end = i + sizeof( double );
+      for( ; i < end; ++i )
+      {
+          m_file << *i;
+      }
+  }
+
+  std::ofstream m_file;
+};
+
+inline void writeToFile( const DecisionTreeNode &tree, const std::string &filename )
+{
+    DecisionTreeWriter writer( filename );
+    const_cast<DecisionTreeNode &>( tree ).visit( writer );
+    writer.close();
 };
 
 /**
@@ -826,6 +980,7 @@ public:
       {
           // EXPERIMENTAL.
           auto tree = m_treeTrainers[0].train();
+          writeToFile( *tree, "model.rf" ); 
           std::cout << "Node count: " << tree->getNodeCount() << std::endl;
           //tree->dump();
       }
