@@ -1,6 +1,7 @@
 #ifndef DATAMODEL_H
 #define DATAMODEL_H
 
+#include <random>
 #include <iomanip>
 #include <algorithm>
 #include <cassert>
@@ -201,6 +202,11 @@ public:
   }
 
   /**
+   * Returns the number of nodes in this tree.
+   */
+  virtual unsigned int getNodeCount() const = 0;
+
+  /**
    * Return the classification of all data points in a data set.
    * N.B. This is a naive implementation, suitable for testing and low-performance applications.
    */
@@ -259,15 +265,20 @@ public:
         return m_rightChild->classify( point );
     }
 
-  virtual void dump( unsigned int indent )
-  {
-      auto tab = std::string( indent, ' ' );
-      std::cout << tab << "Feature #" << m_featureID << ", split value = " << std::setprecision( 17 ) <<  m_splitValue << std::endl;
-      std::cout << tab << "Left: " << std::endl;
-      m_leftChild->dump( indent + 1 );
-      std::cout << tab << "Right: " << std::endl;
-      m_rightChild->dump( indent + 1 );
-  }
+    unsigned int getNodeCount() const
+    {
+        return m_leftChild->getNodeCount() + m_rightChild->getNodeCount();
+    }
+
+    virtual void dump( unsigned int indent )
+    {
+        auto tab = std::string( indent, ' ' );
+        std::cout << tab << "Feature #" << m_featureID << ", split value = " << std::setprecision( 17 ) <<  m_splitValue << std::endl;
+        std::cout << tab << "Left:" << std::endl;
+        m_leftChild->dump( indent + 1 );
+        std::cout << tab << "Right:" << std::endl;
+        m_rightChild->dump( indent + 1 );
+    }
 
   private:
 
@@ -307,6 +318,11 @@ public:
   bool classify( const DataPoint & )
   {
       return m_label;
+  }
+
+  unsigned int getNodeCount() const
+  {
+      return 1;
   }
 
   /**
@@ -402,6 +418,21 @@ private:
   std::vector< SingleFeatureIndex >  m_featureIndices;
 };
 
+
+/**
+ * Returns a random boolean, with probability of being true equal to an integer fraction.
+ */
+bool randomBool( unsigned int numerator, unsigned int denominator )
+{
+    assert( numerator <=  denominator );
+    if ( numerator == denominator ) return true;
+
+    static std::random_device dev;
+    static std::mt19937 rng( dev() );
+    std::uniform_int_distribution<std::mt19937::result_type> dist( 1, denominator );
+    return dist(rng) <= numerator;
+}
+
 /**
  * A node in a decision tree, with special annotations for the training process.
  */
@@ -412,18 +443,20 @@ public:
   typedef std::shared_ptr<TrainingTreeNode> SharedPointer;
 
   TrainingTreeNode( TrainingTreeNode *parent = nullptr ):
-  m_parent            ( parent ),
-  m_splitFeatureID    ( 0      ),
-  m_splitValue        ( 0      ),
-  m_totalCount        ( 0      ),
-  m_trueCount         ( 0      ),
-  m_totalCountLeftHalf( 0      ),
-  m_trueCountLeftHalf ( 0      ),
-  m_trueCountRightHalf( 0      ),
-  m_currentFeature    ( 0      ),
-  m_bestSplitFeature  ( 0      ),
-  m_bestSplitValue    ( 0      ),
-  m_bestSplitGiniIndex( 0      )
+  m_parent             ( parent ),
+  m_splitFeatureID     ( 0      ),
+  m_splitValue         ( 0      ),
+  m_totalCount         ( 0      ),
+  m_trueCount          ( 0      ),
+  m_totalCountLeftHalf ( 0      ),
+  m_trueCountLeftHalf  ( 0      ),
+  m_trueCountRightHalf ( 0      ),
+  m_currentFeature     ( 0      ),
+  m_bestSplitFeature   ( 0      ),
+  m_bestSplitValue     ( 0      ),
+  m_bestSplitGiniIndex ( 0      ),
+  m_featuresToConsider ( 0      ),
+  m_ignoringThisFeature( false  )
   {
   }
 
@@ -503,12 +536,16 @@ public:
 
   /**
    * Initializes the search for the optimal split.
+   * \param featuresToConsider The number of randomly selected features that this node will consider during traversal.
    */
-  void initializeOptimalSplitSearch()
+  void initializeOptimalSplitSearch( unsigned int featuresToConsider )
   {
-      // Reset the point counts. Points will be re-counted during the point registration phase.
-      m_trueCount  = 0;
-      m_totalCount = 0;
+      // Reset the point conts. Points will be re-counted during the point registration phase.
+      m_trueCount          = 0;
+      m_totalCount         = 0;
+
+      // Reset the number of features that will be considered by this node.
+      m_featuresToConsider = featuresToConsider;
 
       // Reset the best split found so far. This will be re-determined during the feature traversal phase.
       m_bestSplitFeature   = 0;
@@ -516,29 +553,41 @@ public:
       m_bestSplitGiniIndex = std::numeric_limits<double>::max();
 
       // Initialize any children.
-      if ( m_leftChild  ) m_leftChild ->initializeOptimalSplitSearch();
-      if ( m_rightChild ) m_rightChild->initializeOptimalSplitSearch();
+      if ( m_leftChild  ) m_leftChild ->initializeOptimalSplitSearch( featuresToConsider );
+      if ( m_rightChild ) m_rightChild->initializeOptimalSplitSearch( featuresToConsider );
   }
 
   /**
    * Instructs this node and its children that a particular feature will be traversed in-order now.
+   * \param featureID The ID of the feature that will be traversed.
+   * \param featuresLeft The total number of features that still have to be traversed, including this one.
    */
-  void startFeatureTraversal( unsigned int featureID )
+  void startFeatureTraversal( unsigned int featureID, unsigned int featuresLeft )
   {
       // Start feature traversal in the children, if present.
       if ( m_leftChild )
       {
           assert( m_rightChild );
-          m_leftChild->startFeatureTraversal( featureID );
-          m_rightChild->startFeatureTraversal( featureID );
+          m_leftChild->startFeatureTraversal ( featureID, featuresLeft );
+          m_rightChild->startFeatureTraversal( featureID, featuresLeft );
       }
+      else
+      {
+          // Reset the feature traversal statistics.
+          m_lastVisitedValue    = std::numeric_limits<double>::min(); // Arbitrary.
+          m_totalCountLeftHalf  = 0          ;
+          m_trueCountLeftHalf   = 0          ;
+          m_trueCountRightHalf  = m_trueCount;
+          m_currentFeature      = featureID  ;
 
-      // Reset the feature traversal statistics.
-      m_lastVisitedValue    = std::numeric_limits<double>::min(); // Arbitrary.
-      m_totalCountLeftHalf  = 0          ;
-      m_trueCountLeftHalf   = 0          ;
-      m_trueCountRightHalf  = m_trueCount;
-      m_currentFeature      = featureID  ;
+          // Determine whether or not this node will consider this feature during this pass.
+          m_ignoringThisFeature = randomBool( m_featuresToConsider, featuresLeft );
+          if ( m_ignoringThisFeature )
+          {
+              assert( m_featuresToConsider > 0 );
+              --m_featuresToConsider; // Use up one 'credit'.
+          }
+      }
   }
 
   /**
@@ -549,6 +598,9 @@ public:
       // This must never be called on internal nodes.
       assert( !m_leftChild  );
       assert( !m_rightChild );
+
+      // Do nothing if this node is not considering this feature.
+      if ( m_ignoringThisFeature ) return;
 
       // If this is the start of a block of previously unseen feature values, calculate what the gain of a split would be.
       if ( ( featureValue != m_lastVisitedValue ) && ( m_totalCountLeftHalf > 0 ) )
@@ -582,34 +634,34 @@ public:
 
   /**
    * Split the leaf nodes at the most optimal point, after all features have been traversed.
+   * \return The number of splits made.
    */
-  void split()
+  unsigned int split()
   {
       // If this is an interior node, split the children and quit.
       if ( m_leftChild )
       {
           assert( m_rightChild );
-          m_leftChild ->split();
-          m_rightChild->split();
-          return;
+          auto l = m_leftChild ->split();
+          auto r = m_rightChild->split();
+          return l + r;
       }
 
       // Assert that this is a leaf node.
-       assert( !m_leftChild  );
+      assert( !m_leftChild  );
       assert( !m_rightChild );
 
-      // Do not split if this node is completely pure.
-      // N.B. the purity cutoff can be made more flexible.
-      if ( m_trueCount == 0 || m_trueCount == m_totalCount )
-      {
-           return;
-      }
+      // Do not split if this node is completely pure (or empty).
+      // TODO: the purity cutoff can be made more flexible.
+      if ( m_trueCount == 0 || m_trueCount == m_totalCount ) return 0;
 
       // Split this node at the best point that was found.
-       m_splitValue     = m_bestSplitValue;
+      m_splitValue     = m_bestSplitValue;
       m_splitFeatureID = m_bestSplitFeature;
       m_leftChild .reset( new TrainingTreeNode( this ) );
       m_rightChild.reset( new TrainingTreeNode( this ) );
+
+      return 1;
   }
 
   /**
@@ -637,14 +689,16 @@ private:
   unsigned int      m_trueCount         ; // Total number of points labeled 'true' in this node.
 
   // Statistics used during traversal:
-  double            m_lastVisitedValue  ;
-  unsigned int      m_totalCountLeftHalf; // Total number of points that have been visited during traversal of the current feature.
-  unsigned int      m_trueCountLeftHalf ; // Totol number of visited points labeled 'true'.
-  unsigned int      m_trueCountRightHalf; // Remaining unvisited points labeled 'true'.
-  unsigned int      m_currentFeature    ; // The feature that is currently being traversed.
-  unsigned int      m_bestSplitFeature  ; // Best feature for splitting found so far.
-  double            m_bestSplitValue    ; // Best value to split at found so far.
-  double            m_bestSplitGiniIndex; // Gini-index of the best split point found so far (lowest index).
+  double            m_lastVisitedValue   ;
+  unsigned int      m_totalCountLeftHalf ; // Total number of points that have been visited during traversal of the current feature.
+  unsigned int      m_trueCountLeftHalf  ; // Totol number of visited points labeled 'true'.
+  unsigned int      m_trueCountRightHalf ; // Remaining unvisited points labeled 'true'.
+  unsigned int      m_currentFeature     ; // The feature that is currently being traversed.
+  unsigned int      m_bestSplitFeature   ; // Best feature for splitting found so far.
+  double            m_bestSplitValue     ; // Best value to split at found so far.
+  double            m_bestSplitGiniIndex ; // Gini-index of the best split point found so far (lowest index).
+  unsigned int      m_featuresToConsider ; // The number of randomly chosen features that this node still has to consider during the feature traversal phase.
+  bool              m_ignoringThisFeature; // Whether or not the currently traversed feature is taken into account by this node.
 
 };
 
@@ -652,10 +706,19 @@ class SingleTreeTrainer
 {
 public:
 
-  SingleTreeTrainer( const TrainingDataSet &dataset, const FeatureIndex &featureIndex ):
+  SingleTreeTrainer( const TrainingDataSet &dataset, const FeatureIndex &featureIndex, unsigned int maxDepth = std::numeric_limits<unsigned int>::max()  ):
   m_dataSet( dataset ),
-  m_featureIndex( featureIndex )
+  m_featureIndex( featureIndex ),
+  m_maxDepth( maxDepth )
   {
+      // TODO:
+      // Max depth = None
+      // Min samples split = 2
+      // Min samples leaf = 1
+      // Max features = sqrt(nfeatures)
+      // Max leaf nodes = None
+      // Min impurity decrease = 0.0
+      // Bootstrap = True
   }
 
   DecisionTreeNode::SharedPointer train()
@@ -667,11 +730,15 @@ public:
       std::vector< TrainingTreeNode * > pointParents( m_featureIndex.size(), &root );
 
       // Split all leaf nodes in the tree until the depth limit is reached.
-      unsigned int LIMIT = 100;
-      for ( unsigned int depth = 0; depth < LIMIT; ++depth )
+      for ( unsigned int depth = 0; depth < m_maxDepth; ++depth )
       {
+          std::cout << "Depth = " << depth << std::endl;
+
           // Tell all nodes that a round of optimal split searching is starting.
-          root.initializeOptimalSplitSearch();
+          unsigned int featureCount = m_featureIndex.getFeatureCount();
+          unsigned int featuresToConsider = std::ceil( std::sqrt( featureCount ) );
+          assert( featuresToConsider > 0 );
+          root.initializeOptimalSplitSearch( featuresToConsider );
 
           // Register all points with their respective parent nodes.
           for ( DataPointID pointID( 0 ), end( pointParents.size() ); pointID < end; ++pointID )
@@ -680,10 +747,10 @@ public:
           }
 
           // Traverse all data points once for each feature, in order, so the tree nodes can find the best possible split for them.
-          for ( unsigned int featureID = 0; featureID < m_featureIndex.getFeatureCount(); ++featureID ) // TODO: random trees should not use all features.
+          for ( unsigned int featureID = 0; featureID < featureCount; ++featureID ) // TODO: random trees should not use all features.
           {
               // Tell the tree that traversal is starting for this feature.
-              root.startFeatureTraversal( featureID );
+              root.startFeatureTraversal( featureID, featureCount - featureID );
 
               // Traverse all datapoints in order of this feature.
               for ( auto it( m_featureIndex.featureBegin( featureID ) ), end( m_featureIndex.featureEnd( featureID ) ); it != end; ++it )
@@ -697,8 +764,10 @@ public:
               }
           }
 
-          // Allow all leaf nodes to split, if necessary.
-          root.split();
+          // Allow all leaf nodes to split, if necessary. Stop if there is no more improvement.
+          auto splitCount = root.split();
+          if ( splitCount == 0 ) break;
+          std::cout << splitCount << " splits made." << std::endl;
       }
 
       // Return a stripped version of the training tree.
@@ -709,6 +778,7 @@ private:
 
   const TrainingDataSet &m_dataSet     ;
   const FeatureIndex    &m_featureIndex;
+  const unsigned int     m_maxDepth    ;
 };
 
 /**
@@ -723,9 +793,10 @@ public:
    * \param dataset A const reference to a training dataset. Modifying the set after construction of the trainer invalidates the trainer.
    * \param concurrentTrainers The maximum number of trees that may be trained concurrently.
    */
-  BinaryRandomForestTrainer( TrainingDataSet::ConstSharedPointer dataset, unsigned int treeCount = 1, unsigned int concurrentTrainers = 1 ):
+  BinaryRandomForestTrainer( TrainingDataSet::ConstSharedPointer dataset, unsigned maxDepth = std::numeric_limits<unsigned int>::max(), unsigned int treeCount = 1, unsigned int concurrentTrainers = 1 ):
   m_dataSet( dataset ),
   m_featureIndex( *dataset ),
+  m_maxDepth( maxDepth ),
   m_trainerCount( concurrentTrainers ),
   m_treeCount( treeCount )
   {
@@ -746,7 +817,7 @@ public:
       // Create the specified number of (possibly) concurrent single-tree trainers.
       m_treeTrainers.clear();
       for ( unsigned int i = 0; i < m_trainerCount; ++i )
-          m_treeTrainers.push_back( SingleTreeTrainer( *m_dataSet, m_featureIndex ) );
+          m_treeTrainers.push_back( SingleTreeTrainer( *m_dataSet, m_featureIndex, m_maxDepth ) );
 
       // Let the trainers train the trees.
       // TODO: launch concurrent trainers.
@@ -755,7 +826,8 @@ public:
       {
           // EXPERIMENTAL.
           auto tree = m_treeTrainers[0].train();
-          tree->dump();
+          std::cout << "Node count: " << tree->getNodeCount() << std::endl;
+          //tree->dump();
       }
   }
 
@@ -763,6 +835,7 @@ private:
 
   TrainingDataSet::ConstSharedPointer  m_dataSet     ;
   FeatureIndex                         m_featureIndex;
+  unsigned int                         m_maxDepth    ;
   unsigned int                         m_trainerCount;
   unsigned int                         m_treeCount   ;
   std::vector< SingleTreeTrainer    >  m_treeTrainers;
