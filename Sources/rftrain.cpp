@@ -25,9 +25,19 @@ namespace
     {
     }
 
-    static constexpr const char * getUsage()
+    static std::string getUsage()
     {
-        return  "Usage: rftrain [-t <max threads>] <training input file> <model output file>";
+        std::stringstream ss;
+        ss <<  "Usage:" << std::endl
+           << std::endl
+           << "   rftrain [options] <training input file> <model output file>" << std::endl
+           << std::endl
+           << " Options:" << std::endl
+           << std::endl
+           << "   -t <thread count>: Sets the number of threads (default is 1)."     << std::endl
+           << "   -d <max depth>   : Sets the maximum tree depth (default is +inf)." << std::endl
+           << "   -c <tree count>  : Sets the number of trees (default is 150)."     << std::endl;
+        return ss.str();
     }
 
     static Options parseOptions( int argc, char **argv )
@@ -52,6 +62,14 @@ namespace
             if ( token == "-t" )
             {
                 if ( !(args >> options.threadCount) ) throw ParseError( "Missing parameter to -t option." );
+            }
+            else if ( token == "-d" )
+            {
+                if ( !(args >> options.maxDepth) ) throw ParseError( "Missing parameter to -d option." );
+            }
+            else if ( token == "-c" )
+            {
+                if ( !(args >> options.treeCount) ) throw ParseError( "Missing parameter to -c option." );
             }
             else
             {
