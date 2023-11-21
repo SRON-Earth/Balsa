@@ -102,12 +102,12 @@ int main( int argc, char **argv )
         // Parse the command-line arguments.
         Options options = Options::parseOptions( argc, argv );
 
-        std::cout <<  options.trainingFile << std::endl;
-        std::cout <<  options.outputFile   << std::endl;
-        std::cout <<  options.maxDepth     << std::endl;
-        std::cout <<  options.treeCount    << std::endl;
-        std::cout <<  options.threadCount  << std::endl;
-
+        // Debug.
+        std::cout <<  "Training File: " << options.trainingFile << std::endl;
+        std::cout <<  "Output File  : " << options.outputFile   << std::endl;
+        std::cout <<  "Max. Depth   : " << options.maxDepth     << std::endl;
+        std::cout <<  "Tree Count   : " << options.treeCount    << std::endl;
+        std::cout <<  "Threads      : " << options.threadCount  << std::endl;
 
         // Load training data set.
         StopWatch watch;
