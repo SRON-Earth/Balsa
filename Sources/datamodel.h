@@ -10,6 +10,8 @@
 #include <limits>
 #include <memory>
 #include <vector>
+#include <thread>
+#include <semaphore>
 
 /**
  * One data point in a data set. The data consists of a list of feature-values,
@@ -498,6 +500,7 @@ class Forest
 {
 public:
 
+  typedef std::shared_ptr<Forest> SharedPointer;
   typedef std::vector<DecisionTreeNode::ConstSharedPointer>::const_iterator ConstIterator;
 
   ConstIterator begin() const
@@ -572,6 +575,14 @@ public:
           ++i;
       }
       std::cout << rule << std::endl;
+  }
+
+  /**
+   * Remove all trees from the forest.
+   */
+  void clear()
+  {
+      m_trees.clear();
   }
 
 private:
@@ -1035,17 +1046,17 @@ private:
 
 };
 
+/**
+ * Trains a single random decision tree at a time.
+ */
 class SingleTreeTrainer
 {
 public:
 
-  SingleTreeTrainer( const TrainingDataSet &dataset, const FeatureIndex &featureIndex, unsigned int maxDepth = std::numeric_limits<unsigned int>::max()  ):
-  m_dataSet( dataset ),
-  m_featureIndex( featureIndex ),
+  SingleTreeTrainer( unsigned int maxDepth = std::numeric_limits<unsigned int>::max()  ):
   m_maxDepth( maxDepth )
   {
       // TODO:
-      // Max depth = None
       // Min samples split = 2
       // Min samples leaf = 1
       // Max features = sqrt(nfeatures)
@@ -1054,13 +1065,13 @@ public:
       // Bootstrap = True
   }
 
-  DecisionTreeNode::SharedPointer train()
+  DecisionTreeNode::SharedPointer train( const FeatureIndex &featureIndex, const TrainingDataSet &dataSet )
   {
       // Create an empty training tree.
       TrainingTreeNode root;
 
       // Create a list of pointers from data points to their current parent nodes.
-      std::vector< TrainingTreeNode * > pointParents( m_featureIndex.size(), &root );
+      std::vector< TrainingTreeNode * > pointParents( featureIndex.size(), &root );
 
       // Split all leaf nodes in the tree until the depth limit is reached.
       for ( unsigned int depth = 0; depth < m_maxDepth; ++depth )
@@ -1068,7 +1079,7 @@ public:
           std::cout << "Depth = " << depth << std::endl;
 
           // Tell all nodes that a round of optimal split searching is starting.
-          unsigned int featureCount = m_featureIndex.getFeatureCount();
+          unsigned int featureCount = featureIndex.getFeatureCount();
           unsigned int featuresToConsider = std::ceil( std::sqrt( featureCount ) );
           assert( featuresToConsider > 0 );
           root.initializeOptimalSplitSearch( featuresToConsider );
@@ -1076,7 +1087,7 @@ public:
           // Register all points with their respective parent nodes.
           for ( DataPointID pointID( 0 ), end( pointParents.size() ); pointID < end; ++pointID )
           {
-              pointParents[pointID] = pointParents[pointID]->registerPoint( pointID, m_dataSet );
+              pointParents[pointID] = pointParents[pointID]->registerPoint( pointID, dataSet );
           }
 
           // Traverse all data points once for each feature, in order, so the tree nodes can find the best possible split for them.
@@ -1086,7 +1097,7 @@ public:
               root.startFeatureTraversal( featureID, featureCount - featureID );
 
               // Traverse all datapoints in order of this feature.
-              for ( auto it( m_featureIndex.featureBegin( featureID ) ), end( m_featureIndex.featureEnd( featureID ) ); it != end; ++it )
+              for ( auto it( featureIndex.featureBegin( featureID ) ), end( featureIndex.featureEnd( featureID ) ); it != end; ++it )
               {
                   // Let the parent node of the data point know that it is being traversed.
                   auto &tuple = *it;
@@ -1109,16 +1120,37 @@ public:
 
 private:
 
-  const TrainingDataSet &m_dataSet     ;
-  const FeatureIndex    &m_featureIndex;
-  const unsigned int     m_maxDepth    ;
+  const unsigned int m_maxDepth;
+
 };
+
+#include "messagequeue.h"
 
 /**
  * Trains a random binary forest classifier on a TrainingDataSet.
  */
 class BinaryRandomForestTrainer
 {
+
+  // Used for distributing jobs to threads.
+  class TrainingJob
+  {
+  public:
+
+    TrainingJob( const TrainingDataSet &dataSet, const FeatureIndex &featureIndex, unsigned int maxDepth, bool stop ):
+    dataSet     ( dataSet      ),
+    featureIndex( featureIndex ),
+    maxDepth    ( maxDepth     ),
+    stop        ( stop         )
+    {
+    }
+
+    const TrainingDataSet &dataSet     ;
+    const FeatureIndex    &featureIndex;
+    unsigned int           maxDepth    ;
+    bool                   stop        ;
+  };
+
 public:
 
   /**
@@ -1126,9 +1158,7 @@ public:
    * \param dataset A const reference to a training dataset. Modifying the set after construction of the trainer invalidates the trainer.
    * \param concurrentTrainers The maximum number of trees that may be trained concurrently.
    */
-  BinaryRandomForestTrainer( TrainingDataSet::ConstSharedPointer dataset, unsigned maxDepth = std::numeric_limits<unsigned int>::max(), unsigned int treeCount = 10, unsigned int concurrentTrainers = 1 ):
-  m_dataSet( dataset ),
-  m_featureIndex( *dataset ),
+  BinaryRandomForestTrainer( unsigned maxDepth = std::numeric_limits<unsigned int>::max(), unsigned int treeCount = 10, unsigned int concurrentTrainers = 10 ):
   m_maxDepth( maxDepth ),
   m_trainerCount( concurrentTrainers ),
   m_treeCount( treeCount )
@@ -1145,43 +1175,68 @@ public:
   /**
    * Train a forest of random trees on the data.
    */
-  void train()
+  Forest::SharedPointer train( TrainingDataSet::ConstSharedPointer dataset )
   {
-      // Create the specified number of (possibly) concurrent single-tree trainers.
-      m_treeTrainers.clear();
+      // Build the feature index that is common to all threads.
+      FeatureIndex featureIndex( *dataset );
+
+      // Create message queues for communicating with the worker threads.
+      MessageQueue<TrainingJob                    > jobOutbox;
+      MessageQueue<DecisionTreeNode::SharedPointer> treeInbox;
+
+      // Start the worker threads.
+      std::vector<std::thread> workers;
       for ( unsigned int i = 0; i < m_trainerCount; ++i )
-          m_treeTrainers.push_back( SingleTreeTrainer( *m_dataSet, m_featureIndex, m_maxDepth ) );
-
-      // Let the trainers train the trees.
-      // TODO: launch concurrent trainers.
-      auto treesToTrain = m_treeCount;
-      while ( treesToTrain-- )
       {
-          // EXPERIMENTAL.
-          auto tree = m_treeTrainers[0].train();
-          m_forest.addTree( tree );
-          std::cout << "Node count: " << tree->getNodeCount() << std::endl;
+          workers.push_back( std::thread( &BinaryRandomForestTrainer::workerThread, i, &jobOutbox, &treeInbox ) );
       }
-  }
 
-  /**
-   * Saves the trained model to a file.
-   */
-  void saveModel( const std::string &filename ) const
-  {
-      writeToFile( m_forest, filename );
+      // Create jobs for all trees.
+      for ( unsigned int i = 0; i < m_treeCount; ++i )
+          jobOutbox.send( TrainingJob( *dataset, featureIndex, m_maxDepth, false ) );
+
+      // Create 'stop' messages for all threads, to be picked up after all the work is done.
+      for ( unsigned int i = 0; i < workers.size(); ++i )
+           jobOutbox.send( TrainingJob( *dataset, featureIndex, 0, true ) );
+
+      // Wait for all the trees to come in, and add them to the forest.
+      Forest::SharedPointer forest( new Forest );
+      for ( unsigned int i = 0; i < m_treeCount; ++i )
+          forest->addTree( treeInbox.receive() );
+
+      // Wait for all the threads to join.
+      for ( auto &worker: workers ) worker.join();
+
+      // Return the trained model.
+      return forest;
   }
 
 private:
 
-  Forest                               m_forest      ;
-  TrainingDataSet::ConstSharedPointer  m_dataSet     ;
-  FeatureIndex                         m_featureIndex;
-  unsigned int                         m_maxDepth    ;
-  unsigned int                         m_trainerCount;
-  unsigned int                         m_treeCount   ;
-  std::vector< SingleTreeTrainer    >  m_treeTrainers;
+  static void workerThread( unsigned int workerID, MessageQueue<TrainingJob> *jobInbox, MessageQueue<DecisionTreeNode::SharedPointer> *treeOutbox )
+  {
+      // Train trees until it is time to stop.
+      unsigned int jobsPickedUp = 0;
+      while ( true )
+      {
+          // Get an assignment or stop message from the queue.
+          TrainingJob job = jobInbox->receive();
+          if ( job.stop ) break;
+          ++jobsPickedUp;
+          std::cout << "Worker #" << workerID << ": job " << jobsPickedUp << " picked up." << std::endl;
 
+          // Train a tree and send it to the main thread.
+          SingleTreeTrainer trainer( job.maxDepth );
+          treeOutbox->send( trainer.train( job.featureIndex, job.dataSet ) );
+          std::cout << "Worker #" << workerID << ": job " << jobsPickedUp << " finished." << std::endl;
+      }
+
+      std::cout << "Worker #" << workerID << " finished." << std::endl;
+  }
+
+  unsigned int m_maxDepth    ;
+  unsigned int m_trainerCount;
+  unsigned int m_treeCount   ;
 };
 
 #endif // DATAMODEL_H

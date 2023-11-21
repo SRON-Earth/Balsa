@@ -1,4 +1,5 @@
 #include <iostream>
+#include <sstream>
 
 #include "timing.h"
 #include "exceptions.h"
@@ -17,30 +18,61 @@ namespace
   {
   public:
 
+    Options():
+    maxDepth   ( std::numeric_limits<unsigned int>::max() ),
+    treeCount  ( 150                                      ),
+    threadCount( 1                                        )
+    {
+    }
 
     static constexpr const char * getUsage()
     {
-        return  "Usage: rftrain <training input file> <model output file>";
+        return  "Usage: rftrain [-t <max threads>] <training input file> <model output file>";
     }
 
     static Options parseOptions( int argc, char **argv )
     {
-        // Check the arguments.
-        if ( argc != 3 )
+        // Put all arguments in a stringstream.
+        std::stringstream args;
+        for ( int i = 0; i < argc; ++i ) args << ' ' << argv[i];
+
+        // Discard the executable name.
+        std::string token;
+        args >> token;
+
+        // Parse all flags.
+        Options options;
+        while ( args >> token )
         {
-            throw ParseError( getUsage() );
+            // Stop if the token is not a flag.
+            assert( token.size() );
+            if ( token[0] != '-' ) break;
+
+            // Parse the '-t <threadcount>' option.
+            if ( token == "-t" )
+            {
+                if ( !(args >> options.threadCount) ) throw ParseError( "Missing parameter to -t option." );
+            }
+            else
+            {
+                throw ParseError( std::string( "Unknown option: " ) + token );
+            }
         }
 
-        // Parse the arguments.
-        Options options;
-        options.trainingFile = std::string( argv[1] );
-        options.outputFile   = argv[2];
+        // Parse the filenames.
+        if ( token.size() == 0 ) throw ParseError( getUsage() );
+        options.trainingFile = token;
+        if( !( args >> options.outputFile ) ) throw ParseError( getUsage() );
 
+        // Return  results.
         return options;
     }
 
-    std::string trainingFile;
-    std::string outputFile  ;
+    std::string  trainingFile;
+    std::string  outputFile  ;
+    unsigned int maxDepth    ;
+    unsigned int treeCount   ;
+    unsigned int threadCount ;
 
   };
 }
@@ -52,6 +84,13 @@ int main( int argc, char **argv )
         // Parse the command-line arguments.
         Options options = Options::parseOptions( argc, argv );
 
+        std::cout <<  options.trainingFile << std::endl;
+        std::cout <<  options.outputFile   << std::endl;
+        std::cout <<  options.maxDepth     << std::endl;
+        std::cout <<  options.treeCount    << std::endl;
+        std::cout <<  options.threadCount  << std::endl;
+
+
         // Load training data set.
         StopWatch watch;
         std::cout << "Ingesting data..." << std::endl;
@@ -61,19 +100,21 @@ int main( int argc, char **argv )
 
         // Train a random forest on the data.
         std::cout << "Building indices..." << std::endl;
-        unsigned int MAX_DEPTH = 50;
         watch.start();
-        BinaryRandomForestTrainer trainer( dataSet, MAX_DEPTH );
+
+        BinaryRandomForestTrainer trainer( options.maxDepth, options.treeCount, options.threadCount );
         std::cout <<"Done (" << watch.stop() << " seconds)." << std::endl;
 
         std::cout << "Training..." << std::endl;
         watch.start();
-        trainer.train();
+        Forest::SharedPointer forest = trainer.train( dataSet );
         std::cout << "Done (" << watch.stop() << " seconds)." << std::endl;
 
         // Save the model to a file.
-        trainer.saveModel( options.outputFile );
-
+        std::cout << "Saving model..." << std::endl;
+        watch.start();
+        writeToFile( *forest, options.outputFile );
+        std::cout << "Done (" << watch.stop() << " seconds)." << std::endl;
     }
     catch ( Exception &e )
     {
