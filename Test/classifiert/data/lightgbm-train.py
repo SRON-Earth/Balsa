@@ -7,30 +7,28 @@ import lightgbm as lgb
 
 def load_dataset_bin(filename):
 
-    import numpy as np
     import struct
 
     with open(filename, "rb") as inf:
-        num_points, num_features = struct.unpack("<QI", inf.read(8 + 4))
-        points = np.zeros((num_points, num_features), dtype=np.float32)
-        labels = np.zeros((num_points,), dtype=np.uint8)
-        unpacker = struct.Struct("<" + "f" * num_features + "B")
-        for i, row in enumerate(unpacker.iter_unpack(inf.read())):
-            points[i] = row[:-1]
-            labels[i] = row[-1]
-    return points, labels
+        num_features, = struct.unpack("<I", inf.read(4))
+        data_points, labels = [], []
+        unpacker = struct.Struct("<" + "f" * (num_features + 1))
+        for row in unpacker.iter_unpack(inf.read()):
+            data_points.append(row[:-1])
+            labels.append(row[-1])
+    return data_points, labels
 
 
 def main(train_filename, test_filename, nthreads=1):
 
     nthreads = int(nthreads)
 
-    train_points, train_labels = load_dataset_bin(train_filename)
-    test_points, test_labels = load_dataset_bin(test_filename)
+    train_data_points, train_labels = load_dataset_bin(train_filename)
+    test_data_points, test_labels = load_dataset_bin(test_filename)
 
-    # model = lgb.LGBMClassifier(learning_rate=0.09,colsample_bytree=np.sqrt(len(points))/len(points), num_leaves=1024)
+    # model = lgb.LGBMClassifier(learning_rate=0.09,colsample_bytree=np.sqrt(len(data_points))/len(data_points), num_leaves=1024)
     model = lgb.LGBMClassifier(boosting_type="dart",learning_rate=0.4,num_leaves=4096)
-    model.fit(train_points, train_labels, eval_set=[(test_points, test_labels),(train_points, train_labels)],
+    model.fit(train_data_points, train_labels, eval_set=[(test_data_points, test_labels),(train_data_points, train_labels)],
               eval_metric='logloss')
 
     # random_forest = lgb.LGBMClassifier(boosting_type="rf", max_depth=50, n_estimators=150, n_jobs=nthreads)
@@ -59,8 +57,8 @@ def main(train_filename, test_filename, nthreads=1):
     # print("max-tree-depth", max([estimator.get_depth() for estimator in random_forest.estimators_]))
     # print("max-node-count", max([estimator.tree_.node_count for estimator in random_forest.estimators_]))
 
-    print("train-accuracy {:.4f}".format(model.score(train_points, train_labels)))
-    print("test-accuracy {:.4f}".format(model.score(test_points, test_labels)))
+    print("train-accuracy {:.4f}".format(model.score(train_data_points, train_labels)))
+    print("test-accuracy {:.4f}".format(model.score(test_data_points, test_labels)))
 
 
 if __name__ == "__main__":

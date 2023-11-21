@@ -8,30 +8,28 @@ from sklearn.metrics import accuracy_score
 
 def load_dataset_bin(filename):
 
-    import numpy as np
     import struct
 
     with open(filename, "rb") as inf:
-        num_points, num_features = struct.unpack("<QI", inf.read(8 + 4))
-        points = np.zeros((num_points, num_features), dtype=np.float32)
-        labels = np.zeros((num_points,), dtype=np.uint8)
-        unpacker = struct.Struct("<" + "f" * num_features + "B")
-        for i, row in enumerate(unpacker.iter_unpack(inf.read())):
-            points[i] = row[:-1]
-            labels[i] = row[-1]
-    return points, labels
+        num_features, = struct.unpack("<I", inf.read(4))
+        data_points, labels = [], []
+        unpacker = struct.Struct("<" + "f" * (num_features + 1))
+        for row in unpacker.iter_unpack(inf.read()):
+            data_points.append(row[:-1])
+            labels.append(row[-1])
+    return data_points, labels
 
 
 def main(filename):
 
-    points, labels = load_dataset_bin(filename)
+    data_points, labels = load_dataset_bin(filename)
 
     with open("sklearn.forest", "rb") as inf:
         random_forest = pickle.load(inf)
 
-    yp = random_forest.predict(points)
+    predicted_labels = random_forest.predict(data_points)
 
-    score = accuracy_score(labels, yp)
+    score = accuracy_score(labels, predicted_labels)
     print(f"test-accuracy {score:.4f}")
 
 

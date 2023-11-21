@@ -27,30 +27,22 @@ TrainingDataSet::SharedPointer loadTrainingDataSet(const std::string &filename)
     assert(stream.good());
 
     // Read the column count of the input matrix.
-    const unsigned int tupleSize = read<std::uint32_t>(stream);
-    const unsigned int featureCount = tupleSize - 1;
-
-    // Read the format header string, with type info for each column.
-    std::string formatString(tupleSize, '?');
-    stream.read(formatString.data(), formatString.size());
-    for (unsigned i = 0; i < featureCount; ++i)
-        assert(formatString.at(i) == 'f');
-    assert(formatString.back() == 'B');
+    const unsigned int numColumns = read<std::uint32_t>(stream);
+    const unsigned int numFeatures = numColumns - 1;
 
     // Read the rows of points.
-    TrainingDataSet::SharedPointer dataset(new TrainingDataSet(featureCount));
+    TrainingDataSet::SharedPointer dataset(new TrainingDataSet(numFeatures));
     while (stream.good())
     {
         // Read the data point columns.
-        DataPoint point(featureCount);
-        for (unsigned int i = 0; i < featureCount; ++i)
-        {
+        DataPoint point(numFeatures);
+        for (unsigned int i = 0; i < numFeatures; ++i)
             point.at(i) = read<float>(stream);
-        }
 
         // Read the label.
-        const bool label = (read<std::uint8_t>(stream) != 0);
+        const bool label = (read<float>(stream) != 0.0f);
 
+        // Stop if the end of the input file was reached.
         if (stream.eof())
             break;
 

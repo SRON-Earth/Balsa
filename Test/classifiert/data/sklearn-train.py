@@ -8,32 +8,30 @@ from sklearn.ensemble import RandomForestClassifier
 
 def load_dataset_bin(filename):
 
-    import numpy as np
     import struct
 
     with open(filename, "rb") as inf:
-        num_points, num_features = struct.unpack("<QI", inf.read(8 + 4))
-        points = np.zeros((num_points, num_features), dtype=np.float32)
-        labels = np.zeros((num_points,), dtype=np.uint8)
-        unpacker = struct.Struct("<" + "f" * num_features + "B")
-        for i, row in enumerate(unpacker.iter_unpack(inf.read())):
-            points[i] = row[:-1]
-            labels[i] = row[-1]
-    return points, labels
+        num_features, = struct.unpack("<I", inf.read(4))
+        data_points, labels = [], []
+        unpacker = struct.Struct("<" + "f" * (num_features + 1))
+        for row in unpacker.iter_unpack(inf.read()):
+            data_points.append(row[:-1])
+            labels.append(row[-1])
+    return data_points, labels
 
 
 def main(filename, nthreads=1):
 
     nthreads = int(nthreads)
 
-    points, labels = load_dataset_bin(filename)
+    data_points, labels = load_dataset_bin(filename)
     random_forest = RandomForestClassifier(n_estimators=150,
                                            n_jobs=nthreads,
                                            max_depth=50,
                                            max_features="sqrt",
                                            min_samples_leaf=1,
                                            min_samples_split=2)
-    random_forest.fit(points, labels)
+    random_forest.fit(data_points, labels)
 
     print("max-tree-depth", max([estimator.get_depth() for estimator in random_forest.estimators_]))
     print("max-node-count", max([estimator.tree_.node_count for estimator in random_forest.estimators_]))

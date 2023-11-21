@@ -11,19 +11,6 @@ CACHE_DIR     = pathlib.Path("cache")
 DATASET       = pathlib.Path("xy_300_post_0.001.json")
 
 
-def load_dataset_bin(filename):
-
-    with open(filename, "rb") as inf:
-        num_points, num_features = struct.unpack("<QI", inf.read(8 + 4))
-        points = np.zeros((num_points, num_features), dtype=np.float32)
-        labels = np.zeros((num_points,), dtype=np.uint8)
-        unpacker = struct.Struct("<" + "f" * num_features + "B")
-        for i, row in enumerate(unpacker.iter_unpack(inf.read())):
-            points[i] = row[:-1]
-            labels[i] = row[-1]
-    return points, labels
-
-
 def store_dataset_csv(filename, points_false, points_true):
 
     assert points_false.shape == points_true.shape
@@ -40,20 +27,15 @@ def store_dataset_csv(filename, points_false, points_true):
 def store_dataset_bin(filename, points_false, points_true):
 
     assert points_false.shape == points_true.shape
-    num_points, num_features = points_false.shape
-    num_points *= 2
+    num_features = points_false.shape[-1]
     with open(filename, "wb") as outf:
-
-        outf.write(struct.pack("<Q", num_points))
         outf.write(struct.pack("<I", num_features))
-
         for i in range(len(points_false)):
             outf.write(points_false[i].tobytes())
-            outf.write(b"\x00")
-
+            outf.write(struct.pack("<f", 0.0))
         for i in range(len(points_true)):
             outf.write(points_true[i].tobytes())
-            outf.write(b"\x01")
+            outf.write(struct.pack("<f", 1.0))
 
 
 def get_dataset_filenames(data_size, test_percentage, data_format):

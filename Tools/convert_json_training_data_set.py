@@ -4,7 +4,6 @@ import jsonpickle
 import jsonpickle.ext.numpy
 import numpy as np
 import os
-import struct
 import sys
 
 def main(filename_in, filename_out):
@@ -12,6 +11,8 @@ def main(filename_in, filename_out):
     jsonpickle.ext.numpy.register_handlers()
     with open(filename_in) as json_file:
         points, labels = jsonpickle.decode(json_file.read())
+    assert points.dtype == np.float32
+    assert labels.dtype == np.float32
 
     num_points, num_features = points.shape
     print("No. of points: ", num_points)
@@ -21,17 +22,8 @@ def main(filename_in, filename_out):
     print(f"Labels: 0 ({percentage_zeros:.2f}%), 1 ({percentage_ones:.2f}%)")
     assert np.sum(labels == 0) + np.sum(labels == 1) == labels.size
 
-    labels = labels.astype(np.uint8)
-
-    assert points.dtype == np.float32
-    assert labels.dtype == np.uint8
-    tuple_value_types = "f" * num_features + "B"
-
     with open(filename_out, "wb") as outf:
-
-        outf.write(struct.pack("<I", num_features + 1))
-        outf.write(tuple_value_types.encode("ascii"))
-
+        outf.write(int.to_bytes(num_features + 1, 4, "little")
         for i in range(num_points):
             outf.write(points[i].tobytes())
             outf.write(labels[i].tobytes())
