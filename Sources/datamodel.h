@@ -789,6 +789,27 @@ public:
 
   typedef std::shared_ptr<TrainingTreeNode> SharedPointer;
 
+  // Statistics pertaining to each split() call.
+  class SplitStatistics
+  {
+  public:
+
+    SplitStatistics( unsigned int splitsMade = 0, unsigned int pointsLeftToImprove = 0 ):
+    splitsMade         ( splitsMade          ),
+    pointsLeftToImprove( pointsLeftToImprove )
+    {
+    }
+
+    SplitStatistics( const SplitStatistics &left, const SplitStatistics &right ):
+    splitsMade( left.splitsMade + right.splitsMade ),
+    pointsLeftToImprove( left.pointsLeftToImprove + right.pointsLeftToImprove )
+    {
+    }
+
+    unsigned int splitsMade         ; // The number of splits made in this pass.
+    unsigned int pointsLeftToImprove; // The total number of points that can be classified better after the split. N.B. if max. depth is exceeded this will be 0 for those points.
+  };
+
   TrainingTreeNode( TrainingTreeNode *parent = nullptr ):
   m_parent             ( parent ),
   m_splitFeatureID     ( 0      ),
@@ -800,6 +821,7 @@ public:
   m_trueCountRightHalf ( 0      ),
   m_currentFeature     ( 0      ),
   m_bestSplitFeature   ( 0      ),
+  m_bestSplitMislabeled( 0      ),
   m_bestSplitValue     ( 0      ),
   m_bestSplitGiniIndex ( 0      ),
   m_featuresToConsider ( 0      ),
@@ -835,15 +857,16 @@ public:
 
       auto tab = std::string( indent, ' ' );
       std::cout << tab << "Node:" << std::endl
-                << tab << "m_totalCount         = " << m_totalCount         << std::endl
-                << tab << "m_trueCount          = " << m_trueCount          << std::endl
-                << tab << "m_totalCountLeftHalf = " << m_totalCountLeftHalf << std::endl
-                << tab << "m_trueCountLeftHalf  = " << m_trueCountLeftHalf  << std::endl
-                << tab << "m_trueCountRightHalf = " << m_trueCountRightHalf << std::endl
-                << tab << "m_currentFeature     = " << m_currentFeature     << std::endl
-                << tab << "m_bestSplitFeature   = " << m_bestSplitFeature   << std::endl
-                << tab << "m_bestSplitValue     = " << m_bestSplitValue     << std::endl
-                << tab << "m_bestSplitGiniIndex = " << m_bestSplitGiniIndex << std::endl;
+                << tab << "m_totalCount          = " << m_totalCount         << std::endl
+                << tab << "m_trueCount           = " << m_trueCount          << std::endl
+                << tab << "m_totalCountLeftHalf  = " << m_totalCountLeftHalf << std::endl
+                << tab << "m_trueCountLeftHalf   = " << m_trueCountLeftHalf  << std::endl
+                << tab << "m_trueCountRightHalf  = " << m_trueCountRightHalf << std::endl
+                << tab << "m_currentFeature      = " << m_currentFeature     << std::endl
+                << tab << "m_bestSplitFeature    = " << m_bestSplitFeature   << std::endl
+                << tab << "m_bestSplitMislabeled = " << m_bestSplitFeature   << std::endl
+                << tab << "m_bestSplitValue      = " << m_bestSplitValue     << std::endl
+                << tab << "m_bestSplitGiniIndex  = " << m_bestSplitGiniIndex << std::endl;
 
       if ( m_leftChild )
       {
@@ -887,7 +910,7 @@ public:
    */
   void initializeOptimalSplitSearch( unsigned int featuresToConsider )
   {
-      // Reset the point conts. Points will be re-counted during the point registration phase.
+      // Reset the point counts. Points will be re-counted during the point registration phase.
       m_trueCount          = 0;
       m_totalCount         = 0;
 
@@ -895,9 +918,10 @@ public:
       m_featuresToConsider = featuresToConsider;
 
       // Reset the best split found so far. This will be re-determined during the feature traversal phase.
-      m_bestSplitFeature   = 0;
-      m_bestSplitValue     = 0;
-      m_bestSplitGiniIndex = std::numeric_limits<double>::max();
+      m_bestSplitFeature    = 0;
+      m_bestSplitMislabeled = 0;
+      m_bestSplitValue      = 0;
+      m_bestSplitGiniIndex  = std::numeric_limits<double>::max();
 
       // Initialize any children.
       if ( m_leftChild  ) m_leftChild ->initializeOptimalSplitSearch( featuresToConsider );
@@ -961,9 +985,12 @@ public:
           // Save this split if it is the best one so far.
           if ( giniTotal < m_bestSplitGiniIndex )
           {
-              m_bestSplitFeature   = m_currentFeature;
-              m_bestSplitValue     = featureValue    ;
-              m_bestSplitGiniIndex = giniTotal       ;
+              auto falseCountLeft   = m_totalCountLeftHalf  - m_trueCountLeftHalf ;
+              auto falseCountRight  = totalCountRightHalf - m_trueCountRightHalf;
+              m_bestSplitFeature    = m_currentFeature;
+              m_bestSplitMislabeled = std::min( m_trueCountLeftHalf, falseCountLeft ) + std::min( m_trueCountRightHalf, falseCountRight );
+              m_bestSplitValue      = featureValue    ;
+              m_bestSplitGiniIndex  = giniTotal       ;
           }
       }
 
@@ -981,26 +1008,31 @@ public:
 
   /**
    * Split the leaf nodes at the most optimal point, after all features have been traversed.
-   * \return The number of splits made.
+   * \param maxDepth Provide the maximum allowed depth.
+   * \param depth Keep to default value of 0.
+   * \return Statistics pertaining to the split.
    */
-  unsigned int split()
+  SplitStatistics split( unsigned int maxDepth, unsigned int depth = 0 )
   {
       // If this is an interior node, split the children and quit.
       if ( m_leftChild )
       {
           assert( m_rightChild );
-          auto l = m_leftChild ->split();
-          auto r = m_rightChild->split();
-          return l + r;
+          auto l = m_leftChild ->split( maxDepth, depth + 1 );
+          auto r = m_rightChild->split( maxDepth, depth + 1 );
+          SplitStatistics stats( l, r );
+          return stats;
       }
 
       // Assert that this is a leaf node.
       assert( !m_leftChild  );
       assert( !m_rightChild );
 
-      // Do not split if this node is completely pure (or empty).
-      // TODO: the purity cutoff can be made more flexible.
-      if ( m_trueCount == 0 || m_trueCount == m_totalCount ) return 0;
+      // Determine whether it's time to stop permanently.
+      if ( m_trueCount == 0 || m_trueCount == m_totalCount )
+      {
+          return SplitStatistics();
+      }
 
       // Split this node at the best point that was found.
       m_splitValue     = m_bestSplitValue;
@@ -1008,7 +1040,7 @@ public:
       m_leftChild .reset( new TrainingTreeNode( this ) );
       m_rightChild.reset( new TrainingTreeNode( this ) );
 
-      return 1;
+      return SplitStatistics( 1, m_bestSplitMislabeled );
   }
 
   /**
@@ -1042,6 +1074,7 @@ private:
   unsigned int      m_trueCountRightHalf ; // Remaining unvisited points labeled 'true'.
   unsigned int      m_currentFeature     ; // The feature that is currently being traversed.
   unsigned int      m_bestSplitFeature   ; // Best feature for splitting found so far.
+  unsigned int      m_bestSplitMislabeled; // Number of mislabeled points that would occur if the split was made here.
   double            m_bestSplitValue     ; // Best value to split at found so far.
   double            m_bestSplitGiniIndex ; // Gini-index of the best split point found so far (lowest index).
   unsigned int      m_featuresToConsider ; // The number of randomly chosen features that this node still has to consider during the feature traversal phase.
@@ -1076,7 +1109,7 @@ public:
       // Create a list of pointers from data points to their current parent nodes.
       std::vector< TrainingTreeNode * > pointParents( featureIndex.size(), &root );
 
-      // Split all leaf nodes in the tree until the depth limit is reached.
+      // Split all leaf nodes in the tree until the there is no more room to improve, or until the depth limit is reached.
       for ( unsigned int depth = 0; depth < m_maxDepth; ++depth )
       {
           std::cout << "Depth = " << depth << std::endl;
@@ -1111,10 +1144,17 @@ public:
               }
           }
 
-          // Allow all leaf nodes to split, if necessary. Stop if there is no more improvement.
-          auto splitCount = root.split();
-          if ( splitCount == 0 ) break;
-          std::cout << splitCount << " splits made." << std::endl;
+          // Allow all leaf nodes to split, if necessary.
+          auto splitStats = root.split( m_maxDepth );
+          std::cout << splitStats.splitsMade << " splits made." << std::endl;
+
+          // Decide whether it is meaningful to continue.
+          // TODO: make more subtle.
+          if ( splitStats.pointsLeftToImprove == 0 )
+          {
+              std::cout << "No more room for improvement." << std::endl;
+              break;
+          }
       }
 
       // Return a stripped version of the training tree.
