@@ -95,7 +95,7 @@ def generate_datasets(data_sizes, test_percentage, use_cache=True):
                 data_points, labels = jsonpickle.decode(json_file.read())
             assert np.sum(labels == 0.0) + np.sum(labels == 1.0) == labels.size
             assert data_points.dtype == np.float32
-            print(labels.dtype)
+            assert labels.dtype == np.float64
             labels = labels.astype(np.float32)
             assert labels.dtype == np.float32
 
