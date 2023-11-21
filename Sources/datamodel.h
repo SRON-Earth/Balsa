@@ -1245,7 +1245,10 @@ public:
       // Wait for all the trees to come in, and add them to the forest.
       Forest::SharedPointer forest( new Forest );
       for ( unsigned int i = 0; i < m_treeCount; ++i )
+      {
+          std::cout << "Tree #" << i << " completed." << std::endl;
           forest->addTree( treeInbox.receive() );
+      }
 
       // Wait for all the threads to join.
       for ( auto &worker: workers ) worker.join();
