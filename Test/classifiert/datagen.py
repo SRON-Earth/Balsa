@@ -27,9 +27,9 @@ def store_dataset_csv(filename, points_false, points_true):
 def store_dataset_bin(filename, points_false, points_true):
 
     assert points_false.shape == points_true.shape
-    num_features = points_false.shape[-1]
+    num_columns = points_false.shape[-1] + 1
     with open(filename, "wb") as outf:
-        outf.write(struct.pack("<I", num_features))
+        outf.write(struct.pack("<I", num_columns))
         for i in range(len(points_false)):
             outf.write(points_false[i].tobytes())
             outf.write(struct.pack("<f", 0.0))

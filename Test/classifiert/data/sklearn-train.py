@@ -11,9 +11,9 @@ def load_dataset_bin(filename):
     import struct
 
     with open(filename, "rb") as inf:
-        num_features, = struct.unpack("<I", inf.read(4))
+        num_columns, = struct.unpack("<I", inf.read(4))
         data_points, labels = [], []
-        unpacker = struct.Struct("<" + "f" * (num_features + 1))
+        unpacker = struct.Struct("<" + "f" * num_columns)
         for row in unpacker.iter_unpack(inf.read()):
             data_points.append(row[:-1])
             labels.append(row[-1])
