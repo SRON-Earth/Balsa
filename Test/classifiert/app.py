@@ -39,9 +39,13 @@ def app_main(classifiers, data_sizes, test_percentage, num_estimators, max_tree_
             run_statistics = {"data_size": data_size}
             test_run_path = classifier_run_path / str(data_size)
             test_run_path.mkdir()
-            run_statistics.update(runner(test_run_path, train_data_filename, train_label_filename, test_data_filename,
-                                         test_label_filename, num_estimators, max_tree_depth, num_threads))
-            classifier_statistics.append(run_statistics)
+            try:
+                run_statistics.update(runner(test_run_path, train_data_filename, train_label_filename, test_data_filename,
+                                             test_label_filename, num_estimators, max_tree_depth, num_threads))
+            except Exception as exception:
+                print("\033[31m" + "Run failed: '" + str(exception) + "'." + "\033[0m")
+            else:
+                classifier_statistics.append(run_statistics)
 
         write_report(run_path / f"{classifier}.pdf", data_sizes, test_percentage, num_threads, {classifier: classifier_statistics})
         statistics[classifier] = classifier_statistics

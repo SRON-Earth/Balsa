@@ -7,6 +7,7 @@ def run_program(program, *args, time_file=None, timeout=None, cwd=None):
         result = subprocess.run(["time", "-v", "-o", time_file, program, *args], capture_output=True, text=True, timeout=timeout, cwd=cwd)
     else:
         result = subprocess.run([program, *args], capture_output=True, text=True, timeout=timeout, cwd=cwd)
+    assert result.returncode == 0, f"Program '{program}' failed with exit code: {result.returncode}"
     return result
 
 
