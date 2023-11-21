@@ -62,9 +62,10 @@ int main( int argc, char **argv )
         std::cout << "Done (" << watch.stop() << " seconds)." << std::endl;
 
         // Load the data.
-        //std::cout << "Ingesting data..." << std::endl;
-        //auto dataSet = loadTrainingDataSet( options.dataPointFile );
-        //std::cout << "Dataset loaded: " << dataSet->size() << " points. (" << elapsed.count() << " seconds)." << std::endl;
+        std::cout << "Ingesting data..." << std::endl;
+        watch.start();
+        auto dataSet = loadDataSet( options.dataPointFile );
+        std::cout << "Dataset loaded: " << dataSet->size() << " points. (" << watch.stop() << " seconds)." << std::endl;
     }
     catch ( Exception &e )
     {

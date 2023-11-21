@@ -41,6 +41,9 @@ class DataSet
 {
 public:
 
+  typedef std::shared_ptr<const DataSet> ConstSharedPointer;
+  typedef std::shared_ptr<      DataSet> SharedPointer     ;
+
   DataSet( unsigned int featureCount ):
   m_featureCount( featureCount )
   {

@@ -30,7 +30,7 @@ namespace
         std::stringstream ss;
         ss <<  "Usage:" << std::endl
            << std::endl
-           << "   rftrain [options] <training input file> <model output file>" << std::endl
+           << "   rftrain [options] <data input file> <label input file> <model output file>" << std::endl
            << std::endl
            << " Options:" << std::endl
            << std::endl
@@ -79,18 +79,20 @@ namespace
 
         // Parse the filenames.
         if ( token.size() == 0 ) throw ParseError( getUsage() );
-        options.trainingFile = token;
+        options.dataFile = token;
+        if( !( args >> options.labelFile ) ) throw ParseError( getUsage() );
         if( !( args >> options.outputFile ) ) throw ParseError( getUsage() );
 
         // Return  results.
         return options;
     }
 
-    std::string  trainingFile;
-    std::string  outputFile  ;
-    unsigned int maxDepth    ;
-    unsigned int treeCount   ;
-    unsigned int threadCount ;
+    std::string  dataFile   ;
+    std::string  labelFile  ;
+    std::string  outputFile ;
+    unsigned int maxDepth   ;
+    unsigned int treeCount  ;
+    unsigned int threadCount;
 
   };
 }
@@ -103,17 +105,18 @@ int main( int argc, char **argv )
         Options options = Options::parseOptions( argc, argv );
 
         // Debug.
-        std::cout <<  "Training File: " << options.trainingFile << std::endl;
-        std::cout <<  "Output File  : " << options.outputFile   << std::endl;
-        std::cout <<  "Max. Depth   : " << options.maxDepth     << std::endl;
-        std::cout <<  "Tree Count   : " << options.treeCount    << std::endl;
-        std::cout <<  "Threads      : " << options.threadCount  << std::endl;
+        std::cout <<  "Data File  : " << options.dataFile    << std::endl;
+        std::cout <<  "Label File : " << options.labelFile   << std::endl;
+        std::cout <<  "Output File: " << options.outputFile  << std::endl;
+        std::cout <<  "Max. Depth : " << options.maxDepth    << std::endl;
+        std::cout <<  "Tree Count : " << options.treeCount   << std::endl;
+        std::cout <<  "Threads    : " << options.threadCount << std::endl;
 
         // Load training data set.
         StopWatch watch;
         std::cout << "Ingesting data..." << std::endl;
         watch.start();
-        auto dataSet = loadTrainingDataSet( options.trainingFile );
+        auto dataSet = loadTrainingDataSet( options.dataFile, options.labelFile );
         std::cout << "Dataset loaded: " << dataSet->size() << " points. (" << watch.stop() << " seconds)." << std::endl;
 
         // Train a random forest on the data.
