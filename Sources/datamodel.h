@@ -628,7 +628,7 @@ inline DecisionTreeNode::SharedPointer readTree( std::istream &in )
         // Read the label.
         char labelText;
         in >> labelText;
-        if( labelText != 'T' & labelText != 'F' ) throw ParseError( "Unexpected leaf node label." );
+        if( labelText != 'T' && labelText != 'F' ) throw ParseError( "Unexpected leaf node label." );
         bool label = labelText == 'T';
         return DecisionTreeNode::SharedPointer( new DecisionTreeLeafNode( label ) );
     }
