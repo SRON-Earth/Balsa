@@ -6,12 +6,15 @@ import numpy as np
 import os
 import sys
 
-def main(filename_in, filename_out):
+
+def main(filename_in, filename_data_out, filename_label_out):
 
     jsonpickle.ext.numpy.register_handlers()
     with open(filename_in) as json_file:
         points, labels = jsonpickle.decode(json_file.read())
     assert points.dtype == np.float32
+    assert labels.dtype == np.float64
+    labels = labels.astype(np.float32)
     assert labels.dtype == np.float32
 
     num_points, num_features = points.shape
@@ -22,17 +25,22 @@ def main(filename_in, filename_out):
     print(f"Labels: 0 ({percentage_zeros:.2f}%), 1 ({percentage_ones:.2f}%)")
     assert np.sum(labels == 0) + np.sum(labels == 1) == labels.size
 
-    with open(filename_out, "wb") as outf:
-        outf.write(int.to_bytes(num_features + 1, 4, "little")
+    with open(filename_data_out, "wb") as outf:
+        outf.write(int.to_bytes(num_features, 4, "little"))
         for i in range(num_points):
             outf.write(points[i].tobytes())
+
+    with open(filename_label_out, "wb") as outf:
+        outf.write(int.to_bytes(1, 4, "little"))
+        for i in range(num_points):
             outf.write(labels[i].tobytes())
+
 
 if __name__ == "__main__":
     
-    if len(sys.argv) != 3:
+    if len(sys.argv) != 4:
         program_name = os.path.basename(sys.argv[0])
-        print(f"Usage: {program_name} INPUT OUTPUT")
+        print(f"Usage: {program_name} <input file> <data output file> <label output file>")
         sys.exit(1)
 
     main(*sys.argv[1:])
