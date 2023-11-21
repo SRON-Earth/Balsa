@@ -11,27 +11,30 @@ def load_dataset_bin(filename):
 
     with open(filename, "rb") as inf:
         num_columns, = struct.unpack("<I", inf.read(4))
-        data_points, labels = [], []
         unpacker = struct.Struct("<" + "f" * num_columns)
-        for row in unpacker.iter_unpack(inf.read()):
-            data_points.append(row[:-1])
-            labels.append(row[-1])
-    return data_points, labels
+        if num_columns == 1:
+            result = [row[0] for row in unpacker.iter_unpack(inf.read())]
+        else:
+            result = [list(row) for row in unpacker.iter_unpack(inf.read())]
+    return result
 
 
-def main(train_filename, test_filename, nthreads=1):
+def main(train_data_filename, train_label_filename, test_data_filename, test_label_filename,
+         num_estimators, max_tree_depth, num_threads):
 
-    nthreads = int(nthreads)
+    num_threads = int(num_threads)
 
-    train_data_points, train_labels = load_dataset_bin(train_filename)
-    test_data_points, test_labels = load_dataset_bin(test_filename)
+    train_data_points = load_dataset_bin(train_data_filename)
+    train_labels = load_dataset_bin(train_label_filename)
+
+    test_data_points = load_dataset_bin(test_data_filename)
+    test_labels = load_dataset_bin(test_label_filename)
 
     # model = lgb.LGBMClassifier(learning_rate=0.09,colsample_bytree=np.sqrt(len(data_points))/len(data_points), num_leaves=1024)
     model = lgb.LGBMClassifier(boosting_type="dart",learning_rate=0.4,num_leaves=4096)
-    model.fit(train_data_points, train_labels, eval_set=[(test_data_points, test_labels),(train_data_points, train_labels)],
-              eval_metric='logloss')
+    model.fit(train_data_points, train_labels, eval_metric='logloss')
 
-    # random_forest = lgb.LGBMClassifier(boosting_type="rf", max_depth=50, n_estimators=150, n_jobs=nthreads)
+    # random_forest = lgb.LGBMClassifier(boosting_type="rf", max_depth=max_tree_depth, n_estimators=num_estimators, n_jobs=num_threads)
 
     # random_forest = lgb.LGBMClassifier(boosting_type="rf",
     #                          num_leaves=165,

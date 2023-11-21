@@ -12,22 +12,26 @@ def load_dataset_bin(filename):
 
     with open(filename, "rb") as inf:
         num_columns, = struct.unpack("<I", inf.read(4))
-        data_points, labels = [], []
         unpacker = struct.Struct("<" + "f" * num_columns)
-        for row in unpacker.iter_unpack(inf.read()):
-            data_points.append(row[:-1])
-            labels.append(row[-1])
-    return data_points, labels
+        if num_columns == 1:
+            result = [row[0] for row in unpacker.iter_unpack(inf.read())]
+        else:
+            result = [list(row) for row in unpacker.iter_unpack(inf.read())]
+    return result
 
 
-def main(filename, nthreads=1):
+def main(data_filename, label_filename, num_estimators, max_tree_depth, num_threads):
 
-    nthreads = int(nthreads)
+    num_estimators = int(num_estimators)
+    max_tree_depth = None if max_tree_depth == "None" else int(max_tree_depth)
+    num_threads = int(num_threads)
 
-    data_points, labels = load_dataset_bin(filename)
-    random_forest = RandomForestClassifier(n_estimators=150,
-                                           n_jobs=nthreads,
-                                           max_depth=50,
+    data_points = load_dataset_bin(data_filename)
+    labels = load_dataset_bin(label_filename)
+
+    random_forest = RandomForestClassifier(n_estimators=num_estimators,
+                                           n_jobs=num_threads,
+                                           max_depth=max_tree_depth,
                                            max_features="sqrt",
                                            min_samples_leaf=1,
                                            min_samples_split=2)

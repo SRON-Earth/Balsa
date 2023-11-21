@@ -11,7 +11,7 @@ from .report  import write_report
 RUN_DIR = pathlib.Path("run")
 
 
-def app_main(classifiers, data_sizes, test_percentage, threads, timeout, use_cache):
+def app_main(classifiers, data_sizes, test_percentage, num_estimators, max_tree_depth, num_threads, timeout, use_cache):
 
     print("\033[35m" + f"Generating datasets..." + "\033[0m")
     generate_datasets(data_sizes, test_percentage, use_cache=use_cache)
@@ -21,7 +21,7 @@ def app_main(classifiers, data_sizes, test_percentage, threads, timeout, use_cac
 
     statistics = {}
     for classifier in classifiers:
-        print("\033[35m" + f"Running {classifier} using {threads} threads..." + "\033[0m")
+        print("\033[35m" + f"Running {classifier} using {num_threads} threads..." + "\033[0m")
 
         classifier_run_path = run_path / classifier
         classifier_run_path.mkdir()
@@ -34,17 +34,19 @@ def app_main(classifiers, data_sizes, test_percentage, threads, timeout, use_cac
 
         for data_size in data_sizes:
             print("\033[32m" + str(data_size) + "\033[0m")
-            train_file, test_file = get_dataset_filenames(data_size, test_percentage, data_format)
+            train_data_filename, train_label_filename, test_data_filename, test_label_filename = \
+                get_dataset_filenames(data_size, test_percentage, data_format)
             run_statistics = {"data_size": data_size}
             test_run_path = classifier_run_path / str(data_size)
             test_run_path.mkdir()
-            run_statistics.update(runner(test_run_path, train_file.absolute(), test_file.absolute(), threads))
+            run_statistics.update(runner(test_run_path, train_data_filename, train_label_filename, test_data_filename,
+                                         test_label_filename, num_estimators, max_tree_depth, num_threads))
             classifier_statistics.append(run_statistics)
 
-        write_report(run_path / f"{classifier}.pdf", data_sizes, test_percentage, threads, {classifier: classifier_statistics})
+        write_report(run_path / f"{classifier}.pdf", data_sizes, test_percentage, num_threads, {classifier: classifier_statistics})
         statistics[classifier] = classifier_statistics
 
-    write_report(run_path / f"all.pdf", data_sizes, test_percentage, threads, statistics)
+    write_report(run_path / f"all.pdf", data_sizes, test_percentage, num_threads, statistics)
 
 
 def parse_command_line_arguments():
@@ -68,7 +70,9 @@ def parse_command_line_arguments():
     parser.add_argument("classifiers", metavar="CLASSIFIER", choices=CLASSIFIERS.keys(), nargs="+")
     parser.add_argument("-n", "--data-sizes", type=data_size_list, default="100,1000,2500,5000,10_000,25_000,50_000")
     parser.add_argument("-p", "--test-percentage", type=percentage, default="20")
-    parser.add_argument("-t", "--threads", type=positive_integer, default="1")
+    parser.add_argument("-d", "--max-tree-depth", type=positive_integer, default="50")
+    parser.add_argument("-e", "--num-estimators", type=positive_integer, default="150")
+    parser.add_argument("-t", "--num-threads", type=positive_integer, default="1")
     parser.add_argument("-x", "--timeout", type=positive_integer, default=None)
     parser.add_argument("-C", "--no-cache", dest="use_cache", action="store_false")
     return parser.parse_args()

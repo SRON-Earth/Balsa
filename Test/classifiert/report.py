@@ -1,10 +1,10 @@
 import matplotlib.pyplot as plt
 
 
-def write_report(report_filename, data_sizes, test_percentage, threads, statistics_):
+def write_report(report_filename, data_sizes, test_percentage, num_threads, statistics_):
 
     plt.figure()
-    plt.title(f"CPU Time :: {threads} thread(s)")
+    plt.title(f"CPU Time :: {num_threads} thread(s)")
     plt.xlabel("No. of samples")
     plt.ylabel("CPU Time (s)")
     for classifier, statistics in statistics_.items():
@@ -14,7 +14,7 @@ def write_report(report_filename, data_sizes, test_percentage, threads, statisti
     plt.legend()
 
     plt.figure()
-    plt.title(f"Maximum RSS :: {threads} thread(s)")
+    plt.title(f"Maximum RSS :: {num_threads} thread(s)")
     plt.xlabel("No. of samples")
     plt.ylabel("Maximum RSS (MB)")
     for classifier, statistics in statistics_.items():
@@ -24,7 +24,7 @@ def write_report(report_filename, data_sizes, test_percentage, threads, statisti
     plt.legend()
 
     plt.figure()
-    plt.title(f"Accuracy :: {threads} thread(s)")
+    plt.title(f"Accuracy :: {num_threads} thread(s)")
     plt.xlabel("No. of samples")
     plt.ylabel("Accuracy (%)")
     for classifier, statistics in statistics_.items():
@@ -34,7 +34,7 @@ def write_report(report_filename, data_sizes, test_percentage, threads, statisti
     plt.legend()
 
     plt.figure()
-    plt.title(f"Maximum node count :: {threads} thread(s)")
+    plt.title(f"Maximum node count :: {num_threads} thread(s)")
     plt.xlabel("No. of samples")
     plt.ylabel("No. of nodes")
     for classifier, statistics in statistics_.items():
@@ -44,7 +44,7 @@ def write_report(report_filename, data_sizes, test_percentage, threads, statisti
     plt.legend()
 
     plt.figure()
-    plt.title(f"Maximum depth :: {threads} thread(s)")
+    plt.title(f"Maximum depth :: {num_threads} thread(s)")
     plt.xlabel("No. of samples")
     plt.ylabel("Depth")
     for classifier, statistics in statistics_.items():

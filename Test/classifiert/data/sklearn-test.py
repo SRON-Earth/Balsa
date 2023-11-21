@@ -12,17 +12,18 @@ def load_dataset_bin(filename):
 
     with open(filename, "rb") as inf:
         num_columns, = struct.unpack("<I", inf.read(4))
-        data_points, labels = [], []
         unpacker = struct.Struct("<" + "f" * num_columns)
-        for row in unpacker.iter_unpack(inf.read()):
-            data_points.append(row[:-1])
-            labels.append(row[-1])
-    return data_points, labels
+        if num_columns == 1:
+            result = [row[0] for row in unpacker.iter_unpack(inf.read())]
+        else:
+            result = [list(row) for row in unpacker.iter_unpack(inf.read())]
+    return result
 
 
-def main(filename):
+def main(data_filename, label_filename):
 
-    data_points, labels = load_dataset_bin(filename)
+    data_points = load_dataset_bin(data_filename)
+    labels = load_dataset_bin(label_filename)
 
     with open("sklearn.forest", "rb") as inf:
         random_forest = pickle.load(inf)
