@@ -34,7 +34,8 @@ def main(data_filename, label_filename, num_estimators, max_tree_depth, num_thre
                                            max_depth=max_tree_depth,
                                            max_features="sqrt",
                                            min_samples_leaf=1,
-                                           min_samples_split=2)
+                                           min_samples_split=2,
+                                           bootstrap=False)
     random_forest.fit(data_points, labels)
 
     print("max-tree-depth", max([estimator.get_depth() for estimator in random_forest.estimators_]))
