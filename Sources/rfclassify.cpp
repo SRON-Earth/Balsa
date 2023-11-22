@@ -78,6 +78,11 @@ int main( int argc, char **argv )
         Forest forest = loadForest( options.modelFile );
         std::cout << "Done (" << watch.stop() << " seconds)." << std::endl;
 
+        // Print model info.
+        std::cout << "Model Statistics:" << std::endl
+                  << "Maximum Node Count: " << forest.getMaximumNodeCount() << std::endl
+                  << "Maximum Depth     : " << forest.getMaximumDepth    () << std::endl;
+
         // Load the data.
         std::cout << "Ingesting data..." << std::endl;
         watch.start();

@@ -215,6 +215,16 @@ public:
   }
 
   /**
+   * Returns the number of nodes in this tree.
+   */
+  virtual unsigned int getNodeCount() const = 0;
+
+  /**
+   * Returns the depth of this tree.
+   */
+  virtual unsigned int getDepth() const = 0;
+
+  /**
    * Classify all points in a DataSet.
    */
   std::vector<bool> classify( const DataSet &dataSet ) // TODO: Make this an interator-based, container independent template.
@@ -238,11 +248,6 @@ public:
    * N.B. This is a naive implementation, suitable for testing and low-performance applications.
    */
   virtual bool classify( const DataPoint &point ) const = 0; // TODO: add efficient bulk classifier.
-
-  /**
-   * Returns the number of nodes in this tree.
-   */
-  virtual unsigned int getNodeCount() const = 0;
 
   /**
    * Print routine for testing purposes.
@@ -348,9 +353,20 @@ public:
       return m_rightChild->classify( point );
   }
 
+  /**
+   * Returns the number of nodes in this tree.
+   */
   unsigned int getNodeCount() const
   {
-      return m_leftChild->getNodeCount() + m_rightChild->getNodeCount();
+      return 1 + m_leftChild->getNodeCount() + m_rightChild->getNodeCount();
+  }
+
+  /**
+   * Returns the depth of this tree.
+   */
+  unsigned int getDepth() const
+  {
+      return 1 + std::max( m_leftChild->getNodeCount(), m_rightChild->getNodeCount() );
   }
 
   virtual void dump( unsigned int indent ) const
@@ -419,17 +435,28 @@ public:
       return getLabel();
   }
 
-  unsigned int getNodeCount() const
-  {
-      return 1;
-  }
-
   /**
    * Returns the label of (all points in) this node.
    */
   bool getLabel() const
   {
       return m_label;
+  }
+
+  /**
+   * Returns the number of nodes in this tree.
+   */
+  unsigned int getNodeCount() const
+  {
+      return 1;
+  }
+
+  /**
+   * Returns the depth of this tree.
+   */
+  unsigned int getDepth() const
+  {
+      return 1;
   }
 
   /**
@@ -514,6 +541,26 @@ public:
   ConstIterator end() const
   {
       return m_trees.end();
+  }
+
+  /**
+   * Returns the number of nodes in the largest tree.
+   */
+  unsigned int getMaximumNodeCount() const
+  {
+      unsigned int maximum = 0;
+      for ( auto &tree: m_trees ) maximum = std::max( maximum, tree->getNodeCount() );
+      return maximum;
+  }
+
+  /**
+   * Returns the depth of the largest tree.
+   */
+  unsigned int getMaximumDepth() const
+  {
+      unsigned int maximum = 0;
+      for ( auto &tree: m_trees ) maximum = std::max( maximum, tree->getDepth() );
+      return maximum;
   }
 
   /**
