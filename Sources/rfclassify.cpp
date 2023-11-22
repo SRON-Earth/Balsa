@@ -45,6 +45,23 @@ namespace
     std::string outputFile   ;
 
   };
+
+  void writeLabels(const std::vector<bool> &labels, const std::string &filename)
+  {
+    // Open the output file stream.
+    std::ofstream stream( filename.c_str(), std::ofstream::binary );
+    assert(stream.good());
+
+    // Write the number of columns.
+    const std::uint32_t numColumns = 1;
+    stream.write( reinterpret_cast<const char*>( &numColumns ), sizeof( std::uint32_t ) );
+
+    // Write the label values.
+    for ( float label : labels )
+    {
+        stream.write( reinterpret_cast<const char*>( &label ), sizeof( float ) );
+    }
+  }
 }
 
 int main( int argc, char **argv )
@@ -66,6 +83,12 @@ int main( int argc, char **argv )
         watch.start();
         auto dataSet = loadDataSet( options.dataPointFile );
         std::cout << "Dataset loaded: " << dataSet->size() << " points. (" << watch.stop() << " seconds)." << std::endl;
+
+        // Classify the data points.
+        std::vector<bool> labels = forest.classify( *dataSet );
+
+        // Store the labels.
+        writeLabels( labels, options.outputFile );
     }
     catch ( Exception &e )
     {
