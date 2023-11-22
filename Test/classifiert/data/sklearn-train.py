@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import argparse
 import pickle
 import sys
 
@@ -20,11 +21,7 @@ def load_dataset_bin(filename):
     return result
 
 
-def main(data_filename, label_filename, num_estimators, max_tree_depth, num_threads):
-
-    num_estimators = int(num_estimators)
-    max_tree_depth = None if max_tree_depth == "None" else int(max_tree_depth)
-    num_threads = int(num_threads)
+def main(data_filename, label_filename, model_filename, num_estimators, max_tree_depth, num_threads):
 
     data_points = load_dataset_bin(data_filename)
     labels = load_dataset_bin(label_filename)
@@ -41,10 +38,29 @@ def main(data_filename, label_filename, num_estimators, max_tree_depth, num_thre
     print("max-tree-depth", max([estimator.get_depth() for estimator in random_forest.estimators_]))
     print("max-node-count", max([estimator.tree_.node_count for estimator in random_forest.estimators_]))
 
-    with open("sklearn.forest", "wb") as outf:
+    with open(model_filename, "wb") as outf:
         pickle.dump(random_forest, outf)
+
+
+def parse_command_line_arguments():
+
+    def positive_integer(text):
+        value = int(text)
+        if value <= 0:
+            raise ValueError
+        return value
+
+    parser = argparse.ArgumentParser(description="Train an sklearn classifier.")
+    parser.add_argument("data_filename", metavar="DATA_INPUT_FILE")
+    parser.add_argument("label_filename", metavar="LABEL_INPUT_FILE")
+    parser.add_argument("model_filename", metavar="MODEL_OUTPUT_FILE")
+    parser.add_argument("-d", "--max-tree-depth", type=positive_integer)
+    parser.add_argument("-e", "--num-estimators", type=positive_integer, default="150")
+    parser.add_argument("-t", "--num-threads", type=positive_integer, default="1")
+    return parser.parse_args()
 
 
 if __name__ == "__main__":
 
-    main(*sys.argv[1:])
+    args = parse_command_line_arguments()
+    main(**dict(vars(args)))

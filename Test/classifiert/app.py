@@ -41,7 +41,8 @@ def app_main(classifiers, data_sizes, test_percentage, num_estimators, max_tree_
             test_run_path.mkdir()
             try:
                 run_statistics.update(runner(test_run_path, train_data_filename, train_label_filename, test_data_filename,
-                                             test_label_filename, num_estimators, max_tree_depth, num_threads))
+                                             test_label_filename, num_estimators=num_estimators,
+                                             max_tree_depth=max_tree_depth, num_threads=num_threads))
             except Exception as exception:
                 print("\033[31m" + "Run failed: '" + str(exception) + "'." + "\033[0m")
             else:
@@ -70,7 +71,7 @@ def parse_command_line_arguments():
     def data_size_list(text):
         return list(sorted([int(value) for value in text.split(",")]))
 
-    parser = argparse.ArgumentParser(description="Tool to test random forest classifiers")
+    parser = argparse.ArgumentParser(prog="classifiert", description="Tool to test random forest classifiers.")
     parser.add_argument("classifiers", metavar="CLASSIFIER", choices=CLASSIFIERS.keys(), nargs="+")
     parser.add_argument("-n", "--data-sizes", type=data_size_list, default="100,1000,2500,5000,10_000,25_000,50_000")
     parser.add_argument("-p", "--test-percentage", type=percentage, default="20")

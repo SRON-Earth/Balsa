@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
+import argparse
 import pickle
 import sys
 
 import lightgbm as lgb
+
 
 def load_dataset_bin(filename):
 
@@ -20,9 +22,7 @@ def load_dataset_bin(filename):
 
 
 def main(train_data_filename, train_label_filename, test_data_filename, test_label_filename,
-         num_estimators, max_tree_depth, num_threads):
-
-    num_threads = int(num_threads)
+         model_filename, num_estimators, max_tree_depth, num_threads):
 
     train_data_points = load_dataset_bin(train_data_filename)
     train_labels = load_dataset_bin(train_label_filename)
@@ -64,6 +64,27 @@ def main(train_data_filename, train_label_filename, test_data_filename, test_lab
     print("test-accuracy {:.4f}".format(model.score(test_data_points, test_labels)))
 
 
+def parse_command_line_arguments():
+
+    def positive_integer(text):
+        value = int(text)
+        if value <= 0:
+            raise ValueError
+        return value
+
+    parser = argparse.ArgumentParser(description="Train a LightGBM classifier.")
+    parser.add_argument("train_data_filename", metavar="TRAIN_DATA_FILE")
+    parser.add_argument("train_label_filename", metavar="TRAIN_LABEL_FILE")
+    parser.add_argument("test_data_filename", metavar="TEST_DATA_FILE")
+    parser.add_argument("test_label_filename", metavar="TEST_LABEL_FILE")
+    parser.add_argument("model_filename", metavar="MODEL_OUTPUT_FILE")
+    parser.add_argument("-d", "--max-tree-depth", type=positive_integer)
+    parser.add_argument("-e", "--num-estimators", type=positive_integer, default="150")
+    parser.add_argument("-t", "--num-threads", type=positive_integer, default="1")
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
 
-    main(*sys.argv[1:])
+    args = parse_command_line_arguments()
+    main(**dict(vars(args)))

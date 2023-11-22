@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import argparse
 import pickle
 import sys
 
@@ -20,12 +21,12 @@ def load_dataset_bin(filename):
     return result
 
 
-def main(data_filename, label_filename):
+def main(model_filename, data_filename, label_filename):
 
     data_points = load_dataset_bin(data_filename)
     labels = load_dataset_bin(label_filename)
 
-    with open("sklearn.forest", "rb") as inf:
+    with open(model_filename, "rb") as inf:
         random_forest = pickle.load(inf)
 
     predicted_labels = random_forest.predict(data_points)
@@ -34,6 +35,16 @@ def main(data_filename, label_filename):
     print(f"test-accuracy {score:.4f}")
 
 
+def parse_command_line_arguments():
+
+    parser = argparse.ArgumentParser(description="Classify data using a pre-trained sklearn classifier.")
+    parser.add_argument("model_filename", metavar="MODEL_INPUT_FILE")
+    parser.add_argument("data_filename", metavar="DATA_INPUT_FILE")
+    parser.add_argument("label_filename", metavar="LABEL_INPUT_FILE")
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
 
-    main(*sys.argv[1:])
+    args = parse_command_line_arguments()
+    main(**dict(vars(args)))
