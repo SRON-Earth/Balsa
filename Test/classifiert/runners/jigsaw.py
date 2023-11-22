@@ -33,7 +33,13 @@ def run(run_path, train_data_filename, train_label_filename, test_data_filename,
     run_statistics = {}
     run_statistics.update(get_statistics_from_time_file(run_path / TIME_FILE))
 
-    run_program("rfclassify", "jigsaw.model", str(test_data_filename), "labels.bin", cwd=run_path)
+    result = run_program("rfclassify", "jigsaw.model", str(test_data_filename), "labels.bin", cwd=run_path)
+
+    for line in result.stdout.split("\n"):
+        if "Maximum Depth" in line:
+            run_statistics["depth"] = int(line.split()[-1])
+        if "Maximum Node Count" in line:
+            run_statistics["node_count"] = int(line.split()[-1])
 
     labels = load_dataset_bin(test_label_filename)
     predicted_labels = load_dataset_bin(run_path / "labels.bin")
