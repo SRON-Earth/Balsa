@@ -36,7 +36,9 @@ def app_main(classifiers, data_sizes, test_percentage, num_estimators, max_tree_
             print("\033[32m" + str(data_size) + "\033[0m")
             train_data_filename, train_label_filename, test_data_filename, test_label_filename = \
                 get_dataset_filenames(data_size, test_percentage, data_format)
-            run_statistics = {"data_size": data_size}
+            test_size = 2 * round(data_size // 2 * test_percentage / 100)
+            training_size = data_size - test_size
+            run_statistics = {"data_size": data_size, "train_data_size": training_size, "test_data_size": test_size}
             test_run_path = classifier_run_path / str(data_size)
             test_run_path.mkdir()
             try:
@@ -48,10 +50,10 @@ def app_main(classifiers, data_sizes, test_percentage, num_estimators, max_tree_
             else:
                 classifier_statistics.append(run_statistics)
 
-        write_report(run_path / f"{classifier}.pdf", data_sizes, test_percentage, num_threads, {classifier: classifier_statistics})
+        write_report(run_path / f"{classifier}.pdf", num_threads, {classifier: classifier_statistics})
         statistics[classifier] = classifier_statistics
 
-    write_report(run_path / f"all.pdf", data_sizes, test_percentage, num_threads, statistics)
+    write_report(run_path / f"all.pdf", num_threads, statistics)
 
 
 def parse_command_line_arguments():
