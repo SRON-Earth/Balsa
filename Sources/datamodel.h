@@ -366,7 +366,7 @@ public:
    */
   unsigned int getDepth() const
   {
-      return 1 + std::max( m_leftChild->getNodeCount(), m_rightChild->getNodeCount() );
+      return 1 + std::max( m_leftChild->getDepth(), m_rightChild->getDepth() );
   }
 
   virtual void dump( unsigned int indent ) const
@@ -1157,7 +1157,7 @@ public:
       std::vector< TrainingTreeNode * > pointParents( featureIndex.size(), &root );
 
       // Split all leaf nodes in the tree until the there is no more room to improve, or until the depth limit is reached.
-      for ( unsigned int depth = 0; depth < m_maxDepth; ++depth )
+      for ( unsigned int depth = 1; depth < m_maxDepth; ++depth )
       {
           std::cout << "Depth = " << depth << std::endl;
 
