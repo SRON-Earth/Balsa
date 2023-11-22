@@ -16,7 +16,7 @@ def run(run_path, train_data_filename, train_label_filename, test_data_filename,
         args += ["-d", str(max_tree_depth)]
     args += [str(train_data_filename), str(train_label_filename), "sklearn.model"]
 
-    result = run_program(PACKAGE_DATA_PATH / "sklearn-train.py", *args, time_file=TIME_FILE, cwd=run_path)
+    result = run_program(PACKAGE_DATA_PATH / "sklearn-train.py", *args, log=True, time_file=TIME_FILE, cwd=run_path)
 
     run_statistics = {}
     for line in result.stdout.split("\n"):

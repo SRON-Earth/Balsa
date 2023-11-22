@@ -18,7 +18,7 @@ def run(run_path, train_data_filename, train_label_filename, test_data_filename,
     args += [str(test_data_filename), str(test_label_filename)]
     args += ["lightgbm.model"]
 
-    result = run_program(PACKAGE_DATA_PATH / "lightgbm-train.py", *args, time_file=TIME_FILE, cwd=run_path)
+    result = run_program(PACKAGE_DATA_PATH / "lightgbm-train.py", *args, log=True, time_file=TIME_FILE, cwd=run_path)
 
     run_statistics = {}
     for line in result.stdout.split("\n"):

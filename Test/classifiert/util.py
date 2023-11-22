@@ -2,12 +2,23 @@ import pathlib
 import subprocess
 
 
-def run_program(program, *args, time_file=None, timeout=None, cwd=None):
+def run_program(program, *args, log=False, time_file=None, timeout=None, cwd=None):
 
+    program = pathlib.Path(program)
     if time_file is not None:
-        result = subprocess.run(["time", "-v", "-o", time_file, program, *args], capture_output=True, text=True, timeout=timeout, cwd=cwd)
+        result = subprocess.run(["time", "-v", "-o", time_file, str(program), *args], capture_output=True, text=True,
+                                timeout=timeout, cwd=cwd)
     else:
-        result = subprocess.run([program, *args], capture_output=True, text=True, timeout=timeout, cwd=cwd)
+        result = subprocess.run([str(program), *args], capture_output=True, text=True, timeout=timeout, cwd=cwd)
+    if log:
+        stdout_filename = f"{program.name}-stdout.txt"
+        stdout_path = stdout_filename if cwd is None else cwd / stdout_filename
+        with open(stdout_path, "w") as outputf:
+            outputf.write(result.stdout)
+        stderr_filename = f"{program.name}-stderr.txt"
+        stderr_path = stderr_filename if cwd is None else cwd / stderr_filename
+        with open(stderr_path, "w") as outputf:
+            outputf.write(result.stderr)
     assert result.returncode == 0, f"Program '{program}' failed with exit code: {result.returncode}"
     return result
 

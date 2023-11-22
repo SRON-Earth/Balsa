@@ -41,7 +41,7 @@ def run(run_path, train_data_filename, train_label_filename, test_data_filename,
     if max_tree_depth is not None:
         args += ["--maxdepth", str(max_tree_depth)]
 
-    run_program("ranger", *args, time_file=TIME_FILE, cwd=run_path)
+    run_program("ranger", *args, log=True, time_file=TIME_FILE, cwd=run_path)
 
     run_statistics = {}
     run_statistics.update(get_statistics_from_time_file(run_path / TIME_FILE))
