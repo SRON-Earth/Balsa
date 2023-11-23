@@ -660,7 +660,6 @@ inline void writeToFile( const Forest &forest, const std::string &filename )
     out.close();
 }
 
-
 /**
  * Read a decision tree from a binary input stream.
  */
@@ -1245,13 +1244,15 @@ public:
 
   /**
    * Constructor.
+   * \param outputFile Name of the model file that will be written.
    * \param dataset A const reference to a training dataset. Modifying the set after construction of the trainer invalidates the trainer.
    * \param concurrentTrainers The maximum number of trees that may be trained concurrently.
    */
-  BinaryRandomForestTrainer( unsigned maxDepth = std::numeric_limits<unsigned int>::max(), unsigned int treeCount = 10, unsigned int concurrentTrainers = 10 ):
+  BinaryRandomForestTrainer( const std::string &outputFile, unsigned maxDepth = std::numeric_limits<unsigned int>::max(), unsigned int treeCount = 10, unsigned int concurrentTrainers = 10 ):
+  m_outputFile( outputFile ),
   m_maxDepth( maxDepth ),
   m_trainerCount( concurrentTrainers ),
-  m_treeCount( treeCount )
+  m_treeCount( treeCount ) 
   {
   }
 
@@ -1263,9 +1264,9 @@ public:
   }
 
   /**
-   * Train a forest of random trees on the data.
+   * Train a forest of random trees on the data. Results will be written to the current output file (see Constructor).
    */
-  Forest::SharedPointer train( TrainingDataSet::ConstSharedPointer dataset )
+  void train( TrainingDataSet::ConstSharedPointer dataset )
   {
       // Build the feature index that is common to all threads.
       FeatureIndex featureIndex( *dataset );
@@ -1289,19 +1290,21 @@ public:
       for ( unsigned int i = 0; i < workers.size(); ++i )
            jobOutbox.send( TrainingJob( *dataset, featureIndex, 0, true ) );
 
-      // Wait for all the trees to come in, and add them to the forest.
-      Forest::SharedPointer forest( new Forest );
+      // Create a forest model file and write the 'f' header marker.
+      std::ofstream out( m_outputFile, std::ios::binary | std::ios::out );
+      out << 'f';
+
+      // Wait for all the trees to come in, and write each tree to a forest file.
+      DecisionTreeWriter writer( out );
       for ( unsigned int i = 0; i < m_treeCount; ++i )
       {
           std::cout << "Tree #" << i << " completed." << std::endl;
-          forest->addTree( treeInbox.receive() );
+          treeInbox.receive()->visit( writer );
       }
+      out.close();
 
       // Wait for all the threads to join.
       for ( auto &worker: workers ) worker.join();
-
-      // Return the trained model.
-      return forest;
   }
 
 private:
@@ -1327,6 +1330,7 @@ private:
       std::cout << "Worker #" << workerID << " finished." << std::endl;
   }
 
+  std::string  m_outputFile  ;
   unsigned int m_maxDepth    ;
   unsigned int m_trainerCount;
   unsigned int m_treeCount   ;

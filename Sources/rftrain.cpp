@@ -123,19 +123,14 @@ int main( int argc, char **argv )
         std::cout << "Building indices..." << std::endl;
         watch.start();
 
-        BinaryRandomForestTrainer trainer( options.maxDepth, options.treeCount, options.threadCount );
+        BinaryRandomForestTrainer trainer( options.outputFile, options.maxDepth, options.treeCount, options.threadCount );
         std::cout <<"Done (" << watch.stop() << " seconds)." << std::endl;
 
         std::cout << "Training..." << std::endl;
         watch.start();
-        Forest::SharedPointer forest = trainer.train( dataSet );
+        trainer.train( dataSet );
         std::cout << "Done (" << watch.stop() << " seconds)." << std::endl;
 
-        // Save the model to a file.
-        std::cout << "Saving model..." << std::endl;
-        watch.start();
-        writeToFile( *forest, options.outputFile );
-        std::cout << "Done (" << watch.stop() << " seconds)." << std::endl;
     }
     catch ( Exception &e )
     {
