@@ -1,5 +1,5 @@
-#ifndef FOO_H
-#define FOO_H
+#ifndef INGESTION_H
+#define INGESTION_H
 
 #include <array>
 #include <cassert>
@@ -8,7 +8,7 @@
 #include <fstream>
 #include <string>
 
-#include "datamodel.h"
+#include "datarepresentation.h"
 
 namespace
 {
@@ -93,4 +93,4 @@ TrainingDataSet::SharedPointer loadTrainingDataSet(const std::string &dataFile, 
     return dataset;
 }
 
-#endif
+#endif // INGESION_H

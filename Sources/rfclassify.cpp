@@ -2,7 +2,7 @@
 
 #include "timing.h"
 #include "exceptions.h"
-#include "datamodel.h"
+#include "decisiontrees.h"
 
 #include <string>
 #include <vector>

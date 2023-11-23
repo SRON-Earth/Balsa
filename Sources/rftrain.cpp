@@ -3,7 +3,7 @@
 
 #include "timing.h"
 #include "exceptions.h"
-#include "datamodel.h"
+#include "randomforesttrainer.h"
 
 #include <string>
 #include <vector>
