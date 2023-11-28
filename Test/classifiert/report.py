@@ -16,13 +16,21 @@ def plot_statistic(statistics, title, y_axis_label, *, key=None, getter_func=dic
 
 def write_report(report_filename, num_threads, statistics):
 
-    plot_statistic(statistics, f"CPU Time :: {num_threads} thread(s)", "CPU Time (s)",
-                   getter_func=lambda d, _: d["user_time"] + d["system_time"])
-    plot_statistic(statistics, f"Maximum RSS :: {num_threads} thread(s)", "Maximum RSS (GB)",
-                   getter_func=lambda d, _: d["max_rss"] / 1_000_000)
-    plot_statistic(statistics, f"Accuracy", "Accuracy (%)", key="accuracy")
-    plot_statistic(statistics, f"Maximum node count", "No. of nodes", key="node_count")
-    plot_statistic(statistics, f"Maximum tree depth", "Levels", key="depth")
+    plot_statistic(statistics, f"CPU Time (Train) :: {num_threads} thread(s)", "CPU Time (s)",
+                   getter_func=lambda d, _: d["train-user-time"] + d["train-system-time"])
+    plot_statistic(statistics, f"Maximum RSS (Train) :: {num_threads} thread(s)", "Maximum RSS (GB)",
+                   getter_func=lambda d, _: d["train-max-rss"] / 1_000_000)
+    plot_statistic(statistics, f"Maximum node count", "No. of nodes", key="train-max-node-count")
+    plot_statistic(statistics, f"Maximum tree depth", "Levels", key="train-max-tree-depth")
+
+    plot_statistic(statistics, f"CPU Time (Test) :: {num_threads} thread(s)", "CPU Time (s)",
+                   getter_func=lambda d, _: d["test-user-time"] + d["test-system-time"])
+    plot_statistic(statistics, f"Maximum RSS (Test) :: {num_threads} thread(s)", "Maximum RSS (GB)",
+                   getter_func=lambda d, _: d["test-max-rss"] / 1_000_000)
+    plot_statistic(statistics, f"Accuracy", "Accuracy", key="test-accuracy")
+    plot_statistic(statistics, f"Precision", "Precision", key="test-precision")
+    plot_statistic(statistics, f"Recall", "Recall", key="test-recall")
+    plot_statistic(statistics, f"P4-metric", "P4-metric", key="test-P4-metric")
 
     from matplotlib.backends.backend_pdf import PdfPages
     report = PdfPages(report_filename)

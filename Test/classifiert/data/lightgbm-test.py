@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 
 import argparse
+import lightgbm as lgb
 import numpy as np
-import pickle
-import sys
 
 
 def load_dataset_bin(filename):
@@ -32,17 +31,15 @@ def store_dataset_bin(filename, data):
 
 def main(model_filename, data_filename, label_filename):
 
-    with open(model_filename, "rb") as inf:
-        random_forest = pickle.load(inf)
-
+    model = lgb.Booster(model_file=model_filename)
     data_points = load_dataset_bin(data_filename)
-    predicted_labels = random_forest.predict(data_points)
+    predicted_labels = np.round(model.predict(np.asarray(data_points)))
     store_dataset_bin(label_filename, predicted_labels.astype(np.float32))
 
 
 def parse_command_line_arguments():
 
-    parser = argparse.ArgumentParser(description="Classify data using a pre-trained sklearn classifier.")
+    parser = argparse.ArgumentParser(description="Classify data using a pre-trained LightGBM classifier.")
     parser.add_argument("model_filename", metavar="MODEL_INPUT_FILE")
     parser.add_argument("data_filename", metavar="DATA_INPUT_FILE")
     parser.add_argument("label_filename", metavar="LABEL_OUTPUT_FILE")

@@ -125,10 +125,9 @@ def load_lgb_dataset(data_filename, label_filename):
 # # output model file
 # output_model = LightGBM_model.txt
 
-def main(train_data_filename, train_label_filename, test_data_filename, test_label_filename,
-         model_filename, num_estimators, max_tree_depth, num_threads):
+def main(data_filename, label_filename, model_filename, num_estimators, max_tree_depth, num_threads):
 
-    train_set = load_lgb_dataset(train_data_filename, train_label_filename)
+    train_set = load_lgb_dataset(data_filename, label_filename)
 
     params = {
         "boosting_type": "gbdt",
@@ -148,30 +147,6 @@ def main(train_data_filename, train_label_filename, test_data_filename, test_lab
     model = lgb.train(params, train_set)
     model.save_model(model_filename)
 
-    # model = lgb.LGBMClassifier(learning_rate=0.09,colsample_bytree=np.sqrt(len(data_points))/len(data_points), num_leaves=1024)
-    # model = lgb.LGBMClassifier(boosting_type="dart",learning_rate=0.4,num_leaves=4096)
-    # model.fit(train_data_points, train_labels, eval_metric='logloss')
-
-    # print(dir(random_forest))
-    # print(dir(random_forest.estimators_))
-    # print(len(random_forest.estimators_))
-    # print(random_forest.estimators_[0].get_depth())
-    # print(dir(random_forest.estimators_[0]))
-    # print(dir(random_forest.estimators_[0].tree_.node_count))
-    # # print("Nodes", random_forest.tree_.node_count)
-
-    # print("max-tree-depth", max([estimator.get_depth() for estimator in random_forest.estimators_]))
-    # print("max-node-count", max([estimator.tree_.node_count for estimator in random_forest.estimators_]))
-
-    # print("train-accuracy {:.4f}".format(model.score(train_data_points, train_labels)))
-    # print("test-accuracy {:.4f}".format(model.score(test_data_points, test_labels)))
-
-    test_data = load_dataset_bin(test_data_filename)
-    labels = load_dataset_bin(test_label_filename)
-    predicted_labels = np.round(model.predict(np.asarray(test_data)))
-    accuracy = 1.0 - np.sum(np.asarray(predicted_labels) != np.asarray(labels)) / len(labels)
-    print(f"test-accuracy {accuracy:.4f}")
-
 
 def parse_command_line_arguments():
 
@@ -182,10 +157,8 @@ def parse_command_line_arguments():
         return value
 
     parser = argparse.ArgumentParser(description="Train a LightGBM classifier.")
-    parser.add_argument("train_data_filename", metavar="TRAIN_DATA_FILE")
-    parser.add_argument("train_label_filename", metavar="TRAIN_LABEL_FILE")
-    parser.add_argument("test_data_filename", metavar="TEST_DATA_FILE")
-    parser.add_argument("test_label_filename", metavar="TEST_LABEL_FILE")
+    parser.add_argument("data_filename", metavar="DATA_INPUT_FILE")
+    parser.add_argument("label_filename", metavar="LABEL_INPUT_FILE")
     parser.add_argument("model_filename", metavar="MODEL_OUTPUT_FILE")
     parser.add_argument("-d", "--max-tree-depth", type=positive_integer)
     parser.add_argument("-e", "--num-estimators", type=positive_integer, default="150")
