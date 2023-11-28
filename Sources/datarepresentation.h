@@ -1,6 +1,8 @@
 #ifndef DATAREPRESENTATION_H
 #define DATAREPRESENTATION_H
 
+#include <cassert>
+#include <memory>
 #include <string>
 #include <vector>
 

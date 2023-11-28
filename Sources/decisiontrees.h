@@ -1,6 +1,7 @@
 #ifndef DECISIONTREES_H
 #define DECISIONTREES_H
 
+#include <cassert>
 #include <iostream>
 #include <fstream>
 #include <iomanip>

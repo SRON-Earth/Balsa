@@ -2,6 +2,7 @@
 #include "utilities.h"
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 
 namespace

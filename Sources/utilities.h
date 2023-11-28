@@ -1,6 +1,7 @@
 #ifndef UTILITIES_H
 #define UTILITIES_H
 
+#include <algorithm>
 #include <tuple>
 #include <vector>
 #include <iostream>
