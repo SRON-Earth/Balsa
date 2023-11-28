@@ -8,7 +8,7 @@ def plot_statistic(statistics, title, y_axis_label, *, key=None, getter_func=dic
     plt.xlabel("No. of samples")
     plt.ylabel(y_axis_label)
     for classifier_name, classifier_statistics in statistics.items():
-        x_values = [run_statistics["train_data_size"] for run_statistics in classifier_statistics]
+        x_values = [run_statistics["data_size"] for run_statistics in classifier_statistics]
         y_values = [getter_func(run_statistics, key) for run_statistics in classifier_statistics]
         plt.plot(x_values, y_values, linestyle="-", marker=".", label=classifier_name)
     plt.legend()

@@ -5,16 +5,21 @@ import sys
 
 from .        import CLASSIFIERS
 from .        import runners
-from .datagen import get_dataset_filenames, generate_datasets
+from .datagen import get_train_dataset_filenames, get_test_dataset_filenames, \
+                     generate_train_datasets, ingest_test_dataset
 from .report  import write_report
 
 RUN_DIR = pathlib.Path("run")
 
 
-def app_main(classifiers, data_sizes, test_percentage, num_estimators, max_tree_depth, num_threads, timeout, use_cache):
+def app_main(train_data_filename, test_data_filename, classifiers, data_sizes,
+             num_estimators, max_tree_depth, num_threads, timeout, use_cache):
 
-    print("\033[35m" + f"Generating datasets..." + "\033[0m")
-    generate_datasets(data_sizes, test_percentage, use_cache=use_cache)
+    print("\033[35m" + f"Generating train datasets..." + "\033[0m")
+    generate_train_datasets(train_data_filename, data_sizes, use_cache=use_cache)
+
+    print("\033[35m" + f"Ingesting test dataset..." + "\033[0m")
+    ingest_test_dataset(test_data_filename)
 
     run_path = RUN_DIR / datetime.datetime.now().isoformat()
     run_path.mkdir()
@@ -34,11 +39,10 @@ def app_main(classifiers, data_sizes, test_percentage, num_estimators, max_tree_
 
         for data_size in data_sizes:
             print("\033[32m" + str(data_size) + "\033[0m")
-            train_data_filename, train_label_filename, test_data_filename, test_label_filename = \
-                get_dataset_filenames(data_size, test_percentage, data_format)
-            test_size = 2 * round(data_size // 2 * test_percentage / 100)
-            training_size = data_size - test_size
-            run_statistics = {"data_size": data_size, "train_data_size": training_size, "test_data_size": test_size}
+            train_data_filename, train_label_filename = get_train_dataset_filenames(data_size, data_format)
+            test_data_filename, test_label_filename = get_test_dataset_filenames(data_format)
+
+            run_statistics = {"data_size": data_size}
             test_run_path = classifier_run_path / str(data_size)
             test_run_path.mkdir()
             try:
@@ -74,14 +78,16 @@ def parse_command_line_arguments():
         return list(sorted([int(value) for value in text.split(",")]))
 
     parser = argparse.ArgumentParser(prog="classifiert", description="Tool to test random forest classifiers.")
+    parser.add_argument("train_data_filename", metavar="TRAIN_DATA_FILE")
+    parser.add_argument("test_data_filename", metavar="TEST_DATA_FILE")
     parser.add_argument("classifiers", metavar="CLASSIFIER", choices=CLASSIFIERS.keys(), nargs="+")
     parser.add_argument("-n", "--data-sizes", type=data_size_list, default="100,1000,2500,5000,10_000,25_000,50_000")
-    parser.add_argument("-p", "--test-percentage", type=percentage, default="20")
     parser.add_argument("-d", "--max-tree-depth", type=positive_integer, default="50")
     parser.add_argument("-e", "--num-estimators", type=positive_integer, default="150")
     parser.add_argument("-t", "--num-threads", type=positive_integer, default="1")
     parser.add_argument("-x", "--timeout", type=positive_integer, default=None)
     parser.add_argument("-C", "--no-cache", dest="use_cache", action="store_false")
+
     return parser.parse_args()
 
 
