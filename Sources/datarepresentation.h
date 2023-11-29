@@ -2,6 +2,7 @@
 #define DATAREPRESENTATION_H
 
 #include <cassert>
+#include <iostream>
 #include <memory>
 #include <string>
 #include <vector>
