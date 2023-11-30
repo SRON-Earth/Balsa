@@ -1,3 +1,3 @@
-add_executable( rftrain rftrain.cpp trainers.cpp utilities.cpp )
+add_executable( rftrain rftrain.cpp ingestion.cpp trainers.cpp utilities.cpp )
 
-add_executable( rfclassify rfclassify.cpp )
+add_executable( rfclassify rfclassify.cpp ingestion.cpp )

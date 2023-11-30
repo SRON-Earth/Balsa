@@ -75,14 +75,14 @@ int main( int argc, char **argv )
         StopWatch watch;
         std::cout << "Loading model.." << std::endl;
         watch.start();
-        Forest forest = loadForest( options.modelFile );
+        Forest::SharedPointer forest = loadForest( options.modelFile );
         std::cout << "Done." << std::endl;
         const auto modelLoadTime = watch.getElapsedTime();
 
         // Print model info.
         std::cout << "Model Statistics:" << std::endl
-                  << "Maximum Node Count: " << forest.getMaximumNodeCount() << std::endl
-                  << "Maximum Depth     : " << forest.getMaximumDepth    () << std::endl;
+                  << "Maximum Node Count: " << forest->getMaximumNodeCount() << std::endl
+                  << "Maximum Depth     : " << forest->getMaximumDepth    () << std::endl;
 
         // Load the data.
         std::cout << "Ingesting data..." << std::endl;
@@ -93,7 +93,7 @@ int main( int argc, char **argv )
 
         // Classify the data points.
         watch.start();
-        std::vector<bool> labels = forest.classify( *dataSet );
+        std::vector<bool> labels = forest->classify( *dataSet );
         watch.stop();
         const auto classificationTime = watch.getElapsedTime();
 

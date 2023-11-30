@@ -76,8 +76,8 @@ public:
       FeatureIndex featureIndex( *dataset );
 
       // Create message queues for communicating with the worker threads.
-      MessageQueue<TrainingJob                    > jobOutbox;
-      MessageQueue<DecisionTreeNode::SharedPointer> treeInbox;
+      MessageQueue<TrainingJob                > jobOutbox;
+      MessageQueue<DecisionTree::SharedPointer> treeInbox;
 
       // Start the worker threads.
       std::vector<std::thread> workers;
@@ -99,11 +99,10 @@ public:
       out << 'f';
 
       // Wait for all the trees to come in, and write each tree to a forest file.
-      DecisionTreeWriter writer( out );
       for ( unsigned int i = 0; i < m_treeCount; ++i )
       {
           std::cout << "Tree #" << i << " completed." << std::endl;
-          treeInbox.receive()->visit( writer );
+          writeDecisionTree( out, *treeInbox.receive() );
       }
       out.close();
 
@@ -113,7 +112,7 @@ public:
 
 private:
 
-  static void workerThread( unsigned int workerID, MessageQueue<TrainingJob> *jobInbox, MessageQueue<DecisionTreeNode::SharedPointer> *treeOutbox )
+  static void workerThread( unsigned int workerID, MessageQueue<TrainingJob> *jobInbox, MessageQueue<DecisionTree::SharedPointer> *treeOutbox )
   {
       // Train trees until it is time to stop.
       unsigned int jobsPickedUp = 0;

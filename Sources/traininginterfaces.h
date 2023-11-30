@@ -37,7 +37,7 @@ public:
   /**
    * Train a tree on the provided dataset.
    */
-  virtual DecisionTreeNode::SharedPointer train( const FeatureIndex &featureIndex, const TrainingDataSet &dataSet ) = 0;
+  virtual DecisionTree::SharedPointer train( const FeatureIndex &featureIndex, const TrainingDataSet &dataSet ) = 0;
 
 protected:
 

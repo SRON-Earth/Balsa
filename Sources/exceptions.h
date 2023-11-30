@@ -56,6 +56,8 @@ public:
  */
 class SupplierError: public Exception
 {
+public:
+
     SupplierError( const std::string &message ):
     Exception( message )
     {

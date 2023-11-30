@@ -109,18 +109,12 @@ namespace
     /**
      * Returns a stripped, non-training decision tree.
      */
-    DecisionTreeNode::SharedPointer finalize()
+    DecisionTree::SharedPointer finalize()
     {
-        // Build an internal node or a leaf node.
-        if ( m_leftChild )
-        {
-            assert( m_rightChild );
-            return DecisionTreeNode::SharedPointer( new DecisionTreeInternalNode( m_splitFeatureID, m_splitValue, m_leftChild->finalize(), m_rightChild->finalize() ) );
-        }
-        else
-        {
-            return DecisionTreeNode::SharedPointer( new DecisionTreeLeafNode( getLabel() ) );
-        }
+        DecisionTree::SharedPointer tree( new DecisionTree() );
+        tree->addNode( DecisionTreeNode() );
+        finalize( tree, 0 );
+        return tree;
     }
 
     /**
@@ -281,6 +275,32 @@ namespace
 
   private:
 
+    void finalize( DecisionTree::SharedPointer tree, unsigned int nodeID )
+    {
+        // Build an internal node or a leaf node.
+        if ( m_leftChild )
+        {
+            assert( m_rightChild );
+
+            const unsigned int leftChildID = tree->addNode( DecisionTreeNode() );
+            const unsigned int rightChildID = tree->addNode( DecisionTreeNode() );
+
+            DecisionTreeNode & node = tree->getNode( nodeID );
+            node.leftChildID = leftChildID;
+            node.rightChildID = rightChildID;
+            node.featureID = m_splitFeatureID;
+            node.splitValue = m_splitValue;
+
+            m_leftChild->finalize( tree, leftChildID );
+            m_rightChild->finalize( tree, rightChildID );
+        }
+        else
+        {
+            DecisionTreeNode & node = tree->getNode( nodeID );
+            node.label = getLabel();
+        }
+    }
+
     bool isLeftChild( const Mark1TrainingTreeNode *node ) const
     {
         return m_leftChild.get() == node;
@@ -310,7 +330,7 @@ namespace
   };
 }
 
-DecisionTreeNode::SharedPointer SingleTreeTrainerMark1::train( const FeatureIndex &featureIndex, const TrainingDataSet &dataSet )
+DecisionTree::SharedPointer SingleTreeTrainerMark1::train( const FeatureIndex &featureIndex, const TrainingDataSet &dataSet )
 {
     // Create an empty training tree.
     Mark1TrainingTreeNode root;
