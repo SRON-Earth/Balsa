@@ -76,7 +76,8 @@ int main( int argc, char **argv )
         std::cout << "Loading model.." << std::endl;
         watch.start();
         Forest forest = loadForest( options.modelFile );
-        std::cout << "Done (" << watch.stop() << " seconds)." << std::endl;
+        std::cout << "Done." << std::endl;
+        const auto modelLoadTime = watch.getElapsedTime();
 
         // Print model info.
         std::cout << "Model Statistics:" << std::endl
@@ -87,13 +88,26 @@ int main( int argc, char **argv )
         std::cout << "Ingesting data..." << std::endl;
         watch.start();
         auto dataSet = loadDataSet( options.dataPointFile );
-        std::cout << "Dataset loaded: " << dataSet->size() << " points. (" << watch.stop() << " seconds)." << std::endl;
+        std::cout << "Dataset loaded: " << dataSet->size() << " points." << std::endl;
+        const auto dataLoadTime = watch.getElapsedTime();
 
         // Classify the data points.
+        watch.start();
         std::vector<bool> labels = forest.classify( *dataSet );
+        watch.stop();
+        const auto classificationTime = watch.getElapsedTime();
 
         // Store the labels.
+        watch.start();
         writeLabels( labels, options.outputFile );
+        watch.stop();
+        const auto labelStoreTime = watch.getElapsedTime();
+
+        std::cout << "Timings:" << std::endl
+                  << "Model Load Time: " << modelLoadTime << std::endl
+                  << "Data Load Time: " << dataLoadTime << std::endl
+                  << "Classification Time: " << classificationTime << std::endl
+                  << "Label Store Time: " << labelStoreTime << std::endl;
     }
     catch ( Exception &e )
     {

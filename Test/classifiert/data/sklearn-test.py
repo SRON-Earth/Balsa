@@ -4,6 +4,7 @@ import argparse
 import numpy as np
 import pickle
 import sys
+import time
 
 
 def load_dataset_bin(filename):
@@ -32,12 +33,31 @@ def store_dataset_bin(filename, data):
 
 def main(model_filename, data_filename, label_filename):
 
+    start_time = time.time()
     with open(model_filename, "rb") as inf:
         random_forest = pickle.load(inf)
+    end_time = time.time()
+    model_load_time = end_time - start_time
 
+    start_time = time.time()
     data_points = load_dataset_bin(data_filename)
+    end_time = time.time()
+    data_load_time = end_time - start_time
+
+    start_time = time.time()
     predicted_labels = random_forest.predict(data_points)
+    end_time = time.time()
+    classification_time = end_time - start_time
+
+    start_time = time.time()
     store_dataset_bin(label_filename, predicted_labels.astype(np.float32))
+    end_time = time.time()
+    label_store_time = end_time - start_time
+
+    print("Model Load Time: ", model_load_time)
+    print("Data Load Time: ", data_load_time)
+    print("Classification Time: ", classification_time)
+    print("Label Store Time:", label_store_time)
 
 
 def parse_command_line_arguments():

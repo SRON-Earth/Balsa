@@ -23,6 +23,14 @@ def run(run_path, train_data_filename, train_label_filename, test_data_filename,
             run_statistics["train-max-tree-depth"] = int(line.split()[-1])
         if "Maximum Node Count" in line:
             run_statistics["train-max-node-count"] = int(line.split()[-1])
+        if "Model Load Time:" in line:
+            run_statistics["test-model-load-time"] = float(line.split()[-1])
+        if "Data Load Time:" in line:
+            run_statistics["test-data-load-time"] = float(line.split()[-1])
+        if "Classification Time:" in line:
+            run_statistics["test-classification-time"] = float(line.split()[-1])
+        if "Label Store Time:" in line:
+            run_statistics["test-label-store-time"] = float(line.split()[-1])
 
     labels = load_dataset_bin(test_label_filename)
     predicted_labels = load_dataset_bin(run_path / "labels.bin")

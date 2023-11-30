@@ -3,6 +3,7 @@
 import argparse
 import lightgbm as lgb
 import numpy as np
+import time
 
 
 def load_dataset_bin(filename):
@@ -31,10 +32,30 @@ def store_dataset_bin(filename, data):
 
 def main(model_filename, data_filename, label_filename):
 
+    start_time = time.time()
     model = lgb.Booster(model_file=model_filename)
+    end_time = time.time()
+    model_load_time = end_time - start_time
+
+    start_time = time.time()
     data_points = load_dataset_bin(data_filename)
+    end_time = time.time()
+    data_load_time = end_time - start_time
+
+    start_time = time.time()
     predicted_labels = np.round(model.predict(np.asarray(data_points)))
+    end_time = time.time()
+    classification_time = end_time - start_time
+
+    start_time = time.time()
     store_dataset_bin(label_filename, predicted_labels.astype(np.float32))
+    end_time = time.time()
+    label_store_time = end_time - start_time
+
+    print("Model Load Time: ", model_load_time)
+    print("Data Load Time: ", data_load_time)
+    print("Classification Time: ", classification_time)
+    print("Label Store Time:", label_store_time)
 
 
 def parse_command_line_arguments():

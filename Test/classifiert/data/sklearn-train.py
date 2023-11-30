@@ -35,8 +35,8 @@ def main(data_filename, label_filename, model_filename, num_estimators, max_tree
                                            bootstrap=False)
     random_forest.fit(data_points, labels)
 
-    print("max-tree-depth", max([estimator.get_depth() for estimator in random_forest.estimators_]))
-    print("max-node-count", max([estimator.tree_.node_count for estimator in random_forest.estimators_]))
+    print("Maximum Depth:", max([estimator.get_depth() for estimator in random_forest.estimators_]))
+    print("Maximum Node Count:", max([estimator.tree_.node_count for estimator in random_forest.estimators_]))
 
     with open(model_filename, "wb") as outf:
         pickle.dump(random_forest, outf)

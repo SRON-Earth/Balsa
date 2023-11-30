@@ -38,6 +38,10 @@ def get_statistics_from_time_file(time_file, *, target_dict=None, key_prefix="")
             target_dict[rekey("user-time")] = float(line.split()[-1])
         elif "System time" in line:
             target_dict[rekey("system-time")] = float(line.split()[-1])
+        elif "Percent of CPU" in line:
+            text = line.split()[-1]
+            assert text[-1] == "%"
+            target_dict[rekey("percent-cpu")] = float(text[:-1])
         elif "Maximum resident set size" in line:
             target_dict[rekey("max-rss")] = int(line.split()[-1])
 

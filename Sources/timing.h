@@ -11,7 +11,7 @@ class StopWatch
   public:
 
     typedef std::chrono::time_point<std::chrono::system_clock> Timestamp;
-    typedef unsigned int Seconds;
+    typedef double Seconds;
 
     StopWatch():
     m_running( false ),
@@ -51,7 +51,7 @@ class StopWatch
     Seconds getElapsedTime() const
     {
         auto end = m_running ? std::chrono::system_clock::now() : m_end;
-        return std::chrono::duration_cast<std::chrono::seconds>( end - m_start ).count();
+        return std::chrono::duration<double>( end - m_start ).count();
     }
 
   private:
