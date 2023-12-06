@@ -16,6 +16,7 @@
 #include "datarepresentation.h"
 #include "decisiontrees.h"
 #include "trainers.h"
+#include "trainermark2.h"
 #include "utilities.h"
 #include "messagequeue.h"
 
@@ -52,11 +53,12 @@ public:
    * \param dataset A const reference to a training dataset. Modifying the set after construction of the trainer invalidates the trainer.
    * \param concurrentTrainers The maximum number of trees that may be trained concurrently.
    */
-  BinaryRandomForestTrainer( const std::string &outputFile, unsigned maxDepth = std::numeric_limits<unsigned int>::max(), unsigned int treeCount = 10, unsigned int concurrentTrainers = 10 ):
+  BinaryRandomForestTrainer( const std::string &outputFile, unsigned maxDepth = std::numeric_limits<unsigned int>::max(), unsigned int treeCount = 10, unsigned int concurrentTrainers = 10, bool v2 = false ):
   m_outputFile( outputFile ),
   m_maxDepth( maxDepth ),
   m_trainerCount( concurrentTrainers ),
-  m_treeCount( treeCount ) 
+  m_treeCount( treeCount ),
+  m_v2( v2 )
   {
   }
 
@@ -83,7 +85,7 @@ public:
       std::vector<std::thread> workers;
       for ( unsigned int i = 0; i < m_trainerCount; ++i )
       {
-          workers.push_back( std::thread( &BinaryRandomForestTrainer::workerThread, i, &jobOutbox, &treeInbox ) );
+          workers.push_back( std::thread( &BinaryRandomForestTrainer::workerThread, i, &jobOutbox, &treeInbox, m_v2 ) );
       }
 
       // Create jobs for all trees.
@@ -112,7 +114,7 @@ public:
 
 private:
 
-  static void workerThread( unsigned int workerID, MessageQueue<TrainingJob> *jobInbox, MessageQueue<DecisionTree::SharedPointer> *treeOutbox )
+  static void workerThread( unsigned int workerID, MessageQueue<TrainingJob> *jobInbox, MessageQueue<DecisionTree::SharedPointer> *treeOutbox, bool v2 )
   {
       // Train trees until it is time to stop.
       unsigned int jobsPickedUp = 0;
@@ -122,11 +124,19 @@ private:
           TrainingJob job = jobInbox->receive();
           if ( job.stop ) break;
           ++jobsPickedUp;
-          std::cout << "Worker #" << workerID << ": job " << jobsPickedUp << " picked up." << std::endl;
+          std::cout << "Worker (" << (v2 ? "V2" : "V1") << ") #" << workerID << ": job " << jobsPickedUp << " picked up." << std::endl;
 
           // Train a tree and send it to the main thread.
-          SingleTreeTrainerMark1 trainer( job.maxDepth );
-          treeOutbox->send( trainer.train( job.featureIndex, job.dataSet ) );
+          if ( v2 )
+          {
+              SingleTreeTrainerMark2 trainer( job.maxDepth );
+              treeOutbox->send( trainer.train( job.featureIndex, job.dataSet ) );
+          }
+          else
+          {
+              SingleTreeTrainerMark1 trainer( job.maxDepth );
+              treeOutbox->send( trainer.train( job.featureIndex, job.dataSet ) );
+          }
           std::cout << "Worker #" << workerID << ": job " << jobsPickedUp << " finished." << std::endl;
       }
 
@@ -137,6 +147,8 @@ private:
   unsigned int m_maxDepth    ;
   unsigned int m_trainerCount;
   unsigned int m_treeCount   ;
+  bool         m_v2          ;
+
 };
 
 #endif // DATAMODEL_H

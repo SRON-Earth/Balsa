@@ -12,11 +12,12 @@
 
 struct DecisionTreeNode
 {
-    unsigned int leftChildID ;
-    unsigned int rightChildID;
-    unsigned int featureID   ;
-    double       splitValue  ;
-    bool         label       ;
+    // DecisionTreeNode() : leftChildID(0), rightChildID(0), splitFeatureID(0), splitValue(0.0), label(false) {}
+    unsigned int leftChildID   ;
+    unsigned int rightChildID  ;
+    unsigned int splitFeatureID;
+    double       splitValue    ;
+    bool         label         ;
 };
 
 inline bool isLeafNode( const DecisionTreeNode & node )
@@ -35,11 +36,11 @@ T read( std::istream & stream )
 inline DecisionTreeNode readDecisionTreeNode( std::istream & in )
 {
     DecisionTreeNode node;
-    node.leftChildID  = read<std::uint32_t>( in );
-    node.rightChildID = read<std::uint32_t>( in );
-    node.featureID    = read<std::uint32_t>( in );
-    node.splitValue   = read<double       >( in );
-    node.label        = read<bool         >( in );
+    node.leftChildID    = read<std::uint32_t>( in );
+    node.rightChildID   = read<std::uint32_t>( in );
+    node.splitFeatureID = read<std::uint32_t>( in );
+    node.splitValue     = read<double       >( in );
+    node.label          = read<bool         >( in );
     return node;
 }
 
@@ -51,11 +52,11 @@ void write( std::ostream & os, const T & value )
 
 inline void writeDecisionTreeNode( std::ostream & os, const DecisionTreeNode & node )
 {
-    write<std::uint32_t>( os, node.leftChildID );
-    write<std::uint32_t>( os, node.rightChildID);
-    write<std::uint32_t>( os, node.featureID   );
-    write<double       >( os, node.splitValue  );
-    write<bool         >( os, node.label       );
+    write<std::uint32_t>( os, node.leftChildID    );
+    write<std::uint32_t>( os, node.rightChildID   );
+    write<std::uint32_t>( os, node.splitFeatureID );
+    write<double       >( os, node.splitValue     );
+    write<bool         >( os, node.label          );
 }
 
 class DecisionTree
@@ -65,6 +66,11 @@ public:
   typedef std::shared_ptr <      DecisionTree> SharedPointer     ;
   typedef std::shared_ptr <const DecisionTree> ConstSharedPointer;
   typedef std::vector<DecisionTreeNode>::const_iterator ConstIterator;
+
+  DecisionTree( std::size_t reservation = 0 )
+  {
+      m_nodes.reserve( reservation );
+  }
 
   ConstIterator begin() const
   {
@@ -92,12 +98,12 @@ public:
       return getDepth( 0 );
   }
 
-  DecisionTreeNode & getNode( unsigned int nodeID )
+  inline DecisionTreeNode & getNode( unsigned int nodeID )
   {
       return m_nodes.at( nodeID );
   }
 
-  const DecisionTreeNode & getNode( unsigned int nodeID ) const
+  inline const DecisionTreeNode & getNode( unsigned int nodeID ) const
   {
       return m_nodes.at( nodeID );
   }
@@ -115,7 +121,7 @@ public:
 
   void dump( unsigned int indent = 0 ) const
   {
-      dump( 0, indent );
+      dump( indent, 0 );
   }
 
 private:
@@ -125,20 +131,34 @@ private:
       auto tab = std::string( indent, ' ' );
 
       const DecisionTreeNode & node = getNode( nodeID );
+      std::cout << tab << "Node #" << nodeID << ", feature #" << node.splitFeatureID
+                << ", split value = " << std::setprecision( 17 )
+                << node.splitValue << ", label = "
+                << ( node.label ? "TRUE" : "FALSE" ) << std::endl;
       if (node.leftChildID || node.rightChildID)
       {
           // Internal node.
-          std::cout << tab << "Feature #" << node.featureID << ", split value = " << std::setprecision( 17 ) << node.splitValue << std::endl;
           std::cout << tab << "Left:" << std::endl;
-          dump( node.leftChildID, indent + 1 );
+          dump( indent + 1, node.leftChildID );
           std::cout << tab << "Right:" << std::endl;
-          dump( node.rightChildID, indent + 1 );
+          dump( indent + 1, node.rightChildID );
       }
-      else
-      {
-          // Lead node.
-          std::cout << tab << ( node.label ? "TRUE" : "FALSE" ) << std::endl;
-      }
+      // if (node.leftChildID || node.rightChildID)
+      // {
+      //     // Internal node.
+      //     std::cout << tab << "Feature #" << node.splitFeatureID
+      //               << ", split value = " << std::setprecision( 17 )
+      //               << node.splitValue << std::endl;
+      //     std::cout << tab << "Left:" << std::endl;
+      //     dump( indent + 1, node.leftChildID );
+      //     std::cout << tab << "Right:" << std::endl;
+      //     dump( indent + 1, node.rightChildID );
+      // }
+      // else
+      // {
+      //     // Leaf node.
+      //     std::cout << tab << ( node.label ? "TRUE" : "FALSE" ) << std::endl;
+      // }
   }
 
   bool classify( const DataSet &dataSet, DataPointID pointID, unsigned int nodeID ) const
@@ -148,7 +168,7 @@ private:
       if (node.leftChildID || node.rightChildID)
       {
           // Internal node
-          if ( dataSet.getFeatureValue( pointID, node.featureID ) < node.splitValue )
+          if ( dataSet.getFeatureValue( pointID, node.splitFeatureID ) < node.splitValue )
               return classify( dataSet, pointID, node.leftChildID );
           return classify( dataSet, pointID, node.rightChildID );
       }

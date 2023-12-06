@@ -112,8 +112,9 @@ namespace
     DecisionTree::SharedPointer finalize()
     {
         DecisionTree::SharedPointer tree( new DecisionTree() );
-        tree->addNode( DecisionTreeNode() );
-        finalize( tree, 0 );
+        unsigned int targetDepth = 0;
+        while ( finalize( *tree, targetDepth ) )
+            ++targetDepth;
         return tree;
     }
 
@@ -275,30 +276,59 @@ namespace
 
   private:
 
-    void finalize( DecisionTree::SharedPointer tree, unsigned int nodeID )
+    bool finalize( DecisionTree & tree, unsigned int targetDepth, unsigned int depth = 0, unsigned int parentNodeID = 0 )
     {
-        // Build an internal node or a leaf node.
-        if ( m_leftChild )
+        const bool isInternalNode = static_cast<bool>( m_leftChild );
+        assert( !isInternalNode || m_rightChild );
+
+        if ( depth == targetDepth )
         {
-            assert( m_rightChild );
+            // Add node.
+            const unsigned int nodeID = tree.addNode( DecisionTreeNode() );
 
-            const unsigned int leftChildID = tree->addNode( DecisionTreeNode() );
-            const unsigned int rightChildID = tree->addNode( DecisionTreeNode() );
+            // Copy node attributes.
+            DecisionTreeNode & node = tree.getNode( nodeID );
+            if ( isInternalNode )
+            {
+                node.splitFeatureID = m_splitFeatureID;
+                node.splitValue = m_splitValue;
+            }
+            else
+            {
+                node.label = getLabel();
+            }
 
-            DecisionTreeNode & node = tree->getNode( nodeID );
-            node.leftChildID = leftChildID;
-            node.rightChildID = rightChildID;
-            node.featureID = m_splitFeatureID;
-            node.splitValue = m_splitValue;
+            // Register child node with its parent.
+            if ( m_parent )
+            {
+                DecisionTreeNode & parentNode = tree.getNode( parentNodeID );
+                if ( m_parent->isLeftChild( this ) )
+                    parentNode.leftChildID = nodeID;
+                else
+                    parentNode.rightChildID = nodeID;
+            }
 
-            m_leftChild->finalize( tree, leftChildID );
-            m_rightChild->finalize( tree, rightChildID );
+            return isInternalNode;
         }
-        else
+
+        if ( isInternalNode )
         {
-            DecisionTreeNode & node = tree->getNode( nodeID );
-            node.label = getLabel();
+            assert( parentNodeID == 0 || depth > 0 );
+
+            if ( m_parent )
+            {
+                DecisionTreeNode & parentNode = tree.getNode( parentNodeID );
+                parentNodeID = m_parent->isLeftChild( this ) ? parentNode.leftChildID : parentNode.rightChildID;
+            }
+
+            const bool leftContinue  = m_leftChild ->finalize( tree, targetDepth, depth + 1, parentNodeID );
+            const bool rightContinue = m_rightChild->finalize( tree, targetDepth, depth + 1, parentNodeID );
+
+            return leftContinue || rightContinue;
         }
+
+        // Leaf node.
+        return false;
     }
 
     bool isLeftChild( const Mark1TrainingTreeNode *node ) const

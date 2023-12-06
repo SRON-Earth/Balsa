@@ -21,7 +21,8 @@ namespace
     Options():
     maxDepth   ( std::numeric_limits<unsigned int>::max() ),
     treeCount  ( 150                                      ),
-    threadCount( 1                                        )
+    threadCount( 1                                        ),
+    v2         ( false                                    )
     {
     }
 
@@ -36,7 +37,8 @@ namespace
            << std::endl
            << "   -t <thread count>: Sets the number of threads (default is 1)."     << std::endl
            << "   -d <max depth>   : Sets the maximum tree depth (default is +inf)." << std::endl
-           << "   -c <tree count>  : Sets the number of trees (default is 150)."     << std::endl;
+           << "   -c <tree count>  : Sets the number of trees (default is 150)."     << std::endl
+           << "   -2               : Use V2 trainer."     << std::endl;
         return ss.str();
     }
 
@@ -71,6 +73,10 @@ namespace
             {
                 if ( !(args >> options.treeCount) ) throw ParseError( "Missing parameter to -c option." );
             }
+            else if ( token == "-2" )
+            {
+                options.v2 = true;
+            }
             else
             {
                 throw ParseError( std::string( "Unknown option: " ) + token );
@@ -93,6 +99,7 @@ namespace
     unsigned int maxDepth   ;
     unsigned int treeCount  ;
     unsigned int threadCount;
+    bool         v2         ;
 
   };
 }
@@ -111,6 +118,7 @@ int main( int argc, char **argv )
         std::cout <<  "Max. Depth : " << options.maxDepth    << std::endl;
         std::cout <<  "Tree Count : " << options.treeCount   << std::endl;
         std::cout <<  "Threads    : " << options.threadCount << std::endl;
+        std::cout <<  "V2         : " << options.v2          << std::endl;
 
         // Load training data set.
         StopWatch watch;
@@ -123,7 +131,7 @@ int main( int argc, char **argv )
         std::cout << "Building indices..." << std::endl;
         watch.start();
 
-        BinaryRandomForestTrainer trainer( options.outputFile, options.maxDepth, options.treeCount, options.threadCount );
+        BinaryRandomForestTrainer trainer( options.outputFile, options.maxDepth, options.treeCount, options.threadCount, options.v2 );
         std::cout <<"Done (" << watch.stop() << " seconds)." << std::endl;
 
         std::cout << "Training..." << std::endl;
