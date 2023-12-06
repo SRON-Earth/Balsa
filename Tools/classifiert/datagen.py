@@ -6,8 +6,7 @@ import struct
 
 jsonpickle.ext.numpy.register_handlers()
 
-RND_GENERATOR = np.random.default_rng()
-CACHE_DIR     = pathlib.Path("cache")
+CACHE_DIR = pathlib.Path("cache")
 
 
 def load_dataset_json(filename):
@@ -91,10 +90,23 @@ def remove_from_cache(data_size):
                 filename.unlink(missing_ok=True)
 
 
-def generate_train_datasets(train_data_filename, data_sizes, use_cache=True):
+def sample_dataset(data_points, labels, data_size, *, random_generator=None, replace=False):
+
+    assert len(data_points) == len(labels)
+
+    if random_generator is None:
+        random_generator = np.random.default_rng()
+
+    assert (data_size <= len(data_points)) or replace
+    index = random_generator.choice(len(data_points), data_size, replace=replace)
+    return data_points[index], labels[index]
+
+
+def generate_train_datasets(train_data_filename, data_sizes, *, use_cache=True, seed=None):
+
+    random_generator = np.random.default_rng(seed)
 
     data_points, labels = None, None
-
     for data_size in data_sizes:
 
         in_cache = is_cached(data_size)
@@ -110,34 +122,18 @@ def generate_train_datasets(train_data_filename, data_sizes, use_cache=True):
 
         remove_from_cache(data_size)
 
-        if data_points is None or labels is None:
+        if data_points is None:
+            assert labels is None
             data_points, labels = load_dataset_json(train_data_filename)
-            with open(train_data_filename) as json_file:
-                data_points, labels = jsonpickle.decode(json_file.read())
             assert np.sum(labels == 0.0) + np.sum(labels == 1.0) == labels.size
 
-        num_data_points, num_features = data_points.shape
-        assert data_size <= num_data_points
-        assert num_data_points % 2 == 0
-        assert data_size % 2 == 0
-
-        index_false = np.flatnonzero(labels == 0)
-        index_true  = np.flatnonzero(labels == 1)
-        assert len(index_false) == len(index_true)
-
-        selected_data_points_false = data_points[RND_GENERATOR.choice(index_false, data_size // 2, replace=False)]
-        selected_data_points_true  = data_points[RND_GENERATOR.choice(index_true , data_size // 2, replace=False)]
-        assert len(selected_data_points_false) == data_size // 2
-        assert len(selected_data_points_true) == data_size // 2
-
-        selected_data_points = np.vstack((selected_data_points_false, selected_data_points_true))
-        selected_labels = np.concatenate((np.zeros(data_size // 2, dtype=np.float32), np.ones(data_size // 2, dtype=np.float32)))
+        new_data_points, new_labels = sample_dataset(data_points, labels, data_size, random_generator=random_generator)
 
         train_data_filename, train_label_filename = get_train_dataset_filenames(data_size, "csv")
-        store_dataset_csv(train_data_filename, selected_data_points, selected_labels)
+        store_dataset_csv(train_data_filename, new_data_points, new_labels)
 
         train_data_filename, train_label_filename = get_train_dataset_filenames(data_size, "bin")
-        store_dataset_bin(train_data_filename, train_label_filename, selected_data_points, selected_labels)
+        store_dataset_bin(train_data_filename, train_label_filename, new_data_points, new_labels)
 
 
 def ingest_test_dataset(test_data_filename):
