@@ -84,16 +84,16 @@ namespace
 
         auto tab = std::string( indent, ' ' );
         std::cout << tab << "Node:" << std::endl
-                  << tab << "m_totalCount          = " << m_totalCount         << std::endl
-                  << tab << "m_trueCount           = " << m_trueCount          << std::endl
-                  << tab << "m_totalCountLeftHalf  = " << m_totalCountLeftHalf << std::endl
-                  << tab << "m_trueCountLeftHalf   = " << m_trueCountLeftHalf  << std::endl
-                  << tab << "m_trueCountRightHalf  = " << m_trueCountRightHalf << std::endl
-                  << tab << "m_currentFeature      = " << m_currentFeature     << std::endl
-                  << tab << "m_bestSplitFeature    = " << m_bestSplitFeature   << std::endl
-                  << tab << "m_bestSplitMislabeled = " << m_bestSplitFeature   << std::endl
-                  << tab << "m_bestSplitValue      = " << m_bestSplitValue     << std::endl
-                  << tab << "m_bestSplitGiniIndex  = " << m_bestSplitGiniIndex << std::endl;
+                  << tab << "m_totalCount          = " << m_totalCount          << std::endl
+                  << tab << "m_trueCount           = " << m_trueCount           << std::endl
+                  << tab << "m_totalCountLeftHalf  = " << m_totalCountLeftHalf  << std::endl
+                  << tab << "m_trueCountLeftHalf   = " << m_trueCountLeftHalf   << std::endl
+                  << tab << "m_trueCountRightHalf  = " << m_trueCountRightHalf  << std::endl
+                  << tab << "m_currentFeature      = " << m_currentFeature      << std::endl
+                  << tab << "m_bestSplitFeature    = " << m_bestSplitFeature    << std::endl
+                  << tab << "m_bestSplitMislabeled = " << m_bestSplitMislabeled << std::endl
+                  << tab << "m_bestSplitValue      = " << m_bestSplitValue      << std::endl
+                  << tab << "m_bestSplitGiniIndex  = " << m_bestSplitGiniIndex  << std::endl;
 
         if ( m_leftChild )
         {

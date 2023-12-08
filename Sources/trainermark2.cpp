@@ -249,16 +249,16 @@ void dump( const DecisionTree & tree, const TrainingStatistics & trainingStatist
 
     auto tab = std::string( indent, ' ' );
     std::cout << tab << "Node:" << std::endl // " (" << nodeID << "):" << std::endl
-              << tab << "m_totalCount          = " << nodeStats.totalCount         << std::endl
-              << tab << "m_trueCount           = " << nodeStats.trueCount          << std::endl
-              << tab << "m_totalCountLeftHalf  = " << nodeStats.totalCountLeftHalf << std::endl
-              << tab << "m_trueCountLeftHalf   = " << nodeStats.trueCountLeftHalf  << std::endl
-              << tab << "m_trueCountRightHalf  = " << nodeStats.trueCountRightHalf << std::endl
-              << tab << "m_currentFeature      = " << nodeStats.currentFeature     << std::endl
-              << tab << "m_bestSplitFeature    = " << nodeStats.bestSplitFeature   << std::endl
-              << tab << "m_bestSplitMislabeled = " << nodeStats.bestSplitFeature   << std::endl
-              << tab << "m_bestSplitValue      = " << nodeStats.bestSplitValue     << std::endl
-              << tab << "m_bestSplitGiniIndex  = " << nodeStats.bestSplitGiniIndex << std::endl;
+              << tab << "m_totalCount          = " << nodeStats.totalCount          << std::endl
+              << tab << "m_trueCount           = " << nodeStats.trueCount           << std::endl
+              << tab << "m_totalCountLeftHalf  = " << nodeStats.totalCountLeftHalf  << std::endl
+              << tab << "m_trueCountLeftHalf   = " << nodeStats.trueCountLeftHalf   << std::endl
+              << tab << "m_trueCountRightHalf  = " << nodeStats.trueCountRightHalf  << std::endl
+              << tab << "m_currentFeature      = " << nodeStats.currentFeature      << std::endl
+              << tab << "m_bestSplitFeature    = " << nodeStats.bestSplitFeature    << std::endl
+              << tab << "m_bestSplitMislabeled = " << nodeStats.bestSplitMislabeled << std::endl
+              << tab << "m_bestSplitValue      = " << nodeStats.bestSplitValue      << std::endl
+              << tab << "m_bestSplitGiniIndex  = " << nodeStats.bestSplitGiniIndex  << std::endl;
 
     if ( !isLeafNode( node ) )
     {
