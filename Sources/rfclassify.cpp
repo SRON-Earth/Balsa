@@ -1,15 +1,14 @@
+#include <chrono>
+#include <fstream>
 #include <iostream>
-
-#include "timing.h"
-#include "exceptions.h"
-#include "decisiontrees.h"
-
+#include <random>
 #include <string>
 #include <vector>
-#include <random>
-#include <chrono>
 
+#include "decisiontrees.h"
+#include "exceptions.h"
 #include "ingestion.h"
+#include "timing.h"
 
 namespace
 {

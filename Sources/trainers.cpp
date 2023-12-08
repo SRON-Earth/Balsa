@@ -284,10 +284,10 @@ namespace
         if ( depth == targetDepth )
         {
             // Add node.
-            const unsigned int nodeID = tree.addNode( DecisionTreeNode() );
+            const unsigned int nodeID = tree.addNode( DecisionTree::DecisionTreeNode() );
 
             // Copy node attributes.
-            DecisionTreeNode & node = tree.getNode( nodeID );
+            DecisionTree::DecisionTreeNode & node = tree[nodeID];
             if ( isInternalNode )
             {
                 node.splitFeatureID = m_splitFeatureID;
@@ -301,7 +301,7 @@ namespace
             // Register child node with its parent.
             if ( m_parent )
             {
-                DecisionTreeNode & parentNode = tree.getNode( parentNodeID );
+                DecisionTree::DecisionTreeNode & parentNode = tree[parentNodeID];
                 if ( m_parent->isLeftChild( this ) )
                     parentNode.leftChildID = nodeID;
                 else
@@ -317,7 +317,7 @@ namespace
 
             if ( m_parent )
             {
-                DecisionTreeNode & parentNode = tree.getNode( parentNodeID );
+                DecisionTree::DecisionTreeNode & parentNode = tree[parentNodeID];
                 parentNodeID = m_parent->isLeftChild( this ) ? parentNode.leftChildID : parentNode.rightChildID;
             }
 

@@ -1,85 +1,75 @@
 #ifndef DECISIONTREES_H
 #define DECISIONTREES_H
 
-#include <cassert>
-#include <cstdint>
+#include <algorithm>
+#include <memory>
+#include <vector>
 #include <iostream>
-#include <fstream>
-#include <iomanip>
 
-#include "exceptions.h"
 #include "datarepresentation.h"
 
-struct DecisionTreeNode
-{
-    // DecisionTreeNode() : leftChildID(0), rightChildID(0), splitFeatureID(0), splitValue(0.0), label(false) {}
-    unsigned int leftChildID   ;
-    unsigned int rightChildID  ;
-    unsigned int splitFeatureID;
-    double       splitValue    ;
-    bool         label         ;
-};
-
-inline bool isLeafNode( const DecisionTreeNode & node )
-{
-    return !node.leftChildID && !node.rightChildID;
-}
-
-template <typename T>
-T read( std::istream & stream )
-{
-    T result;
-    stream.read( reinterpret_cast<char *>( &result ), sizeof( T ) );
-    return result;
-}
-
-inline DecisionTreeNode readDecisionTreeNode( std::istream & in )
-{
-    DecisionTreeNode node;
-    node.leftChildID    = read<std::uint32_t>( in );
-    node.rightChildID   = read<std::uint32_t>( in );
-    node.splitFeatureID = read<std::uint32_t>( in );
-    node.splitValue     = read<double       >( in );
-    node.label          = read<bool         >( in );
-    return node;
-}
-
-template <typename T>
-void write( std::ostream & os, const T & value )
-{
-    os.write( reinterpret_cast<const char *>( &value ), sizeof( T ) );
-}
-
-inline void writeDecisionTreeNode( std::ostream & os, const DecisionTreeNode & node )
-{
-    write<std::uint32_t>( os, node.leftChildID    );
-    write<std::uint32_t>( os, node.rightChildID   );
-    write<std::uint32_t>( os, node.splitFeatureID );
-    write<double       >( os, node.splitValue     );
-    write<bool         >( os, node.label          );
-}
-
+/**
+ * A decision tree.
+ */
 class DecisionTree
 {
 public:
 
   typedef std::shared_ptr <      DecisionTree> SharedPointer     ;
   typedef std::shared_ptr <const DecisionTree> ConstSharedPointer;
+
+  typedef unsigned int NodeID;
+
+  struct DecisionTreeNode
+  {
+      unsigned int  leftChildID   ;
+      unsigned int  rightChildID  ;
+      unsigned char splitFeatureID;
+      double        splitValue    ;
+      bool          label         ;
+  };
+
   typedef std::vector<DecisionTreeNode>::const_iterator ConstIterator;
 
-  DecisionTree( std::size_t reservation = 0 )
+  /**
+   * Construct an empty decision tree.
+   */
+  DecisionTree()
   {
-      m_nodes.reserve( reservation );
   }
 
+  /**
+   * Construct a decision tree from a sequence of decision tree nodes.
+   */
+  template <typename T>
+  DecisionTree( T first, T last )
+  : m_nodes( first, last )
+  {
+  }
+
+  /**
+   * Return an iterator to the beginning of the collection of nodes in this
+   * tree.
+   */
   ConstIterator begin() const
   {
       return m_nodes.begin();
   }
 
+  /**
+   * Return an iterator to the end of the collection of nodes in this tree.
+   */
   ConstIterator end() const
   {
       return m_nodes.end();
+  }
+
+  /**
+   * Pre-allocate space for the given number of nodes.
+   */
+  void reserve( std::size_t size )
+  {
+      m_nodes.reserve( size );
   }
 
   /**
@@ -95,140 +85,57 @@ public:
    */
   unsigned int getDepth() const
   {
-      return getDepth( 0 );
+      return getDepth( NodeID( 0 ) );
   }
 
-  inline DecisionTreeNode & getNode( unsigned int nodeID )
+  /**
+   * Return a reference to the node with the specified ID.
+   */
+  DecisionTreeNode & operator[]( unsigned int nodeID )
   {
       return m_nodes.at( nodeID );
   }
 
-  inline const DecisionTreeNode & getNode( unsigned int nodeID ) const
+  /**
+   * Return a const reference to the node with the specified ID.
+   */
+  const DecisionTreeNode & operator[]( unsigned int nodeID ) const
   {
       return m_nodes.at( nodeID );
   }
 
+  /**
+   * Classify the specified data point.
+   */
   bool classify( const DataSet &dataSet, DataPointID pointID ) const
   {
-      return classify( dataSet, pointID, 0 );
+      return classify( NodeID( 0 ), dataSet, pointID );
   }
 
+  /**
+   * Add a new node to the tree and return its ID.
+   */
   unsigned int addNode( const DecisionTreeNode & node )
   {
       m_nodes.push_back( node );
       return m_nodes.size() - 1;
   }
 
+  /**
+   * Print the tree for debugging purposes.
+   */
   void dump( unsigned int indent = 0 ) const
   {
-      dump( indent, 0 );
+      dump( NodeID( 0 ), indent );
   }
 
 private:
 
-  void dump( unsigned int indent, unsigned int nodeID ) const
-  {
-      auto tab = std::string( indent, ' ' );
-
-      const DecisionTreeNode & node = getNode( nodeID );
-      std::cout << tab << "Node #" << nodeID << ", feature #" << node.splitFeatureID
-                << ", split value = " << std::setprecision( 17 )
-                << node.splitValue << ", label = "
-                << ( node.label ? "TRUE" : "FALSE" ) << std::endl;
-      if (node.leftChildID || node.rightChildID)
-      {
-          // Internal node.
-          std::cout << tab << "Left:" << std::endl;
-          dump( indent + 1, node.leftChildID );
-          std::cout << tab << "Right:" << std::endl;
-          dump( indent + 1, node.rightChildID );
-      }
-      // if (node.leftChildID || node.rightChildID)
-      // {
-      //     // Internal node.
-      //     std::cout << tab << "Feature #" << node.splitFeatureID
-      //               << ", split value = " << std::setprecision( 17 )
-      //               << node.splitValue << std::endl;
-      //     std::cout << tab << "Left:" << std::endl;
-      //     dump( indent + 1, node.leftChildID );
-      //     std::cout << tab << "Right:" << std::endl;
-      //     dump( indent + 1, node.rightChildID );
-      // }
-      // else
-      // {
-      //     // Leaf node.
-      //     std::cout << tab << ( node.label ? "TRUE" : "FALSE" ) << std::endl;
-      // }
-  }
-
-  bool classify( const DataSet &dataSet, DataPointID pointID, unsigned int nodeID ) const
-  {
-      const DecisionTreeNode & node = getNode( nodeID );
-
-      if (node.leftChildID || node.rightChildID)
-      {
-          // Internal node
-          if ( dataSet.getFeatureValue( pointID, node.splitFeatureID ) < node.splitValue )
-              return classify( dataSet, pointID, node.leftChildID );
-          return classify( dataSet, pointID, node.rightChildID );
-      }
-
-      return node.label;
-  }
-
-  unsigned int getDepth( unsigned int nodeID ) const
-  {
-      const DecisionTreeNode & node = getNode( nodeID );
-      const unsigned int depthLeft  = ( node.leftChildID  == 0 ) ? 0 : getDepth( node.leftChildID  );
-      const unsigned int depthRight = ( node.rightChildID == 0 ) ? 0 : getDepth( node.rightChildID );
-      return 1 + std::max( depthLeft, depthRight );
-  }
+  void dump( NodeID nodeID, unsigned int indent ) const;
+  bool classify( NodeID nodeID, const DataSet &dataSet, DataPointID pointID ) const;
+  unsigned int getDepth( NodeID nodeID ) const;
 
   std::vector<DecisionTreeNode> m_nodes;
-};
-
-inline DecisionTree::ConstSharedPointer readDecisionTree( std::istream & in )
-{
-    // Create an empty decision tree.
-    DecisionTree::SharedPointer tree( new DecisionTree() );
-
-    // Read the header.
-    assert( in.good() );
-    if ( in.eof() ) throw ParseError( "Unexpected end of file." );
-    char marker = read<char>( in );
-    if ( marker != 't' ) throw ParseError( "Unexpected header block." );
-
-    // Read the node count.
-    if ( in.eof() ) throw ParseError( "Unexpected end of file." );
-    std::size_t nodeCount = read<std::uint64_t>( in );
-
-    // Parse tree nodes.
-    for ( ; nodeCount > 0; --nodeCount )
-    {
-        tree->addNode( readDecisionTreeNode( in ) );
-    }
-
-    return tree;
-}
-
-inline void writeDecisionTree( std::ostream & os, const DecisionTree & tree )
-{
-    write<char>( os, 't' );
-    write<std::uint64_t>( os, tree.getNodeCount() );
-    for ( auto const & node : tree )
-    {
-        writeDecisionTreeNode( os, node );
-    }
-}
-
-/**
- * Writes a decision tree to a binary file.
- */
-inline void writeToFile( const DecisionTree & tree, const std::string & filename )
-{
-    // Serialize the tree.
-    std::ofstream out( filename, std::ios::binary | std::ios::out );
-    writeDecisionTree( out, tree );
 };
 
 /**
@@ -241,11 +148,19 @@ public:
   typedef std::shared_ptr<Forest> SharedPointer;
   typedef std::vector<DecisionTree::ConstSharedPointer>::const_iterator ConstIterator;
 
+  /**
+   * Return an iterator to the beginning of the collection of decision trees in
+   * this forest.
+   */
   ConstIterator begin() const
   {
       return m_trees.begin();
   }
 
+  /**
+   * Return an iterator to the end of the collection of decision trees in this
+   * forest.
+   */
   ConstIterator end() const
   {
       return m_trees.end();
@@ -285,7 +200,7 @@ public:
   }
 
   /**
-   * Return the classification of all data points in a data set.
+   * Return the classification of a data point.
    */
   bool classify( const DataSet &dataSet, DataPointID pointID )
   {
@@ -293,16 +208,6 @@ public:
       for ( auto tree: m_trees ) if ( tree->classify( dataSet, pointID ) ) ++trueCount;
       return trueCount >= m_trees.size() / 2; // TODO: weighted voting based on quality of out-of-bag predictions of subtrees?
   }
-
-  // /**
-  //  * Return the classification of a data point.
-  //  */
-  // bool classify( const DataPoint &point ) const
-  // {
-  //     unsigned int trueCount = 0;
-  //     // for ( auto tree: m_trees ) if ( tree->classify( point ) ) ++trueCount;
-  //     return trueCount >= m_trees.size() / 2; // TODO: weighted voting based on quality of out-of-bag predictions of subtrees?
-  // }
 
   /**
    * Add a tree to the forest.
@@ -349,69 +254,46 @@ private:
 };
 
 /**
+ * Determine whether a decision tree node is a leaf node.
+ */
+inline bool isLeafNode( const DecisionTree::DecisionTreeNode & node )
+{
+    return node.leftChildID == 0;
+}
+
+/**
+ * Read a decision tree from a binary input stream.
+ */
+DecisionTree::SharedPointer readDecisionTree( std::istream & in );
+
+/**
+ * Write a decision tree to a binary input stream.
+ */
+void writeDecisionTree( std::ostream & os, const DecisionTree & tree );
+
+/**
+ * Writes a decision tree to a binary file.
+ */
+void storeDecisionTree( const DecisionTree & tree, const std::string & filename );
+
+/**
  * Reads a Forest from a binary input stream. See also: loadForest().
  */
-inline Forest::SharedPointer readForest( std::istream &in )
-{
-    // Create an empty forest.
-    Forest::SharedPointer forest( new Forest() );
-
-    // Read the header.
-    assert( in.good() );
-    if ( in.eof() ) throw ParseError( "Unexpected end of file." );
-    char marker = 0;
-    in >> marker;
-    if ( marker != 'f' ) throw ParseError( "Unexpected header block." );
-
-    // Parse trees until the end of the file is reached.
-    while ( in.peek() != std::ifstream::traits_type::eof() )
-    {
-        forest->addTree( readDecisionTree( in ) );
-        assert( in.good() );
-    }
-
-    return forest;
-}
+Forest::SharedPointer readForest( std::istream &in );
 
 /**
  * Writes a Forest to a binary output stream. See also: storeForest().
  */
-inline void writeForest( std::ostream & out, const Forest &forest )
-{
-    // Write the forest header.
-    out << 'f';
-
-    // Serialize all trees.
-    for ( auto const & tree : forest )
-    {
-        writeDecisionTree( out, *tree );
-    }
-}
+void writeForest( std::ostream & out, const Forest &forest );
 
 /**
  * Reads a Forest from a file.
  */
-inline Forest::SharedPointer loadForest( const std::string &filename )
-{
-    // Open an input stream for the file.
-    std::ifstream in( filename, std::ios::binary | std::ios::in );
-    if ( !in.good() ) throw ClientError( std::string( "Can't read file '" ) + filename + "'." );
-
-    // Read the forest.
-    return readForest( in );
-}
+Forest::SharedPointer loadForest( const std::string &filename );
 
 /**
  * Writes a Forest to a file.
  */
-inline void storeForest( const Forest &forest, const std::string &filename )
-{
-    // Open an output stream for the file.
-    std::ofstream out( filename, std::ios::binary | std::ios::out );
-    if ( !out.good() ) throw SupplierError( std::string( "Can't create file '" ) + filename + "'." );
-
-    // Write the forest.
-    writeForest( out, forest );
-}
+void storeForest( const Forest &forest, const std::string &filename );
 
 #endif // DECISIONTREES_H
