@@ -3,13 +3,15 @@ from ..util import run_program, get_statistics_from_time_file, get_classificatio
 
 
 def run(run_path, train_data_filename, train_label_filename, test_data_filename, test_label_filename, *,
-        num_estimators, max_tree_depth, num_threads):
+        num_estimators, max_tree_depth, num_threads, version):
 
     run_statistics = {}
 
     args = ["-c", str(num_estimators), "-t", str(num_threads)]
     if max_tree_depth is not None:
         args += ["-d", str(max_tree_depth)]
+    if version == 2:
+        args += ["-2"]
     args += [str(train_data_filename), str(train_label_filename), "jigsaw.model"]
 
     result = run_program("rftrain", *args, log=True, time_file="train.time", cwd=run_path)
@@ -38,4 +40,20 @@ def run(run_path, train_data_filename, train_label_filename, test_data_filename,
 
     return run_statistics
 
-register_classifier("jigsaw", "bin", run)
+
+def run_mark1(run_path, train_data_filename, train_label_filename, test_data_filename, test_label_filename, *,
+              num_estimators, max_tree_depth, num_threads):
+
+    return run(run_path, train_data_filename, train_label_filename, test_data_filename, test_label_filename,
+               num_estimators=num_estimators, max_tree_depth=max_tree_depth, num_threads=num_threads, version=1)
+
+
+def run_mark2(run_path, train_data_filename, train_label_filename, test_data_filename, test_label_filename, *,
+              num_estimators, max_tree_depth, num_threads):
+
+    return run(run_path, train_data_filename, train_label_filename, test_data_filename, test_label_filename,
+               num_estimators=num_estimators, max_tree_depth=max_tree_depth, num_threads=num_threads, version=2)
+
+
+register_classifier("jigsaw", "bin", run_mark1)
+register_classifier("jigsaw-mark2", "bin", run_mark2)
