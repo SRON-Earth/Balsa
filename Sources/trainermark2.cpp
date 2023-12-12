@@ -350,9 +350,9 @@ namespace
         }
     }
 
-    unsigned int                        m_maxDepth;
-    std::vector<NodeAnnotations> m_annotations;
-    std::vector<DecisionTreeNode>       m_nodes;
+    unsigned int                  m_maxDepth;
+    std::vector<NodeAnnotations>  m_annotations;
+    std::vector<DecisionTreeNode> m_nodes;
 
   };
 } // Anonymous namespace.
