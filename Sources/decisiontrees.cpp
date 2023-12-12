@@ -70,14 +70,15 @@ bool DecisionTree::classify( NodeID nodeID, const DataSet &dataSet, DataPointID 
 {
     const DecisionTreeNode & node = m_nodes[nodeID];
 
-    if (node.leftChildID || node.rightChildID)
+    //  Recurse if this is an internal node.
+    if (node.leftChildID)
     {
-        // Internal node
         if ( dataSet.getFeatureValue( pointID, node.splitFeatureID ) < node.splitValue )
             return classify( node.leftChildID, dataSet, pointID );
         return classify( node.rightChildID, dataSet, pointID );
     }
 
+    // Return the label if it is a leaf node.
     return node.label;
 }
 

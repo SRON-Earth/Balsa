@@ -93,7 +93,7 @@ public:
    */
   DecisionTreeNode & operator[]( unsigned int nodeID )
   {
-      return m_nodes.at( nodeID );
+      return m_nodes[nodeID];
   }
 
   /**
@@ -101,7 +101,7 @@ public:
    */
   const DecisionTreeNode & operator[]( unsigned int nodeID ) const
   {
-      return m_nodes.at( nodeID );
+      return m_nodes[nodeID];
   }
 
   /**
