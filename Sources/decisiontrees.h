@@ -42,8 +42,8 @@ public:
    * Construct a decision tree from a sequence of decision tree nodes.
    */
   template <typename T>
-  DecisionTree( T first, T last )
-  : m_nodes( first, last )
+  DecisionTree( T first, T last ):
+  m_nodes( first, last )
   {
   }
 
@@ -113,6 +113,11 @@ public:
   }
 
   /**
+   * Bulk-classifies a set of points, adding a vote (+1) to an output vector for each point of which the label is 'true'.
+   */
+  void classifyVote( const DataSet &dataSet, std::vector<unsigned int> &result ) const;
+
+  /**
    * Add a new node to the tree and return its ID.
    */
   unsigned int addNode( const DecisionTreeNode & node )
@@ -130,6 +135,8 @@ public:
   }
 
 private:
+
+  void recursiveClassifyVote( std::vector<unsigned int>::iterator pointsBegin, std::vector<unsigned int>::iterator pointsEnd, const DataSet &dataSet, std::vector<unsigned int> &result, unsigned int currentNodeID ) const;
 
   void dump( NodeID nodeID, unsigned int indent ) const;
   bool classify( NodeID nodeID, const DataSet &dataSet, DataPointID pointID ) const;
@@ -187,9 +194,9 @@ public:
   }
 
   /**
-   * Classify all points in a DataSet.
+   * Classify all points in a DataSet, brute-force style.
    */
-  std::vector<bool> classify( const DataSet &dataSet ) // TODO: Make this an interator-based, container independent template.
+  std::vector<bool> classifyBruteForce( const DataSet &dataSet )
   {
       std::vector<bool> labels( dataSet.size() );
       for ( std::size_t i = 0; i < dataSet.size(); ++i )
@@ -197,6 +204,36 @@ public:
         labels[i] = classify( dataSet, i );
       }
       return labels;
+  }
+
+  /**
+   * Classify all points in a DataSet using bulk voting.
+   */
+  std::vector<bool> classifyBulk( const DataSet &dataSet )
+  {
+      // Let each tree vote whether a particular point is true or false.
+      std::vector<unsigned int> votes( dataSet.size(), 0 );
+      for ( auto tree: m_trees )
+      {
+          tree->classifyVote( dataSet, votes );
+      }
+
+       // Calculate the end result of all votes.
+      std::vector<bool> labels( dataSet.size() );
+      auto limit = ( m_trees.size() / 2 ); // TODO: maybe weighted voting based on quality of out-of-bag-predictions.
+      for ( unsigned int point = 0; point < dataSet.size(); ++point )
+      {
+          labels[point] = votes[point] >= limit;
+      }
+      return labels;
+  }
+
+  /**
+   * Classify all points in a dataset.
+   */
+  std::vector<bool> classify( const DataSet &dataSet )
+  {
+      return classifyBulk( dataSet ); // Single-threaded bulk classification.
   }
 
   /**

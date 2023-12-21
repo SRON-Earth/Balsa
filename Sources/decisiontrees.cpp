@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <fstream>
 #include <iomanip>
+#include <numeric>
 
 #include "decisiontrees.h"
 #include "exceptions.h"
@@ -51,7 +52,7 @@ void DecisionTree::dump( NodeID nodeID, unsigned int indent ) const
     if (node.leftChildID || node.rightChildID)
     {
         // Internal node.
-        std::cout << tab << "Feature #" << node.splitFeatureID
+        std::cout << tab << "Node #" << nodeID << " Feature #" << static_cast<unsigned int>( node.splitFeatureID )
                   << ", split value = " << std::setprecision( 17 )
                   << node.splitValue << std::endl;
         std::cout << tab << "Left:" << std::endl;
@@ -62,9 +63,10 @@ void DecisionTree::dump( NodeID nodeID, unsigned int indent ) const
     else
     {
         // Leaf node.
-        std::cout << tab << ( node.label ? "TRUE" : "FALSE" ) << std::endl;
+        std::cout << tab << "Node #" << nodeID << " " << ( node.label ? "TRUE" : "FALSE" ) << std::endl;
     }
 }
+
 
 bool DecisionTree::classify( NodeID nodeID, const DataSet &dataSet, DataPointID pointID ) const
 {
@@ -80,6 +82,51 @@ bool DecisionTree::classify( NodeID nodeID, const DataSet &dataSet, DataPointID 
 
     // Return the label if it is a leaf node.
     return node.label;
+}
+
+void DecisionTree::recursiveClassifyVote( std::vector<unsigned int>::iterator pointsBegin, std::vector<unsigned int>::iterator pointsEnd, const DataSet &dataSet, std::vector<unsigned int> &voteTable, unsigned int currentNodeID ) const
+{
+    // If the current node is an interior node, split the points along the split value, and classify both halves.
+    auto &currentNode = m_nodes[currentNodeID];
+    if ( currentNode.leftChildID > 0 )
+    {
+        // Extract the split limit and split dimension of this node.
+        auto splitValue = currentNode.splitValue;
+        auto featureID  = currentNode.splitFeatureID;
+
+        // Split the point IDs in two halves: points that lie below and points that lie on or above the feature split value.
+        auto pointIsBelowLimit = [&dataSet,splitValue,featureID]( const unsigned int &pointID )
+        {
+            return dataSet.getFeatureValue( pointID, featureID ) < splitValue;
+        };
+        auto secondHalf = std::partition( pointsBegin, pointsEnd, pointIsBelowLimit );
+
+        // Recursively classify both halves.
+        recursiveClassifyVote( pointsBegin, secondHalf, dataSet, voteTable, currentNode.leftChildID  );
+        recursiveClassifyVote( secondHalf , pointsEnd , dataSet, voteTable, currentNode.rightChildID );
+    }
+
+    // If the current node is a leaf node (and the label is 'true'), increment the true count in the output.
+    else
+    {
+        if ( currentNode.label )
+        {
+            for ( auto it( pointsBegin ), end( pointsEnd ); it != end; ++it )
+            {
+                ++voteTable[*it];
+            }
+        }
+    }
+}
+
+void DecisionTree::classifyVote( const DataSet &dataSet, std::vector<unsigned int> &result ) const
+{
+    // Create a list containing all datapoint IDs (0, 1, 2, etc.).
+    std::vector<unsigned int> pointIDs( dataSet.size() );
+    std::iota( pointIDs.begin(), pointIDs.end(), 0 );
+
+    // Recursively partition the list of point IDs according to the interior node criteria, and classify them by the leaf node labels.
+    recursiveClassifyVote( pointIDs.begin(), pointIDs.end(), dataSet, result, 0 );
 }
 
 unsigned int DecisionTree::getDepth( NodeID nodeID ) const
