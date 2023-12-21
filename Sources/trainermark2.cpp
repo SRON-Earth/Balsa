@@ -5,6 +5,7 @@
 #include "decisiontrees.h"
 #include "trainermark2.h"
 #include "utilities.h"
+#include "weightedcoin.h"
 
 namespace
 {
@@ -206,7 +207,7 @@ namespace
             nodeStats.currentFeature     = featureID  ;
 
             // Determine whether or not this node will consider this feature during this pass.
-            nodeStats.ignoringThisFeature = randomBool( nodeStats.featuresToConsider, featuresLeft );
+            nodeStats.ignoringThisFeature = m_coin.flip( nodeStats.featuresToConsider, featuresLeft );
             if ( nodeStats.ignoringThisFeature )
             {
                 assert( nodeStats.featuresToConsider > 0 );
@@ -351,6 +352,7 @@ namespace
     }
 
     unsigned int                  m_maxDepth;
+    WeightedCoin                  m_coin;
     std::vector<NodeAnnotations>  m_annotations;
     std::vector<DecisionTreeNode> m_nodes;
 

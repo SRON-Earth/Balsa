@@ -155,14 +155,14 @@ namespace
      * \param featureID The ID of the feature that will be traversed.
      * \param featuresLeft The total number of features that still have to be traversed, including this one.
      */
-    void startFeatureTraversal( unsigned int featureID, unsigned int featuresLeft )
+    void startFeatureTraversal( unsigned int featureID, unsigned int featuresLeft, WeightedCoin & coin )
     {
         // Start feature traversal in the children, if present.
         if ( m_leftChild )
         {
             assert( m_rightChild );
-            m_leftChild->startFeatureTraversal ( featureID, featuresLeft );
-            m_rightChild->startFeatureTraversal( featureID, featuresLeft );
+            m_leftChild->startFeatureTraversal ( featureID, featuresLeft, coin );
+            m_rightChild->startFeatureTraversal( featureID, featuresLeft, coin );
         }
         else
         {
@@ -174,7 +174,7 @@ namespace
             m_currentFeature      = featureID  ;
 
             // Determine whether or not this node will consider this feature during this pass.
-            m_ignoringThisFeature = randomBool( m_featuresToConsider, featuresLeft );
+            m_ignoringThisFeature = coin.flip( m_featuresToConsider, featuresLeft );
             if ( m_ignoringThisFeature )
             {
                 assert( m_featuresToConsider > 0 );
@@ -389,7 +389,7 @@ DecisionTree::SharedPointer SingleTreeTrainerMark1::train( const FeatureIndex &f
         for ( unsigned int featureID = 0; featureID < featureCount; ++featureID ) // TODO: random trees should not use all features.
         {
             // Tell the tree that traversal is starting for this feature.
-            root.startFeatureTraversal( featureID, featureCount - featureID );
+            root.startFeatureTraversal( featureID, featureCount - featureID, m_coin );
 
             // Traverse all datapoints in order of this feature.
             for ( auto it( featureIndex.featureBegin( featureID ) ), end( featureIndex.featureEnd( featureID ) ); it != end; ++it )

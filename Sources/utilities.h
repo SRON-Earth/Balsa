@@ -97,9 +97,4 @@ inline double giniImpurity( unsigned int trueCount, unsigned int totalCount )
     return ( 2 * t * ( 1.0 - ( t / T ) ) ) / T;
 }
 
-/**
- * Returns a random boolean, with probability of being true equal to an integer fraction.
- */
-bool randomBool( unsigned int numerator, unsigned int denominator );
-
 #endif // UTILITIES_H

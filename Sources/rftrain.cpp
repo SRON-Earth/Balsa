@@ -1,16 +1,13 @@
 #include <iostream>
-#include <sstream>
-
-#include "timing.h"
-#include "exceptions.h"
-#include "randomforesttrainer.h"
-
-#include <string>
-#include <vector>
 #include <random>
-#include <chrono>
+#include <sstream>
+#include <string>
 
+#include "exceptions.h"
 #include "ingestion.h"
+#include "randomforesttrainer.h"
+#include "timing.h"
+#include "weightedcoin.h"
 
 namespace
 {
@@ -22,6 +19,7 @@ namespace
     maxDepth   ( std::numeric_limits<unsigned int>::max() ),
     treeCount  ( 150                                      ),
     threadCount( 1                                        ),
+    seed       ( std::random_device{}()                   ),
     v2         ( false                                    )
     {
     }
@@ -35,10 +33,11 @@ namespace
            << std::endl
            << " Options:" << std::endl
            << std::endl
-           << "   -t <thread count>: Sets the number of threads (default is 1)."     << std::endl
-           << "   -d <max depth>   : Sets the maximum tree depth (default is +inf)." << std::endl
-           << "   -c <tree count>  : Sets the number of trees (default is 150)."     << std::endl
-           << "   -2               : Use V2 trainer."     << std::endl;
+           << "   -t <thread count>: Sets the number of threads (default is 1)."        << std::endl
+           << "   -d <max depth>   : Sets the maximum tree depth (default is +inf)."    << std::endl
+           << "   -c <tree count>  : Sets the number of trees (default is 150)."        << std::endl
+           << "   -s <random seed> : Sets the random seed (default is a random value)." << std::endl
+           << "   -2               : Use V2 trainer." << std::endl;
         return ss.str();
     }
 
@@ -73,6 +72,10 @@ namespace
             {
                 if ( !(args >> options.treeCount) ) throw ParseError( "Missing parameter to -c option." );
             }
+            else if ( token == "-s" )
+            {
+                if ( !(args >> options.seed) ) throw ParseError( "Missing parameter to -s option." );
+            }
             else if ( token == "-2" )
             {
                 options.v2 = true;
@@ -93,13 +96,14 @@ namespace
         return options;
     }
 
-    std::string  dataFile   ;
-    std::string  labelFile  ;
-    std::string  outputFile ;
-    unsigned int maxDepth   ;
-    unsigned int treeCount  ;
-    unsigned int threadCount;
-    bool         v2         ;
+    std::string                     dataFile   ;
+    std::string                     labelFile  ;
+    std::string                     outputFile ;
+    unsigned int                    maxDepth   ;
+    unsigned int                    treeCount  ;
+    unsigned int                    threadCount;
+    std::random_device::result_type seed       ;
+    bool                            v2         ;
 
   };
 }
@@ -112,13 +116,17 @@ int main( int argc, char **argv )
         Options options = Options::parseOptions( argc, argv );
 
         // Debug.
-        std::cout <<  "Data File  : " << options.dataFile    << std::endl;
-        std::cout <<  "Label File : " << options.labelFile   << std::endl;
-        std::cout <<  "Output File: " << options.outputFile  << std::endl;
-        std::cout <<  "Max. Depth : " << options.maxDepth    << std::endl;
-        std::cout <<  "Tree Count : " << options.treeCount   << std::endl;
-        std::cout <<  "Threads    : " << options.threadCount << std::endl;
-        std::cout <<  "V2         : " << options.v2          << std::endl;
+        std::cout <<  "Data File      : " << options.dataFile         << std::endl;
+        std::cout <<  "Label File     : " << options.labelFile        << std::endl;
+        std::cout <<  "Output File    : " << options.outputFile       << std::endl;
+        std::cout <<  "Max. Depth     : " << options.maxDepth         << std::endl;
+        std::cout <<  "Tree Count     : " << options.treeCount        << std::endl;
+        std::cout <<  "Threads        : " << options.threadCount      << std::endl;
+        std::cout <<  "Random Seed    : " << options.seed             << std::endl;
+        std::cout <<  "Trainer Version: " << (options.v2 ? "2" : "1") << std::endl;
+
+        // Seed master seed sequence.
+        getMasterSeedSequence().seed( options.seed );
 
         // Load training data set.
         StopWatch watch;

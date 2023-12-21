@@ -2,6 +2,7 @@
 #define TRAINERS_H
 
 #include "traininginterfaces.h"
+#include "weightedcoin.h"
 
 /**
  * First working design of the random tree trainer.
@@ -16,6 +17,10 @@ public:
   }
 
   DecisionTree::SharedPointer train( const FeatureIndex &featureIndex, const TrainingDataSet &dataSet );
+
+private:
+
+  WeightedCoin m_coin;
 
 };
 
