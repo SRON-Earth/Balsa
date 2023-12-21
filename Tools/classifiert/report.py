@@ -34,9 +34,11 @@ def write_report(report_filename, num_threads, statistics):
     plot_statistic(statistics, f"Classification Wall Clock Time", "Time (s)", key="test-classification-time")
     plot_statistic(statistics, f"Label Store Wall Clock Time", "Time (s)", key="test-label-store-time")
     plot_statistic(statistics, f"Accuracy", "Accuracy", key="test-accuracy")
+    plot_statistic(statistics, f"P4-metric", "P4-metric", key="test-P4-metric")
     plot_statistic(statistics, f"Precision", "Precision", key="test-precision")
     plot_statistic(statistics, f"Recall", "Recall", key="test-recall")
-    plot_statistic(statistics, f"P4-metric", "P4-metric", key="test-P4-metric")
+    plot_statistic(statistics, f"Specificity", "Specificity", key="test-specificity")
+    plot_statistic(statistics, f"Negative Predictive Value", "NPV", key="test-npv")
 
     from matplotlib.backends.backend_pdf import PdfPages
     report = PdfPages(report_filename)

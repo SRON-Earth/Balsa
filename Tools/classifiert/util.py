@@ -56,6 +56,15 @@ def accuracy(num_true_positives, num_false_positives, num_true_negatives, num_fa
     return (num_true_positives + num_true_negatives) / denominator
 
 
+def P4_metric(num_true_positives, num_false_positives, num_true_negatives, num_false_negatives):
+
+    denominator = 4.0 * num_true_positives * num_true_negatives + \
+        (num_true_positives + num_true_negatives) * (num_false_positives + num_false_negatives)
+    if denominator == 0:
+        return 0
+    return (4.0 * num_true_positives * num_true_negatives) / denominator
+
+
 def precision(num_true_positives, num_false_positives, num_true_negatives, num_false_negatives):
 
     denominator = num_true_positives + num_false_positives
@@ -72,13 +81,20 @@ def recall(num_true_positives, num_false_positives, num_true_negatives, num_fals
     return num_true_positives / denominator
 
 
-def P4_metric(num_true_positives, num_false_positives, num_true_negatives, num_false_negatives):
+def specificity(num_true_positives, num_false_positives, num_true_negatives, num_false_negatives):
 
-    denominator = 4.0 * num_true_positives * num_true_negatives + \
-        (num_true_positives + num_true_negatives) * (num_false_positives + num_false_negatives)
+    denominator = num_true_negatives + num_false_positives
     if denominator == 0:
         return 0
-    return (4.0 * num_true_positives * num_true_negatives) / denominator
+    return num_true_negatives / denominator
+
+
+def negative_predictive_value(num_true_positives, num_false_positives, num_true_negatives, num_false_negatives):
+
+    denominator = num_true_negatives + num_false_negatives
+    if denominator == 0:
+        return 0
+    return num_true_negatives / denominator
 
 
 def get_classification_scores(predicted_labels, labels, *, target_dict=None, key_prefix=""):
@@ -99,10 +115,12 @@ def get_classification_scores(predicted_labels, labels, *, target_dict=None, key
     if target_dict is None:
         target_dict = {}
 
-    target_dict[rekey("accuracy" )] = accuracy (num_true_positives, num_false_positives, num_true_negatives, num_false_negatives)
-    target_dict[rekey("precision")] = precision(num_true_positives, num_false_positives, num_true_negatives, num_false_negatives)
-    target_dict[rekey("recall"   )] = recall   (num_true_positives, num_false_positives, num_true_negatives, num_false_negatives)
-    target_dict[rekey("P4-metric")] = P4_metric(num_true_positives, num_false_positives, num_true_negatives, num_false_negatives)
+    target_dict[rekey("accuracy"   )] = accuracy                 (num_true_positives, num_false_positives, num_true_negatives, num_false_negatives)
+    target_dict[rekey("P4-metric"  )] = P4_metric                (num_true_positives, num_false_positives, num_true_negatives, num_false_negatives)
+    target_dict[rekey("precision"  )] = precision                (num_true_positives, num_false_positives, num_true_negatives, num_false_negatives)
+    target_dict[rekey("recall"     )] = recall                   (num_true_positives, num_false_positives, num_true_negatives, num_false_negatives)
+    target_dict[rekey("specificity")] = specificity              (num_true_positives, num_false_positives, num_true_negatives, num_false_negatives)
+    target_dict[rekey("npv"        )] = negative_predictive_value(num_true_positives, num_false_positives, num_true_negatives, num_false_negatives)
 
     return target_dict
 
