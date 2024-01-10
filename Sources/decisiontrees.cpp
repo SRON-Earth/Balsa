@@ -161,13 +161,13 @@ DecisionTree::SharedPointer readDecisionTree( std::istream & in )
 
     // Allocate a buffer and read the raw tree data into it.
     auto rawTreeSize = rawNodeSize * nodeCount;
-    char buffer[rawTreeSize];
-    in.read( buffer, rawTreeSize );
+    std::unique_ptr<char[]> buffer(new char[rawTreeSize]);
+    in.read( &(buffer[0]), rawTreeSize );
 
     if ( in.fail() ) throw ParseError( "Could not read data." );
 
     // Parse tree nodes.
-    char *rawNode = buffer;
+    char *rawNode = &(buffer[0]);
     for ( std::size_t nodeID = 0; nodeID < nodeCount; ++nodeID )
     {
         DecisionTree::DecisionTreeNode node;
