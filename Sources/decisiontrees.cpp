@@ -152,10 +152,31 @@ DecisionTree::SharedPointer readDecisionTree( std::istream & in )
     if ( in.eof() ) throw ParseError( "Unexpected end of file." );
     std::size_t nodeCount = read<std::uint64_t>( in );
 
+    // Calculate the size of one tree node.
+    std::size_t rawNodeSize  = sizeof( DecisionTree::DecisionTreeNode().leftChildID    )
+                             + sizeof( DecisionTree::DecisionTreeNode().rightChildID   )
+                             + sizeof( DecisionTree::DecisionTreeNode().splitFeatureID )
+                             + sizeof( DecisionTree::DecisionTreeNode().splitValue     )
+                             + sizeof( DecisionTree::DecisionTreeNode().label          );
+
+    // Allocate a buffer and read the raw tree data into it.
+    auto rawTreeSize = rawNodeSize * nodeCount;
+    char buffer[rawTreeSize];
+    in.read( buffer, rawTreeSize );
+
+    if ( in.fail() ) throw ParseError( "Could not read data." );
+
     // Parse tree nodes.
-    for ( ; nodeCount > 0; --nodeCount )
+    char *rawNode = buffer;
+    for ( std::size_t nodeID = 0; nodeID < nodeCount; ++nodeID )
     {
-        tree->addNode( readDecisionTreeNode( in ) );
+        DecisionTree::DecisionTreeNode node;
+        node.leftChildID    = *reinterpret_cast<std::uint32_t *>( rawNode ); rawNode += sizeof( std::uint32_t );
+        node.rightChildID   = *reinterpret_cast<std::uint32_t *>( rawNode ); rawNode += sizeof( std::uint32_t );
+        node.splitFeatureID = *reinterpret_cast<std::uint8_t  *>( rawNode ); rawNode += sizeof( std::uint8_t  );
+        node.splitValue     = *reinterpret_cast<double        *>( rawNode ); rawNode += sizeof( double        );
+        node.label          = *reinterpret_cast<bool          *>( rawNode ); rawNode += sizeof( bool          );
+        tree->addNode( node );
     }
 
     return tree;
