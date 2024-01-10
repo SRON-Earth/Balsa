@@ -18,11 +18,14 @@ class MessageQueue
      */
     void send( const Message &message )
     {
-        // Acquire the mutex on the queue.
-        std::lock_guard<std::mutex> lock( m_mutex );
+        // Critical section.
+        {
+            // Acquire the mutex on the queue.
+            std::lock_guard<std::mutex> lock( m_mutex );
 
-        // Add an item to the queue.
-        m_queue.push( message );
+            // Add an item to the queue.
+            m_queue.push( message );
+        }
 
         // Wake up one waiter to pick up the message.
         m_condition.notify_one();
