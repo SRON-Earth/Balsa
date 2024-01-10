@@ -32,7 +32,7 @@ DataSet::SharedPointer loadDataSet(const std::string &dataFile)
         // Read the data point columns.
         DataPoint point(numColumns);
         for (unsigned int i = 0; i < numColumns; ++i)
-            point.at(i) = read<float>(stream);
+            point[i] = read<float>(stream);
 
         // Stop if the end of the input file was reached.
         if (stream.eof())
@@ -67,7 +67,7 @@ TrainingDataSet::SharedPointer loadTrainingDataSet(const std::string &dataFile, 
         // Read the data point columns.
         DataPoint point(numDataColumns);
         for (unsigned int i = 0; i < numDataColumns; ++i)
-            point.at(i) = read<float>(dataStream);
+            point[i] = read<float>(dataStream);
 
         // Read the label.
         const bool label = (read<float>(labelStream) != 0.0f);
