@@ -2,39 +2,51 @@
 #define DECISIONTREES_H
 
 #include <algorithm>
-#include <memory>
-#include <vector>
+#include <cstdint>
+#include <fstream>
+#include <iomanip>
 #include <iostream>
+#include <memory>
+#include <numeric>
+#include <vector>
 
+#include "classifier.h"
 #include "datarepresentation.h"
+#include "exceptions.h"
 
 /**
  * A decision tree.
  */
-class DecisionTree
+template <typename FeatureIterator, typename OutputIterator>
+class DecisionTree: public Classifier<FeatureIterator, OutputIterator>
 {
 public:
+  typedef std::shared_ptr<DecisionTree<FeatureIterator, OutputIterator>> SharedPointer;
+  typedef std::shared_ptr<const DecisionTree<FeatureIterator, OutputIterator>> ConstSharedPointer;
 
-  typedef std::shared_ptr <      DecisionTree> SharedPointer     ;
-  typedef std::shared_ptr <const DecisionTree> ConstSharedPointer;
+  typedef typename std::iterator_traits<FeatureIterator>::value_type FeatureValueType;
+  typedef typename std::iterator_traits<OutputIterator>::value_type LabelValueType;
+
+  using typename Classifier<FeatureIterator, OutputIterator>::VoteTable;
 
   typedef unsigned int NodeID;
 
   struct DecisionTreeNode
   {
-      unsigned int  leftChildID   ;
-      unsigned int  rightChildID  ;
-      unsigned char splitFeatureID;
-      double        splitValue    ;
-      bool          label         ;
+      unsigned int      leftChildID   ;
+      unsigned int      rightChildID  ;
+      unsigned char     splitFeatureID;
+      FeatureValueType  splitValue    ;
+      LabelValueType    label         ;
   };
 
-  typedef std::vector<DecisionTreeNode>::const_iterator ConstIterator;
+  typedef typename std::vector<DecisionTreeNode>::const_iterator ConstIterator;
 
   /**
    * Construct an empty decision tree.
    */
-  DecisionTree()
+  explicit DecisionTree( std::size_t featureCount )
+  : Classifier<FeatureIterator, OutputIterator>( featureCount )
   {
   }
 
@@ -42,8 +54,9 @@ public:
    * Construct a decision tree from a sequence of decision tree nodes.
    */
   template <typename T>
-  DecisionTree( T first, T last ):
-  m_nodes( first, last )
+  DecisionTree( std::size_t featureCount, T first, T last )
+  : Classifier<FeatureIterator, OutputIterator>( featureCount )
+  , m_nodes( first, last )
   {
   }
 
@@ -105,17 +118,10 @@ public:
   }
 
   /**
-   * Classify the specified data point.
+   * Bulk-classifies a sequence of data points.
    */
-  bool classify( const DataSet &dataSet, DataPointID pointID ) const
-  {
-      return classify( NodeID( 0 ), dataSet, pointID );
-  }
-
-  /**
-   * Bulk-classifies a set of points, adding a vote (+1) to an output vector for each point of which the label is 'true'.
-   */
-  void classifyVote( const DataSet &dataSet, std::vector<unsigned int> &result ) const;
+  void classify( FeatureIterator pointsStart, FeatureIterator pointsEnd,
+      OutputIterator labels ) const;
 
   /**
    * Add a new node to the tree and return its ID.
@@ -134,203 +140,310 @@ public:
       dump( NodeID( 0 ), indent );
   }
 
+  /**
+  * Bulk-classifies a set of points, adding a vote (+1) to the vote table for
+  * each point of which the label is 'true'.
+  */
+  unsigned int classifyAndVote( FeatureIterator pointsStart,
+      FeatureIterator pointsEnd, VoteTable & table ) const;
+
 private:
 
-  void recursiveClassifyVote( std::vector<unsigned int>::iterator pointsBegin, std::vector<unsigned int>::iterator pointsEnd, const DataSet &dataSet, std::vector<unsigned int> &result, unsigned int currentNodeID ) const;
-
+  void recursiveClassifyVote( std::vector<DataPointID>::iterator pointIDsStart,
+    std::vector<DataPointID>::iterator pointIDsEnd, FeatureIterator pointsStart,
+    VoteTable & result, NodeID currentNodeID ) const;
   void dump( NodeID nodeID, unsigned int indent ) const;
-  bool classify( NodeID nodeID, const DataSet &dataSet, DataPointID pointID ) const;
   unsigned int getDepth( NodeID nodeID ) const;
 
   std::vector<DecisionTreeNode> m_nodes;
 };
 
-/**
- * An ensemble of (usually randomized) decision trees.
- */
-class Forest
+template <typename FeatureIterator, typename OutputIterator>
+void DecisionTree<FeatureIterator, OutputIterator>::dump( NodeID nodeID, unsigned int indent ) const
 {
-public:
+    auto tab = std::string( indent, ' ' );
 
-  typedef std::shared_ptr<Forest> SharedPointer;
-  typedef std::vector<DecisionTree::ConstSharedPointer>::const_iterator ConstIterator;
+    const DecisionTreeNode & node = m_nodes[nodeID];
+    if (node.leftChildID || node.rightChildID)
+    {
+        // Internal node.
+        std::cout << tab << "Node #" << nodeID
+                  << " Feature #" << static_cast<unsigned int>( node.splitFeatureID )
+                  << ", split value = " << std::setprecision( 17 )
+                  << node.splitValue << std::endl;
+        std::cout << tab << "Left:" << std::endl;
+        dump( node.leftChildID, indent + 1 );
+        std::cout << tab << "Right:" << std::endl;
+        dump( node.rightChildID, indent + 1 );
+    }
+    else
+    {
+        // Leaf node.
+        std::cout << tab << "Node #" << nodeID << " " << ( node.label ? "TRUE" : "FALSE" ) << std::endl;
+    }
+}
 
-  /**
-   * Return an iterator to the beginning of the collection of decision trees in
-   * this forest.
-   */
-  ConstIterator begin() const
-  {
-      return m_trees.begin();
-  }
+template <typename FeatureIterator, typename OutputIterator>
+void DecisionTree<FeatureIterator, OutputIterator>::classify( FeatureIterator pointsStart, FeatureIterator pointsEnd,
+    OutputIterator labels ) const
+{
+    // Check the dimensions of the input data.
+    auto rawFeatureCount = std::distance( pointsStart, pointsEnd );
+    auto featureCount    = this->getFeatureCount();
+    assert( rawFeatureCount > 0 );
+    assert( ( rawFeatureCount % featureCount ) == 0 );
 
-  /**
-   * Return an iterator to the end of the collection of decision trees in this
-   * forest.
-   */
-  ConstIterator end() const
-  {
-      return m_trees.end();
-  }
+    // Create a table for the label votes.
+    unsigned int pointCount = rawFeatureCount / featureCount;
+    VoteTable voteCounts( typename VoteTable::value_type( 0 ), pointCount );
 
-  /**
-   * Returns the number of nodes in the largest tree.
-   */
-  unsigned int getMaximumNodeCount() const
-  {
-      unsigned int maximum = 0;
-      for ( auto &tree: m_trees ) maximum = std::max( maximum, tree->getNodeCount() );
-      return maximum;
-  }
+    // Bulk-classify all points.
+    classifyAndVote( pointsStart, pointsEnd, voteCounts );
 
-  /**
-   * Returns the depth of the largest tree.
-   */
-  unsigned int getMaximumDepth() const
-  {
-      unsigned int maximum = 0;
-      for ( auto &tree: m_trees ) maximum = std::max( maximum, tree->getDepth() );
-      return maximum;
-  }
+    // Generate the labels.
+    for ( auto voteCount : voteCounts ) *labels++ = voteCount > 0;
+}
 
-  /**
-   * Classify all points in a DataSet, brute-force style.
-   */
-  std::vector<bool> classifyBruteForce( const DataSet &dataSet )
-  {
-      std::vector<bool> labels( dataSet.size() );
-      for ( std::size_t i = 0; i < dataSet.size(); ++i )
-      {
-        labels[i] = classify( dataSet, i );
-      }
-      return labels;
-  }
+template <typename FeatureIterator, typename OutputIterator>
+unsigned int DecisionTree<FeatureIterator, OutputIterator>::classifyAndVote( FeatureIterator pointsStart, FeatureIterator pointsEnd,
+    VoteTable & table ) const
+{
+    // Check the dimensions of the input data.
+    auto rawFeatureCount = std::distance( pointsStart, pointsEnd );
+    auto featureCount    = this->getFeatureCount();
+    assert( rawFeatureCount > 0 );
+    assert( ( rawFeatureCount % featureCount ) == 0 );
 
-  /**
-   * Classify all points in a DataSet using bulk voting.
-   */
-  std::vector<bool> classifyBulk( const DataSet &dataSet )
-  {
-      // Let each tree vote whether a particular point is true or false.
-      std::vector<unsigned int> votes( dataSet.size(), 0 );
-      for ( auto tree: m_trees )
-      {
-          tree->classifyVote( dataSet, votes );
-      }
+    // Determine the number of points in the input data.
+    unsigned int pointCount = rawFeatureCount / featureCount;
 
-       // Calculate the end result of all votes.
-      std::vector<bool> labels( dataSet.size() );
-      auto limit = ( m_trees.size() / 2 ); // TODO: maybe weighted voting based on quality of out-of-bag-predictions.
-      for ( unsigned int point = 0; point < dataSet.size(); ++point )
-      {
-          labels[point] = votes[point] >= limit;
-      }
-      return labels;
-  }
+    // Create a list containing all datapoint IDs (0, 1, 2, etc.).
+    std::vector<DataPointID> pointIDs( pointCount );
+    std::iota( pointIDs.begin(), pointIDs.end(), 0 );
 
-  /**
-   * Classify all points in a dataset.
-   */
-  std::vector<bool> classify( const DataSet &dataSet )
-  {
-      return classifyBulk( dataSet ); // Single-threaded bulk classification.
-  }
+    // Recursively partition the list of point IDs according to the interior
+    // node criteria, and classify them by the leaf node labels.
+    recursiveClassifyVote( pointIDs.begin(), pointIDs.end(), pointsStart, table, NodeID( 0 ) );
 
-  /**
-   * Return the classification of a data point.
-   */
-  bool classify( const DataSet &dataSet, DataPointID pointID )
-  {
-      unsigned int trueCount = 0;
-      for ( auto tree: m_trees ) if ( tree->classify( dataSet, pointID ) ) ++trueCount;
-      return trueCount >= m_trees.size() / 2; // TODO: weighted voting based on quality of out-of-bag predictions of subtrees?
-  }
+    return 1;
+}
 
-  /**
-   * Add a tree to the forest.
-   * \param tree The root node of the tree.
-   */
-  void addTree( DecisionTree::ConstSharedPointer tree )
-  {
-      m_trees.push_back( tree );
-  }
+template <typename FeatureIterator, typename OutputIterator>
+void DecisionTree<FeatureIterator, OutputIterator>::recursiveClassifyVote( std::vector<DataPointID>::iterator pointIDsStart,
+    std::vector<DataPointID>::iterator pointIDsEnd, FeatureIterator pointsStart, VoteTable & voteTable,
+    NodeID currentNodeID ) const
+{
+    // If the current node is an interior node, split the points along the split value, and classify both halves.
+    auto &currentNode = m_nodes[currentNodeID];
+    if ( currentNode.leftChildID > 0 )
+    {
+        // Extract the split limit and split dimension of this node.
+        auto splitValue = currentNode.splitValue;
+        auto featureID  = currentNode.splitFeatureID;
 
-  /**
-   * Print the forest for debugging purposes.
-   */
-  void dump() const
-  {
-      std::cout << "Forest:" << std::endl;
-      unsigned int i = 0;
-      std::string rule( 80, '-' );
-      for ( auto const & tree: m_trees )
-      {
-          // Dump the tree with a header.
-          std::cout << rule << std::endl;
-          std::cout << "Tree #" << i << std::endl;
-          std::cout << rule << std::endl;
-          tree->dump();
+        // Retrieve feature count.
+        auto featureCount = this->getFeatureCount();
 
-          // Increment counter.
-          ++i;
-      }
-      std::cout << rule << std::endl;
-  }
+        // Split the point IDs in two halves: points that lie below and points that lie on or above the feature split value.
+        auto pointIsBelowLimit = [&pointsStart,featureCount,splitValue,featureID]( const unsigned int &pointID )
+        {
+            return pointsStart[featureCount * pointID + featureID] < splitValue;
+        };
+        auto secondHalf = std::partition( pointIDsStart, pointIDsEnd, pointIsBelowLimit );
 
-  /**
-   * Remove all trees from the forest.
-   */
-  void clear()
-  {
-      m_trees.clear();
-  }
+        // Recursively classify both halves.
+        recursiveClassifyVote( pointIDsStart, secondHalf, pointsStart, voteTable, currentNode.leftChildID  );
+        recursiveClassifyVote( secondHalf , pointIDsEnd , pointsStart, voteTable, currentNode.rightChildID );
+    }
 
-private:
+    // If the current node is a leaf node (and the label is 'true'), increment the true count in the output.
+    else
+    {
+        if ( currentNode.label )
+        {
+            for ( auto it( pointIDsStart ), end( pointIDsEnd ); it != end; ++it )
+            {
+                assert( *it < voteTable.size() );
+                ++voteTable[*it];
+            }
+        }
+    }
+}
 
-  std::vector<DecisionTree::ConstSharedPointer> m_trees;
-};
+template <typename FeatureIterator, typename OutputIterator>
+unsigned int DecisionTree<FeatureIterator, OutputIterator>::getDepth( NodeID nodeID ) const
+{
+    const DecisionTreeNode & node = m_nodes[nodeID];
+    const unsigned int depthLeft  = ( node.leftChildID  == 0 ) ? 0 : getDepth( node.leftChildID  );
+    const unsigned int depthRight = ( node.rightChildID == 0 ) ? 0 : getDepth( node.rightChildID );
+    return 1 + std::max( depthLeft, depthRight );
+}
 
 /**
  * Determine whether a decision tree node is a leaf node.
  */
-inline bool isLeafNode( const DecisionTree::DecisionTreeNode & node )
+template <typename FeatureIterator, typename OutputIterator>
+inline bool isLeafNode( const typename DecisionTree<FeatureIterator, OutputIterator>::DecisionTreeNode & node )
 {
     return node.leftChildID == 0;
 }
 
 /**
- * Read a decision tree from a binary input stream.
+ * Deserialize a POD (Plain Old Data) value from a binary input stream.
  */
-DecisionTree::SharedPointer readDecisionTree( std::istream & in );
+template <typename T>
+inline T readPODValue( std::istream & stream )
+{
+    T result;
+    stream.read( reinterpret_cast<char *>( &result ), sizeof( T ) );
+    return result;
+}
 
 /**
- * Write a decision tree to a binary input stream.
+ * Serialize a POD (Plain Old Data) value to a binary input stream.
  */
-void writeDecisionTree( std::ostream & os, const DecisionTree & tree );
+template <typename T>
+void writePODValue( std::ostream & os, const T & value )
+{
+    os.write( reinterpret_cast<const char *>( &value ), sizeof( T ) );
+}
+
+/**
+ * Read a decision tree from a binary input stream.
+ */
+template <typename FeatureIterator, typename OutputIterator>
+typename DecisionTree<FeatureIterator, OutputIterator>::SharedPointer readDecisionTree( std::istream & in )
+{
+    // Read the header.
+    assert( in.good() );
+    if ( in.eof() ) throw ParseError( "Unexpected end of file." );
+    char marker = readPODValue<char>( in );
+    if ( in.eof() ) throw ParseError( "Unexpected end of file." );
+    if ( marker != 't' ) throw ParseError( "Unexpected header block." );
+
+    // Read the feature count.
+    if ( in.eof() ) throw ParseError( "Unexpected end of file." );
+    std::size_t featureCount = readPODValue<std::uint8_t>( in );
+
+    // Create an empty decision tree.
+    typedef DecisionTree<FeatureIterator, OutputIterator> DecisionTreeType;
+    typename DecisionTreeType::SharedPointer tree( new DecisionTreeType( featureCount ) );
+
+    // Read the node count.
+    if ( in.eof() ) throw ParseError( "Unexpected end of file." );
+    std::size_t nodeCount = readPODValue<std::uint64_t>( in );
+
+    // Calculate the size of one tree node.
+    typedef typename DecisionTreeType::DecisionTreeNode DecisionTreeNodeType;
+    std::size_t rawNodeSize  = sizeof( DecisionTreeNodeType().leftChildID    )
+                             + sizeof( DecisionTreeNodeType().rightChildID   )
+                             + sizeof( DecisionTreeNodeType().splitFeatureID )
+                             + sizeof( DecisionTreeNodeType().splitValue     )
+                             + sizeof( DecisionTreeNodeType().label          );
+
+    // Allocate a buffer and read the raw tree data into it.
+    auto rawTreeSize = rawNodeSize * nodeCount;
+    std::unique_ptr<char[]> buffer(new char[rawTreeSize]);
+    in.read( &(buffer[0]), rawTreeSize );
+
+    if ( in.fail() ) throw ParseError( "Could not read data." );
+
+    // Parse tree nodes.
+    char *rawNode = &(buffer[0]);
+    for ( std::size_t nodeID = 0; nodeID < nodeCount; ++nodeID )
+    {
+        DecisionTreeNodeType node;
+
+        node.leftChildID = *reinterpret_cast<decltype( DecisionTreeNodeType().leftChildID ) *>( rawNode );
+        rawNode += sizeof( DecisionTreeNodeType().leftChildID );
+
+        node.rightChildID = *reinterpret_cast<decltype( DecisionTreeNodeType().rightChildID ) *>( rawNode );
+        rawNode += sizeof( DecisionTreeNodeType().rightChildID );
+
+        node.splitFeatureID = *reinterpret_cast<decltype( DecisionTreeNodeType().splitFeatureID ) *>( rawNode );
+        rawNode += sizeof( DecisionTreeNodeType().splitFeatureID );
+
+        node.splitValue = *reinterpret_cast<decltype( DecisionTreeNodeType().splitValue ) *>( rawNode );
+        rawNode += sizeof( DecisionTreeNodeType().splitValue );
+
+        node.label = *reinterpret_cast<decltype( DecisionTreeNodeType().label ) *>( rawNode );
+        rawNode += sizeof( DecisionTreeNodeType().label );
+
+        tree->addNode( node );
+    }
+
+    return tree;
+}
+
+template <typename LabelType>
+void writeLabel( std::ostream & os, LabelType label );
+
+template <>
+void writeLabel( std::ostream & os, bool label )
+{
+    writePODValue<std::uint8_t>( os, label );
+}
+
+template <>
+void writeLabel( std::ostream & os, std::uint8_t label )
+{
+    writePODValue<std::uint8_t>( os, label );
+}
+
+template <typename FeatureType>
+void writeSplitValue( std::ostream & os, FeatureType splitValue );
+
+template <>
+void writeSplitValue( std::ostream & os, float splitValue )
+{
+    writePODValue<float>( os, splitValue );
+}
+
+template <>
+void writeSplitValue( std::ostream & os, double splitValue )
+{
+    writePODValue<double>( os, splitValue );
+}
+
+/**
+ * Write a decision tree to a binary output stream.
+ */
+template <typename FeatureIterator, typename OutputIterator>
+void writeDecisionTree( std::ostream & os, const DecisionTree<FeatureIterator, OutputIterator> & tree )
+{
+    writePODValue<char>( os, 't' );
+    writePODValue<std::uint8_t>( os, tree.getFeatureCount() );
+    writePODValue<std::uint64_t>( os, tree.getNodeCount() );
+    for ( auto const & node : tree )
+    {
+        writePODValue<std::uint32_t>( os, node.leftChildID    );
+        writePODValue<std::uint32_t>( os, node.rightChildID   );
+        writePODValue<std::uint8_t >( os, node.splitFeatureID );
+        writeSplitValue( os, node.splitValue );
+        writeLabel( os, node.label );
+    }
+}
+
+/**
+ * Read a decision tree from a binary file.
+ */
+template <typename FeatureIterator, typename OutputIterator>
+typename DecisionTree<FeatureIterator, OutputIterator>::SharedPointer loadDecisionTree( const std::string & filename )
+{
+    // Serialize the tree.
+    std::ifstream in( filename, std::ios::binary );
+    return readDecisionTree<FeatureIterator, OutputIterator>( in );
+};
 
 /**
  * Writes a decision tree to a binary file.
  */
-void storeDecisionTree( const DecisionTree & tree, const std::string & filename );
-
-/**
- * Reads a Forest from a binary input stream. See also: loadForest().
- */
-Forest::SharedPointer readForest( std::istream &in );
-
-/**
- * Writes a Forest to a binary output stream. See also: storeForest().
- */
-void writeForest( std::ostream & out, const Forest &forest );
-
-/**
- * Reads a Forest from a file.
- */
-Forest::SharedPointer loadForest( const std::string &filename );
-
-/**
- * Writes a Forest to a file.
- */
-void storeForest( const Forest &forest, const std::string &filename );
+template <typename FeatureIterator, typename OutputIterator>
+void storeDecisionTree( const DecisionTree<FeatureIterator, OutputIterator> & tree, const std::string & filename )
+{
+    // Serialize the tree.
+    std::ofstream out( filename, std::ios::binary | std::ios::out );
+    writeDecisionTree( out, tree );
+};
 
 #endif // DECISIONTREES_H

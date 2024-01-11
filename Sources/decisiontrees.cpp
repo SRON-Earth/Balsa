@@ -7,6 +7,7 @@
 #include "decisiontrees.h"
 #include "exceptions.h"
 
+#if 0
 namespace
 {
   template <typename T>
@@ -84,7 +85,7 @@ bool DecisionTree::classify( NodeID nodeID, const DataSet &dataSet, DataPointID 
     return node.label;
 }
 
-void DecisionTree::recursiveClassifyVote( std::vector<unsigned int>::iterator pointsBegin, std::vector<unsigned int>::iterator pointsEnd, const DataSet &dataSet, std::vector<unsigned int> &voteTable, unsigned int currentNodeID ) const
+void DecisionTree::recursiveClassifyVote( std::vector<unsigned int>::iterator pointsStart, std::vector<unsigned int>::iterator pointsEnd, const DataSet &dataSet, std::vector<unsigned int> &voteTable, unsigned int currentNodeID ) const
 {
     // If the current node is an interior node, split the points along the split value, and classify both halves.
     auto &currentNode = m_nodes[currentNodeID];
@@ -99,10 +100,10 @@ void DecisionTree::recursiveClassifyVote( std::vector<unsigned int>::iterator po
         {
             return dataSet.getFeatureValue( pointID, featureID ) < splitValue;
         };
-        auto secondHalf = std::partition( pointsBegin, pointsEnd, pointIsBelowLimit );
+        auto secondHalf = std::partition( pointsStart, pointsEnd, pointIsBelowLimit );
 
         // Recursively classify both halves.
-        recursiveClassifyVote( pointsBegin, secondHalf, dataSet, voteTable, currentNode.leftChildID  );
+        recursiveClassifyVote( pointsStart, secondHalf, dataSet, voteTable, currentNode.leftChildID  );
         recursiveClassifyVote( secondHalf , pointsEnd , dataSet, voteTable, currentNode.rightChildID );
     }
 
@@ -111,7 +112,7 @@ void DecisionTree::recursiveClassifyVote( std::vector<unsigned int>::iterator po
     {
         if ( currentNode.label )
         {
-            for ( auto it( pointsBegin ), end( pointsEnd ); it != end; ++it )
+            for ( auto it( pointsStart ), end( pointsEnd ); it != end; ++it )
             {
                 ++voteTable[*it];
             }
@@ -252,3 +253,4 @@ void storeForest( const Forest &forest, const std::string &filename )
     // Write the forest.
     writeForest( out, forest );
 }
+#endif

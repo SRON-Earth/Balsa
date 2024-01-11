@@ -72,6 +72,11 @@ public:
       return m_dataRows[ pointID * m_featureCount + featureID];
   }
 
+  const std::vector<double> & getData() const
+  {
+      return m_dataRows;
+  }
+
 private:
 
   unsigned int        m_featureCount;

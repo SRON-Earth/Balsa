@@ -3,21 +3,37 @@
 
 #include "decisiontrees.h"
 
-
-// Tests consistency between the brute force classifier and the fast bulk classifyVote() method of DecisionTree.
-bool testClassifyVote( )
+// Tests classification on a relatively simple, but non-trivial decision tree.
+bool testClassification()
 {
+    // Create a dataset.
+    DataSet points( 4 );
+    points.appendDataPoint( {10  , 10, 10, 4.9} ); // Should be false.
+    points.appendDataPoint( { 2.9, 0 , 6,  5  } ); // Should be true.
+    points.appendDataPoint( {10  , 0 , 6,  5  } ); // Shuuld be false.
+    points.appendDataPoint( { 3  , 0 , 6,  5  } ); // Should be false.
 
-    // Construct a relatively simple, but non-trivial tree.
-    DecisionTree tree;
-    auto root = tree.addNode( DecisionTree::DecisionTreeNode() ); // Root.
+    // Create expected labels.
+    std::vector<bool> expectedLabels{false, true, false, false};
+
+    // Allocate space for the classification result.
+    std::vector<bool> labels( points.size(), false );
+
+    // Construct a relatively simple, but non-trivial decision tree.
+    typedef typename std::decay_t<decltype( points.getData() )>::const_iterator FeatureIteratorType;
+    typedef typename decltype( labels )::iterator OutputIteratorType;
+    typedef DecisionTree<FeatureIteratorType, OutputIteratorType> DecisionTreeType;
+    typedef typename DecisionTreeType::DecisionTreeNode DecisionTreeNodeType;
+
+    DecisionTreeType tree( points.getFeatureCount() );
+    auto root = tree.addNode( DecisionTreeNodeType() ); // Root.
     assert( root == 0 );
-    auto l = tree.addNode( DecisionTree::DecisionTreeNode() );
-    auto r = tree.addNode( DecisionTree::DecisionTreeNode() );
+    auto l = tree.addNode( DecisionTreeNodeType() );
+    auto r = tree.addNode( DecisionTreeNodeType() );
     tree[root].leftChildID  = l;
     tree[root].rightChildID = r;
-    auto rl = tree.addNode( DecisionTree::DecisionTreeNode() );
-    auto rr = tree.addNode( DecisionTree::DecisionTreeNode() );
+    auto rl = tree.addNode( DecisionTreeNodeType() );
+    auto rr = tree.addNode( DecisionTreeNodeType() );
     tree[r].leftChildID  = rl;
     tree[r].rightChildID = rr;
     tree[root].splitFeatureID = 3;
@@ -29,27 +45,18 @@ bool testClassifyVote( )
     tree[rl].label = true ;
     tree[rr].label = false;
 
-
-    // Create a dataset.
-    DataSet points( 4 );
-    points.appendDataPoint( {10  , 10, 10, 4.9} ); // Should be false.
-    points.appendDataPoint( { 2.9, 0 , 6,  5  } ); // Should be true.
-    points.appendDataPoint( {10  , 0 , 6,  5  } ); // Shuuld be false.
-    points.appendDataPoint( {3  , 0 , 6,  5   } ); // Should be false.
-
     // Classify the dataset using the bulk classification method.
-    std::vector<unsigned int> votes( points.size(), 0 );
     tree.dump();
-    tree.classifyVote( points, votes );
+    tree.classify( points.getData().begin(), points.getData().end(), labels.begin() );
 
-    // Check the classification against naive classification.
+    // Check the classification against the expected result.
     bool success = true;
     for ( unsigned int point = 0; point < points.size(); ++point )
     {
-        if ( tree.classify( points, point ) != ( votes[point] > 0 ) )
+        if ( labels[point] != expectedLabels[point] )
         {
             success = false;
-            std::cout << "Inconsistency on point " << point << std::endl;
+            std::cout << "Inconsistency on point #" << point << std::endl;
         }
     }
 
@@ -60,7 +67,7 @@ int main( int, char ** )
 {
     unsigned int successes = 0;
     unsigned int failures  = 0;
-    if ( testClassifyVote() ) ++successes; else ++failures;
+    if ( testClassification() ) ++successes; else ++failures;
 
     std::cout << successes << " successes, " << failures << " failures." << std::endl;
     return failures;
