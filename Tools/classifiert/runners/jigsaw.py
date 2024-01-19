@@ -3,21 +3,19 @@ from ..util import run_program, get_statistics_from_time_file, get_classificatio
 
 
 def run(run_path, train_data_filename, train_label_filename, test_data_filename, test_label_filename, *,
-        num_estimators, max_tree_depth, num_threads, version):
+        num_estimators, max_tree_depth, num_threads):
 
     run_statistics = {}
 
     args = ["-c", str(num_estimators), "-t", str(num_threads)]
     if max_tree_depth is not None:
         args += ["-d", str(max_tree_depth)]
-    if version == 2:
-        args += ["-2"]
     args += [str(train_data_filename), str(train_label_filename), "jigsaw.model"]
-
     result = run_program("rftrain", *args, log=True, time_file="train.time", cwd=run_path)
     get_statistics_from_time_file(run_path / "train.time", target_dict=run_statistics, key_prefix="train-")
 
-    result = run_program("rfclassify", "jigsaw.model", str(test_data_filename), "labels.bin", log=True, time_file="test.time", cwd=run_path)
+    args = ["-t", str(num_threads), "-p", str(num_threads)]
+    result = run_program("rfclassify", *args, "jigsaw.model", str(test_data_filename), "labels.bin", log=True, time_file="test.time", cwd=run_path)
     get_statistics_from_time_file(run_path / "test.time", target_dict=run_statistics, key_prefix="test-")
 
     for line in result.stdout.split("\n"):
@@ -40,20 +38,4 @@ def run(run_path, train_data_filename, train_label_filename, test_data_filename,
 
     return run_statistics
 
-
-def run_mark1(run_path, train_data_filename, train_label_filename, test_data_filename, test_label_filename, *,
-              num_estimators, max_tree_depth, num_threads):
-
-    return run(run_path, train_data_filename, train_label_filename, test_data_filename, test_label_filename,
-               num_estimators=num_estimators, max_tree_depth=max_tree_depth, num_threads=num_threads, version=1)
-
-
-def run_mark2(run_path, train_data_filename, train_label_filename, test_data_filename, test_label_filename, *,
-              num_estimators, max_tree_depth, num_threads):
-
-    return run(run_path, train_data_filename, train_label_filename, test_data_filename, test_label_filename,
-               num_estimators=num_estimators, max_tree_depth=max_tree_depth, num_threads=num_threads, version=2)
-
-
-register_classifier("jigsaw", "bin", run_mark1)
-register_classifier("jigsaw-mark2", "bin", run_mark2)
+register_classifier("jigsaw", "bin", run)

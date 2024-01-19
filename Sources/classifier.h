@@ -56,4 +56,4 @@ private:
   std::size_t m_featureCount;
 };
 
-#endif
+#endif // CLASSIFIER_H

@@ -15,28 +15,22 @@
  * evaluated need to be kept in memory simultaneously. In the single threaded
  * case, only a single classifier is kept in memory at any given time.
  *
- * Classifying datasets in batches using this classifier stream implementation
- * is inefficient, because each classifier in the stream will be (re)loaded for
- * each dataset in the batch. If enough memory is available, consider using an
- * eager classifier stream implementation instead.
- *
- * A classifier stream implementation for random forests that keeps all
- * classifiers in memory.
- *
- * Loading all classifiers upfront can be efficient when classifying datasets in
- * batches, because the classification of each dataset needs all classifiers.
- * However, doing so is not efficient in terms of memory. If memory is scarse,
- * consider using a lazy classification stream implementation instead.
+ * When classifying datasets in batches, loading classifiers on demand is
+ * inefficient, because each classifier in the stream will be (re)loaded for
+ * each dataset in the batch. If enough memory is available, consider setting
+ * `maxPreload` to zero. This will cause all classifiers to be loaded into
+ * memory once.
  */
-
-/**
- * Class that represents a collection of decision trees that can be iterated.
- */
-template<typename FeatureIterator, typename OutputIterator>
+template<typename FeatureIterator,
+         typename OutputIterator,
+         typename FeatureType = std::iterator_traits<FeatureIterator>::value_type,
+         typename LabelType = std::iterator_traits<OutputIterator>::value_type>
 class DecisionTreeClassifierStream: public ClassifierStream<FeatureIterator, OutputIterator>
 {
 public:
   using typename ClassifierStream<FeatureIterator, OutputIterator>::ClassifierType;
+
+  typedef DecisionTreeClassifier<FeatureIterator, OutputIterator, FeatureType, LabelType> DecisionTreeClassifierType;
 
   DecisionTreeClassifierStream( const std::string &filename, unsigned int maxPreload = 0 )
   : m_filename( filename )
@@ -70,7 +64,7 @@ public:
    * Return the next classifier in the stream, or an empty shared pointer when
    * the end of the stream has been reached.
    */
-  virtual typename DecisionTreeClassifierStream::ClassifierType::SharedPointer next()
+  virtual typename ClassifierType::SharedPointer next()
   {
       // Fetch more trees if necessary.
       if ( m_cacheIndex == m_cache.size() )
@@ -137,7 +131,7 @@ private:
               break;
           }
 
-          auto tree = DecisionTreeClassifier<FeatureIterator, OutputIterator>::read( m_modelFile );
+          auto tree = DecisionTreeClassifierType::deserialize( m_modelFile );
           m_cache.push_back( tree );
       }
 

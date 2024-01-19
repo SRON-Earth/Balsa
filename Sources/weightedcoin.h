@@ -54,7 +54,7 @@ private:
 typedef ThreadSafeRandomNumberGenerator<> MasterSeedSequence;
 
 /**
- * Return a reference to a singleton thread safe random runmber generator that
+ * Return a reference to a singleton thread safe random number generator that
  * can be used for seeding thread local random number generators.
  */
 MasterSeedSequence & getMasterSeedSequence();

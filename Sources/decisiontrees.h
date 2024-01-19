@@ -2,38 +2,41 @@
 #define DECISIONTREES_H
 
 #include <algorithm>
-#include <cstdint>
-#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <memory>
-#include <numeric>
+#include <string>
+#include <type_traits>
 #include <vector>
 
 #include "datarepresentation.h"
 #include "exceptions.h"
 
-typedef unsigned char FeatureID;
+/**
+ * The unique consecutive ID of a decision tree node.
+ */
 typedef unsigned int NodeID;
-
 
 /**
  * A decision tree.
  */
-template <typename FeatureValueType = double, typename LabelValueType = unsigned char>
+template <typename FeatureType = double, typename LabelType = bool>
 class DecisionTree
 {
+  static_assert( std::is_arithmetic<FeatureType>::value, "Feature type should be an integral or floating point type." );
+  static_assert( std::is_same<LabelType, bool>::value, "Label type should be 'bool'." );
+
 public:
-  typedef std::shared_ptr<DecisionTree<FeatureValueType, LabelValueType>> SharedPointer;
-  typedef std::shared_ptr<const DecisionTree<FeatureValueType, LabelValueType>> ConstSharedPointer;
+  typedef std::shared_ptr<DecisionTree<FeatureType, LabelType>> SharedPointer;
+  typedef std::shared_ptr<const DecisionTree<FeatureType, LabelType>> ConstSharedPointer;
 
   struct DecisionTreeNode
   {
-      NodeID           leftChildID   ;
-      NodeID           rightChildID  ;
-      FeatureID        splitFeatureID;
-      FeatureValueType splitValue    ;
-      LabelValueType   label         ;
+      NodeID      leftChildID   ;
+      NodeID      rightChildID  ;
+      FeatureID   splitFeatureID;
+      FeatureType splitValue    ;
+      LabelType   label         ;
   };
 
   typedef typename std::vector<DecisionTreeNode>::const_iterator ConstIterator;
@@ -41,8 +44,7 @@ public:
   /**
    * Construct an empty decision tree.
    */
-  explicit DecisionTree( unsigned int featureCount )
-  : m_featureCount( featureCount )
+  DecisionTree()
   {
   }
 
@@ -50,15 +52,9 @@ public:
    * Construct a decision tree from a sequence of decision tree nodes.
    */
   template <typename T>
-  DecisionTree( unsigned int featureCount, T first, T last )
-  : m_featureCount( featureCount )
-  , m_nodes( first, last )
+  DecisionTree( T first, T last )
+  : m_nodes( first, last )
   {
-  }
-
-  unsigned int getFeatureCount() const
-  {
-      return m_featureCount;
   }
 
   /**
@@ -140,79 +136,33 @@ private:
   void dump( NodeID nodeID, unsigned int indent ) const;
   unsigned int getDepth( NodeID nodeID ) const;
 
-  unsigned int m_featureCount;
   std::vector<DecisionTreeNode> m_nodes;
 };
 
 /**
  * Determine whether a decision tree node is a leaf node.
  */
-template <typename FeatureValueType, typename LabelValueType>
-inline bool isLeafNode( const typename DecisionTree<FeatureValueType, LabelValueType>::DecisionTreeNode & node )
+template <typename FeatureType, typename LabelType>
+inline bool isLeafNode( const typename DecisionTree<FeatureType, LabelType>::DecisionTreeNode & node )
 {
     return node.leftChildID == 0;
 }
 
-/**
- * Serialize a POD (Plain Old Data) value to a binary input stream.
- */
-template <typename T>
-void writePODValue( std::ostream & os, const T & value )
+// #############################################################################
+// # DecisionTree implementation.
+// #############################################################################
+
+template <typename FeatureType, typename LabelType>
+unsigned int DecisionTree<FeatureType, LabelType>::getDepth( NodeID nodeID ) const
 {
-    os.write( reinterpret_cast<const char *>( &value ), sizeof( T ) );
+    const DecisionTreeNode & node = m_nodes[nodeID];
+    const unsigned int depthLeft  = ( node.leftChildID  == 0 ) ? 0 : getDepth( node.leftChildID  );
+    const unsigned int depthRight = ( node.rightChildID == 0 ) ? 0 : getDepth( node.rightChildID );
+    return 1 + std::max( depthLeft, depthRight );
 }
 
-template <typename LabelType>
-void writeLabel( std::ostream & os, LabelType label );
-
-template <>
-void writeLabel( std::ostream & os, bool label );
-
-template <>
-void writeLabel( std::ostream & os, std::uint8_t label );
-
-template <typename FeatureType>
-void writeSplitValue( std::ostream & os, FeatureType splitValue );
-
-template <>
-void writeSplitValue( std::ostream & os, float splitValue );
-
-template <>
-void writeSplitValue( std::ostream & os, double splitValue );
-
-/**
- * Write a decision tree to a binary output stream.
- */
-template <typename FeatureValueType, typename LabelValueType>
-void writeDecisionTree( std::ostream & os, const DecisionTree<FeatureValueType, LabelValueType> & tree )
-{
-    writePODValue<char>( os, 't' );
-    writePODValue<std::uint8_t>( os, tree.getFeatureCount() );
-    writePODValue<std::uint64_t>( os, tree.getNodeCount() );
-    for ( auto const & node : tree )
-    {
-        writePODValue<std::uint32_t>( os, node.leftChildID );
-    }
-    for ( auto const & node : tree )
-    {
-        writePODValue<std::uint32_t>( os, node.rightChildID );
-    }
-    for ( auto const & node : tree )
-    {
-        writePODValue<std::uint8_t>( os, node.splitFeatureID );
-    }
-    for ( auto const & node : tree )
-    {
-        writeSplitValue( os, node.splitValue );
-    }
-    for ( auto const & node : tree )
-    {
-        writeLabel( os, node.label );
-    }
-}
-
-template <typename FeatureValueType, typename LabelValueType>
-void DecisionTree<FeatureValueType, LabelValueType>::dump( NodeID nodeID, unsigned int indent ) const
+template <typename FeatureType, typename LabelType>
+void DecisionTree<FeatureType, LabelType>::dump( NodeID nodeID, unsigned int indent ) const
 {
     auto tab = std::string( indent, ' ' );
 
@@ -234,15 +184,6 @@ void DecisionTree<FeatureValueType, LabelValueType>::dump( NodeID nodeID, unsign
         // Leaf node.
         std::cout << tab << "Node #" << nodeID << " " << ( node.label ? "TRUE" : "FALSE" ) << std::endl;
     }
-}
-
-template <typename FeatureValueType, typename LabelValueType>
-unsigned int DecisionTree<FeatureValueType, LabelValueType>::getDepth( NodeID nodeID ) const
-{
-    const DecisionTreeNode & node = m_nodes[nodeID];
-    const unsigned int depthLeft  = ( node.leftChildID  == 0 ) ? 0 : getDepth( node.leftChildID  );
-    const unsigned int depthRight = ( node.rightChildID == 0 ) ? 0 : getDepth( node.rightChildID );
-    return 1 + std::max( depthLeft, depthRight );
 }
 
 #endif // DECISIONTREES_H

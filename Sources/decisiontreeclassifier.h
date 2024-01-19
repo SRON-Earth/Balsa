@@ -1,29 +1,26 @@
 #ifndef DECISIONTREECLASSIFIER_H
 #define DECISIONTREECLASSIFIER_H
 
+#include <iterator>
+#include <numeric>
+
 #include "classifier.h"
 #include "decisiontrees.h"
 #include "exceptions.h"
-
-#include <iostream>
-
-/**
- * Deserialize a POD (Plain Old Data) value from a binary input stream.
- */
-template <typename T>
-inline T readPODValue( std::istream & stream )
-{
-    T result;
-    stream.read( reinterpret_cast<char *>( &result ), sizeof( T ) );
-    return result;
-}
+#include "serdes.h"
 
 /**
  * Class that represents a collection of decision trees that can be iterated.
  */
-template<typename FeatureIterator, typename OutputIterator>
+template<typename FeatureIterator,
+         typename OutputIterator,
+         typename FeatureType = std::iterator_traits<FeatureIterator>::value_type,
+         typename LabelType = std::iterator_traits<OutputIterator>::value_type>
 class DecisionTreeClassifier: public Classifier<FeatureIterator, OutputIterator>
 {
+  static_assert( std::is_arithmetic<FeatureType>::value, "Feature type should be an integral or floating point type." );
+  static_assert( std::is_same<LabelType, bool>::value, "Label type should be 'bool'." );
+
 public:
   using typename Classifier<FeatureIterator, OutputIterator>::VoteTable;
   using Classifier<FeatureIterator, OutputIterator>::getFeatureCount;
@@ -31,60 +28,15 @@ public:
   typedef std::shared_ptr<DecisionTreeClassifier> SharedPointer;
   typedef std::shared_ptr<const DecisionTreeClassifier> ConstSharedPointer;
 
-  typedef typename std::iterator_traits<FeatureIterator>::value_type FeatureValueType;
-  // typedef typename std::iterator_traits<OutputIterator>::value_type LabelValueType;
-  typedef unsigned char LabelValueType;
-
-  static typename Classifier<FeatureIterator, OutputIterator>::SharedPointer read( std::ifstream & in )
-  {
-    // Read the header.
-    assert( in.good() );
-    if ( in.eof() ) throw ParseError( "Unexpected end of file." );
-    char marker = readPODValue<char>( in );
-    if ( in.eof() ) throw ParseError( "Unexpected end of file." );
-    if ( marker != 't' ) throw ParseError( "Unexpected header block." );
-
-    // Read the feature count.
-    if ( in.eof() ) throw ParseError( "Unexpected end of file." );
-    std::size_t featureCount = readPODValue<std::uint8_t>( in );
-
-    // Create an empty decision tree.
-    typedef DecisionTreeClassifier<FeatureIterator, OutputIterator> DecisionTreeClassifierType;
-    typename DecisionTreeClassifierType::SharedPointer tree( new DecisionTreeClassifierType( featureCount ) );
-
-    // Read the node count.
-    if ( in.eof() ) throw ParseError( "Unexpected end of file." );
-    std::size_t nodeCount = readPODValue<std::uint64_t>( in );
-
-    std::cout << "features: " << featureCount << " nodes: " << nodeCount << std::endl;
-
-    tree->m_leftChildID   .resize( nodeCount );
-    tree->m_rightChildID  .resize( nodeCount );
-    tree->m_splitFeatureID.resize( nodeCount );
-    tree->m_splitValue    .resize( nodeCount );
-    tree->m_label         .resize( nodeCount );
-
-    in.read( reinterpret_cast<char*>( tree->m_leftChildID   .data() ), nodeCount * sizeof( std::uint32_t ) );
-    in.read( reinterpret_cast<char*>( tree->m_rightChildID  .data() ), nodeCount * sizeof( std::uint32_t ) );
-    in.read( reinterpret_cast<char*>( tree->m_splitFeatureID.data() ), nodeCount * sizeof( std::uint8_t ) );
-    in.read( reinterpret_cast<char*>( tree->m_splitValue    .data() ), nodeCount * sizeof( FeatureValueType ) );
-    in.read( reinterpret_cast<char*>( tree->m_label         .data() ), nodeCount * sizeof( LabelValueType ) );
-
-    return tree;
-  }
-
   /**
-   * Creates an empty decision tree classifier.
+   * Deserialize a classifier instance from a binary input stream.
    */
-  explicit DecisionTreeClassifier( unsigned int featureCount )
-  : Classifier<FeatureIterator, OutputIterator>( featureCount )
-  {
-  }
+  static SharedPointer deserialize( std::istream & is );
 
   /**
    * Creates a decision tree classifier from a decision tree.
    */
-  explicit DecisionTreeClassifier( const DecisionTree<> & decisionTree );
+  explicit DecisionTreeClassifier( unsigned int featureCount, const DecisionTree<> & decisionTree );
 
   void classify( FeatureIterator pointsStart, FeatureIterator pointsEnd, OutputIterator labels ) const;
 
@@ -92,20 +44,67 @@ public:
 
 private:
 
+  explicit DecisionTreeClassifier( unsigned int featureCount );
+
   void recursiveClassifyVote( std::vector<DataPointID>::iterator pointIDsStart,
     std::vector<DataPointID>::iterator pointIDsEnd, FeatureIterator pointsStart, VoteTable & voteTable,
     NodeID currentNodeID ) const;
 
-  std::vector<unsigned int    >  m_leftChildID   ;
-  std::vector<unsigned int    >  m_rightChildID  ;
-  std::vector<unsigned char   >  m_splitFeatureID;
-  std::vector<FeatureValueType>  m_splitValue    ;
-  std::vector<LabelValueType  >  m_label         ;
+  std::vector<NodeID>        m_leftChildID   ;
+  std::vector<NodeID>        m_rightChildID  ;
+  std::vector<FeatureID>     m_splitFeatureID;
+  std::vector<FeatureType>   m_splitValue    ;
+  std::vector<unsigned char> m_label         ;
 };
 
-template <typename FeatureIterator, typename OutputIterator>
-DecisionTreeClassifier<FeatureIterator, OutputIterator>::DecisionTreeClassifier( const DecisionTree<> & tree )
-: Classifier<FeatureIterator, OutputIterator>( tree.getFeatureCount() )
+template <typename FeatureIterator, typename OutputIterator, typename FeatureType, typename LabelType>
+typename DecisionTreeClassifier<FeatureIterator, OutputIterator, FeatureType, LabelType>::SharedPointer
+DecisionTreeClassifier<FeatureIterator, OutputIterator, FeatureType, LabelType>::deserialize( std::istream & is )
+{
+    // Read the header.
+    assert( is.good() );
+    if ( is.eof() ) throw ParseError( "Unexpected end of file." );
+    char marker = ::deserialize<char>( is );
+    if ( is.eof() ) throw ParseError( "Unexpected end of file." );
+    if ( marker != 't' ) throw ParseError( "Unexpected header block." );
+
+    // Read the feature count.
+    if ( is.eof() ) throw ParseError( "Unexpected end of file." );
+    unsigned int featureCount = ::deserialize<std::uint8_t>( is );
+
+    // Read the node count.
+    if ( is.eof() ) throw ParseError( "Unexpected end of file." );
+    std::size_t nodeCount = ::deserialize<std::uint64_t>( is );
+
+    // Create an empty decision tree classifier.
+    SharedPointer classifier( new DecisionTreeClassifier( featureCount ) );
+
+    // Allocate space for decision tree nodes.
+    classifier->m_leftChildID   .resize( nodeCount );
+    classifier->m_rightChildID  .resize( nodeCount );
+    classifier->m_splitFeatureID.resize( nodeCount );
+    classifier->m_splitValue    .resize( nodeCount );
+    classifier->m_label         .resize( nodeCount );
+
+    // Deserialize decision tree nodes.
+    is.read( reinterpret_cast<char*>( classifier->m_leftChildID   .data() ), nodeCount * sizeof( std::uint32_t ) );
+    is.read( reinterpret_cast<char*>( classifier->m_rightChildID  .data() ), nodeCount * sizeof( std::uint32_t ) );
+    is.read( reinterpret_cast<char*>( classifier->m_splitFeatureID.data() ), nodeCount * sizeof( std::uint8_t  ) );
+    is.read( reinterpret_cast<char*>( classifier->m_splitValue    .data() ), nodeCount * sizeof( FeatureType   ) );
+    is.read( reinterpret_cast<char*>( classifier->m_label         .data() ), nodeCount * sizeof( LabelType     ) );
+
+    return classifier;
+}
+
+template <typename FeatureIterator, typename OutputIterator, typename FeatureType, typename LabelType>
+DecisionTreeClassifier<FeatureIterator, OutputIterator, FeatureType, LabelType>::DecisionTreeClassifier( unsigned int featureCount )
+: Classifier<FeatureIterator, OutputIterator>( featureCount )
+{
+}
+
+template <typename FeatureIterator, typename OutputIterator, typename FeatureType, typename LabelType>
+DecisionTreeClassifier<FeatureIterator, OutputIterator, FeatureType, LabelType>::DecisionTreeClassifier( unsigned int featureCount, const DecisionTree<> & tree )
+: Classifier<FeatureIterator, OutputIterator>( featureCount )
 {
     // Pre-allocate internal data structures.
     auto nodeCount = tree.getNodeCount();
@@ -126,8 +125,8 @@ DecisionTreeClassifier<FeatureIterator, OutputIterator>::DecisionTreeClassifier(
     }
 }
 
-template <typename FeatureIterator, typename OutputIterator>
-void DecisionTreeClassifier<FeatureIterator, OutputIterator>::classify( FeatureIterator pointsStart, FeatureIterator pointsEnd,
+template <typename FeatureIterator, typename OutputIterator, typename FeatureType, typename LabelType>
+void DecisionTreeClassifier<FeatureIterator, OutputIterator, FeatureType, LabelType>::classify( FeatureIterator pointsStart, FeatureIterator pointsEnd,
     OutputIterator labels ) const
 {
     // Check the dimensions of the input data.
@@ -147,8 +146,8 @@ void DecisionTreeClassifier<FeatureIterator, OutputIterator>::classify( FeatureI
     for ( auto voteCount : voteCounts ) *labels++ = voteCount > 0;
 }
 
-template <typename FeatureIterator, typename OutputIterator>
-unsigned int DecisionTreeClassifier<FeatureIterator, OutputIterator>::classifyAndVote( FeatureIterator pointsStart, FeatureIterator pointsEnd,
+template <typename FeatureIterator, typename OutputIterator, typename FeatureType, typename LabelType>
+unsigned int DecisionTreeClassifier<FeatureIterator, OutputIterator, FeatureType, LabelType>::classifyAndVote( FeatureIterator pointsStart, FeatureIterator pointsEnd,
     VoteTable & table ) const
 {
     // Check the dimensions of the input data.
@@ -172,8 +171,8 @@ unsigned int DecisionTreeClassifier<FeatureIterator, OutputIterator>::classifyAn
     return 1;
 }
 
-template <typename FeatureIterator, typename OutputIterator>
-void DecisionTreeClassifier<FeatureIterator, OutputIterator>::recursiveClassifyVote( std::vector<DataPointID>::iterator pointIDsStart,
+template <typename FeatureIterator, typename OutputIterator, typename FeatureType, typename LabelType>
+void DecisionTreeClassifier<FeatureIterator, OutputIterator, FeatureType, LabelType>::recursiveClassifyVote( std::vector<DataPointID>::iterator pointIDsStart,
     std::vector<DataPointID>::iterator pointIDsEnd, FeatureIterator pointsStart, VoteTable & voteTable,
     NodeID currentNodeID ) const
 {

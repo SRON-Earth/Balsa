@@ -15,9 +15,10 @@
 
 #include "datarepresentation.h"
 #include "decisiontrees.h"
+#include "messagequeue.h"
+#include "serdes.h"
 #include "trainers.h"
 #include "utilities.h"
-#include "messagequeue.h"
 
 /**
  * Trains a random binary forest classifier on a TrainingDataSet.
@@ -96,13 +97,21 @@ public:
 
       // Create a forest model file and write the 'f' header marker.
       std::ofstream out( m_outputFile, std::ios::binary | std::ios::out );
-      out << 'f';
+      serialize<char>( out, 'f' );
 
       // Wait for all the trees to come in, and write each tree to a forest file.
       for ( unsigned int i = 0; i < m_treeCount; ++i )
       {
           std::cout << "Tree #" << i << " completed." << std::endl;
-          writeDecisionTree( out, *treeInbox.receive() );
+          DecisionTree<>::SharedPointer tree = treeInbox.receive();
+          serialize<char>( out, 't' );
+          serialize<std::uint8_t>( out, dataset->getFeatureCount() );
+          serialize<std::uint64_t>( out, tree->getNodeCount() );
+          for ( auto const & node : *tree ) serialize<std::uint32_t>( out, node.leftChildID    );
+          for ( auto const & node : *tree ) serialize<std::uint32_t>( out, node.rightChildID   );
+          for ( auto const & node : *tree ) serialize<std::uint8_t >( out, node.splitFeatureID );
+          for ( auto const & node : *tree ) serialize<double       >( out, node.splitValue     );
+          for ( auto const & node : *tree ) serialize<bool         >( out, node.label          );
       }
       out.close();
 

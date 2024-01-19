@@ -1,16 +1,14 @@
 #include <chrono>
 #include <fstream>
 #include <iostream>
-#include <random>
 #include <string>
 #include <vector>
 #include <sstream>
 
-#include "decisiontrees.h"
-#include "decisiontreeclassifierstream.h"
-#include "ensembleclassifier.h"
 #include "exceptions.h"
 #include "ingestion.h"
+#include "randomforestclassifier.h"
+#include "serdes.h"
 #include "timing.h"
 
 namespace
@@ -89,60 +87,18 @@ namespace
     unsigned int maxPreload ;
   };
 
-  void writeLabels(const std::vector<bool> &labels, const std::string &filename)
+  void writeLabels(const std::vector<bool> & labels, const std::string & filename)
   {
     // Open the output file stream.
-    std::ofstream stream( filename.c_str(), std::ofstream::binary );
-    assert(stream.good());
+    std::ofstream os( filename.c_str(), std::ofstream::binary );
+    assert( os.good() );
 
     // Write the number of columns.
-    const std::uint32_t numColumns = 1;
-    stream.write( reinterpret_cast<const char*>( &numColumns ), sizeof( std::uint32_t ) );
+    serialize<std::uint32_t>( os, 1 );
 
     // Write the label values.
-    for ( float label : labels )
-    {
-        stream.write( reinterpret_cast<const char*>( &label ), sizeof( float ) );
-    }
+    for ( const bool & label : labels ) serialize<float>( os, label );
   }
-
-  template<typename FeatureIterator = double *, typename OutputIterator = unsigned short *>
-  class RandomForestClassifier: public Classifier<FeatureIterator, OutputIterator>
-  {
-  public:
-    using typename Classifier<FeatureIterator, OutputIterator>::VoteTable;
-
-    RandomForestClassifier( const std::string &modelFileName, unsigned int featureCount, unsigned int maxThreads = 0, unsigned int maxPreload = 1 ):
-    Classifier<FeatureIterator, OutputIterator>( featureCount ),
-    m_treeStream( modelFileName, maxPreload ),
-    m_classifier( featureCount, m_treeStream, maxThreads )
-    {
-    }
-
-    /**
-     * Bulk-classifies a sequence of data points.
-     */
-    void classify( FeatureIterator pointsStart, FeatureIterator pointsEnd, OutputIterator labels ) const
-    {
-        m_classifier.classify( pointsStart, pointsEnd, labels );
-    }
-
-  protected:
-
-    /**
-     * Bulk-classifies a set of points, adding a vote (+1) to the vote table for
-     * each point of which the label is 'true'.
-     */
-    unsigned int classifyAndVote( FeatureIterator pointsStart, FeatureIterator pointsEnd, VoteTable & table ) const
-    {
-        return m_classifier.classifyAndVote( pointsStart, pointsEnd, table );
-    }
-
-  private:
-
-    DecisionTreeClassifierStream<FeatureIterator, OutputIterator>   m_treeStream;
-    EnsembleClassifier<FeatureIterator, OutputIterator>             m_classifier;
-  };
 }
 
 int main( int argc, char **argv )
@@ -166,15 +122,17 @@ int main( int argc, char **argv )
         std::cout << "Ingesting data..." << std::endl;
         watch.start();
         auto dataSet = loadDataSet( options.dataFile );
-        std::cout << "Dataset loaded: " << dataSet->getFeatureCount() << " features x " << dataSet->size() << " points." << std::endl;
+        std::cout << "Dataset loaded: " << dataSet->getFeatureCount()
+                  << " features x " << dataSet->size() << " points."
+                  << std::endl;
         const auto dataLoadTime = watch.getElapsedTime();
 
         // Classify the data points.
         watch.start();
         std::vector<bool> labels( dataSet->size(), false );
         typedef typename std::decay_t<decltype( dataSet->getData() )>::const_iterator FeatureIteratorType;
-        typedef typename decltype( labels )::iterator OutputIteratorType;
-        typedef RandomForestClassifier<FeatureIteratorType, OutputIteratorType> ClassifierType;
+        typedef typename std::vector<bool>::iterator OutputIteratorType;
+        typedef RandomForestClassifier<FeatureIteratorType, OutputIteratorType, double, bool> ClassifierType;
         ClassifierType classifier( options.modelFile, dataSet->getFeatureCount(), options.threadCount - 1, options.maxPreload );
         classifier.classify( dataSet->getData().begin(), dataSet->getData().end(), labels.begin() );
         watch.stop();

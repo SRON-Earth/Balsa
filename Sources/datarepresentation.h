@@ -8,15 +8,20 @@
 #include <vector>
 
 /**
- * One data point in a data set. The data consists of a list of feature-values,
- * where each feature is a double-precision float.
+ * The unique consecutive ID of a feature.
  */
-typedef std::vector<double> DataPoint;
+typedef unsigned char FeatureID;
 
 /**
  * The unique consecutive ID of a DataPoint.
  */
 typedef std::size_t DataPointID;
+
+/**
+ * One data point in a data set. The data consists of a list of feature-values,
+ * where each feature is a double-precision float.
+ */
+typedef std::vector<double> DataPoint;
 
 /**
  * A set of DataPoints.
@@ -65,7 +70,7 @@ public:
   /**
    * Returns a specific feature-value of a particular point.
    */
-  double getFeatureValue( DataPointID pointID, unsigned int featureID ) const
+  double getFeatureValue( DataPointID pointID, FeatureID featureID ) const
   {
       assert( pointID < size() );
       assert( featureID < m_featureCount );
@@ -144,7 +149,7 @@ public:
   /**
    * Returns a specific feature-value of a particular point.
    */
-  double getFeatureValue( DataPointID pointID, unsigned int featureID ) const
+  double getFeatureValue( DataPointID pointID, FeatureID featureID ) const
   {
       return m_dataSet.getFeatureValue( pointID, featureID );
   }
@@ -169,6 +174,5 @@ private:
   DataSet             m_dataSet      ; // The data points without their labels.
   std::vector< bool > m_dataSetLabels; // The labels of each point in the dataset.
 };
-
 
 #endif // DATAREPRESENTATION_H

@@ -6,7 +6,7 @@
 /**
  * Random tree trainer that represents the tree as a single array.
  */
-template <typename FeatureValueType = double, typename LabelValueType = unsigned char>
+template <typename FeatureValueType = double, typename LabelValueType = bool>
 class SingleTreeTrainerMark2: public SingleTreeTrainer<FeatureValueType, LabelValueType>
 {
 public:
