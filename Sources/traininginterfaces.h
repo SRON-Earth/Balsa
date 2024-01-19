@@ -14,6 +14,7 @@ class TrainingDataSet;
 /**
  * Abstract interface of a class that trains a single random decision tree.
  */
+template <typename FeatureValueType, typename LabelValueType>
 class SingleTreeTrainer
 {
 public:
@@ -37,14 +38,12 @@ public:
   /**
    * Train a tree on the provided dataset.
    */
-  virtual DecisionTree::SharedPointer train( const FeatureIndex &featureIndex, const TrainingDataSet &dataSet ) = 0;
+  virtual typename DecisionTree<FeatureValueType, LabelValueType>::SharedPointer train( const FeatureIndex &featureIndex, const TrainingDataSet &dataSet ) = 0;
 
 protected:
 
   const unsigned int m_maxDepth;
 
 };
-
-
 
 #endif // TRAININGINTERFACES_H

@@ -3,7 +3,31 @@
 
 #include "classifierstream.h"
 #include "decisiontrees.h"
+#include "decisiontreeclassifier.h"
 #include "exceptions.h"
+
+/**
+ * A classifier stream implementation for random forests that loads decision
+ * trees on demand.
+ *
+ * Loading classifiers on demand enables ensemble classification using a minimal
+ * amount of memory. Only the classifiers from the ensemble that are being
+ * evaluated need to be kept in memory simultaneously. In the single threaded
+ * case, only a single classifier is kept in memory at any given time.
+ *
+ * Classifying datasets in batches using this classifier stream implementation
+ * is inefficient, because each classifier in the stream will be (re)loaded for
+ * each dataset in the batch. If enough memory is available, consider using an
+ * eager classifier stream implementation instead.
+ *
+ * A classifier stream implementation for random forests that keeps all
+ * classifiers in memory.
+ *
+ * Loading all classifiers upfront can be efficient when classifying datasets in
+ * batches, because the classification of each dataset needs all classifiers.
+ * However, doing so is not efficient in terms of memory. If memory is scarse,
+ * consider using a lazy classification stream implementation instead.
+ */
 
 /**
  * Class that represents a collection of decision trees that can be iterated.
@@ -113,7 +137,7 @@ private:
               break;
           }
 
-          auto tree = readDecisionTree<FeatureIterator, OutputIterator>( m_modelFile );
+          auto tree = DecisionTreeClassifier<FeatureIterator, OutputIterator>::read( m_modelFile );
           m_cache.push_back( tree );
       }
 

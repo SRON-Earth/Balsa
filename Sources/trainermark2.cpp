@@ -13,8 +13,8 @@ namespace
   {
   public:
 
-    typedef DecisionTree::NodeID NodeID;
-    typedef DecisionTree::DecisionTreeNode DecisionTreeNode;
+    // typedef DecisionTree<>::NodeID NodeID;
+    typedef DecisionTree<>::DecisionTreeNode DecisionTreeNode;
 
     // Statistics pertaining to each split() call.
     class SplitStatistics
@@ -66,7 +66,7 @@ namespace
      * \param dataSet Set of data points and associated labels to use for training.
      * \return A trained decision tree instance.
      */
-    DecisionTree::SharedPointer train( const FeatureIndex &featureIndex, const TrainingDataSet &dataSet )
+    DecisionTree<>::SharedPointer train( const FeatureIndex &featureIndex, const TrainingDataSet &dataSet )
     {
         // Create a tree containing a single node.
         m_nodes.clear();
@@ -132,7 +132,7 @@ namespace
         finalize();
 
         // Return a stripped version of the training tree.
-        return DecisionTree::SharedPointer( new DecisionTree( m_nodes.begin(), m_nodes.end() ) );
+        return DecisionTree<>::SharedPointer( new DecisionTree<>( dataSet.getFeatureCount(), m_nodes.begin(), m_nodes.end() ) );
     }
 
     /**
@@ -167,7 +167,7 @@ namespace
         while ( true )
         {
             const DecisionTreeNode & node = m_nodes[nodeID];
-            if ( isLeafNode( node ) )
+            if ( isLeafNode<double, unsigned char>( node ) )
                 break;
 
             // Defer the registration to the correct child.
@@ -195,7 +195,7 @@ namespace
     {
         for ( NodeID nodeID( 0 ), end( m_nodes.size() ); nodeID != end; ++nodeID )
         {
-            if ( !isLeafNode( m_nodes[nodeID] ) )
+            if ( !isLeafNode<double, unsigned char>( m_nodes[nodeID] ) )
                 continue;
 
             // Reset the feature traversal statistics.
@@ -270,7 +270,7 @@ namespace
         for ( NodeID nodeID = NodeID( 0 ), end( m_nodes.size() ); nodeID != end; ++nodeID )
         {
             // Do not attempt to split interior nodes.
-            if ( !isLeafNode( m_nodes[nodeID] ) )
+            if ( !isLeafNode<double, unsigned char>( m_nodes[nodeID] ) )
                 continue;
 
             // Determine whether it's time to stop permanently.
@@ -314,7 +314,7 @@ namespace
         for ( NodeID nodeID( 0 ), end( m_nodes.size() ); nodeID != end; ++nodeID )
         {
             DecisionTreeNode & node = m_nodes[nodeID];
-            if ( isLeafNode( node ) )
+            if ( isLeafNode<double, unsigned char>( node ) )
             {
                 const NodeAnnotations & nodeStats = m_annotations[nodeID];
                 node.label = nodeStats.totalCount < 2 * nodeStats.trueCount;
@@ -341,7 +341,7 @@ namespace
                   << tab << "m_bestSplitValue      = " << nodeStats.bestSplitValue      << std::endl
                   << tab << "m_bestSplitGiniIndex  = " << nodeStats.bestSplitGiniIndex  << std::endl;
 
-        if ( !isLeafNode( node ) )
+        if ( !isLeafNode<double, unsigned char>( node ) )
         {
             std::cout << tab << "Split feature #" << node.splitFeatureID << ", value = " <<  node.splitValue << std::endl;
             std::cout << tab << "Left: " << std::endl;
@@ -359,7 +359,14 @@ namespace
   };
 } // Anonymous namespace.
 
-DecisionTree::SharedPointer SingleTreeTrainerMark2::train( const FeatureIndex &featureIndex, const TrainingDataSet &dataSet )
+// DecisionTree<>::SharedPointer trainDefault( unsigned int maxDepth, const FeatureIndex &featureIndex, const TrainingDataSet &dataSet )
+// {
+//     Mark2TreeTrainer trainer( maxDepth );
+//     return trainer.train( featureIndex, dataSet );
+// }
+
+template <>
+DecisionTree<>::SharedPointer SingleTreeTrainerMark2<>::train( const FeatureIndex &featureIndex, const TrainingDataSet &dataSet )
 {
     Mark2TreeTrainer trainer( m_maxDepth );
     return trainer.train( featureIndex, dataSet );

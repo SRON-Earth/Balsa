@@ -7,6 +7,30 @@
 #include "decisiontrees.h"
 #include "exceptions.h"
 
+template <>
+void writeLabel( std::ostream & os, bool label )
+{
+    writePODValue<std::uint8_t>( os, label );
+}
+
+template <>
+void writeLabel( std::ostream & os, std::uint8_t label )
+{
+    writePODValue<std::uint8_t>( os, label );
+}
+
+template <>
+void writeSplitValue( std::ostream & os, float splitValue )
+{
+    writePODValue<float>( os, splitValue );
+}
+
+template <>
+void writeSplitValue( std::ostream & os, double splitValue )
+{
+    writePODValue<double>( os, splitValue );
+}
+
 #if 0
 namespace
 {

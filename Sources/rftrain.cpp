@@ -19,8 +19,7 @@ namespace
     maxDepth   ( std::numeric_limits<unsigned int>::max() ),
     treeCount  ( 150                                      ),
     threadCount( 1                                        ),
-    seed       ( std::random_device{}()                   ),
-    v2         ( false                                    )
+    seed       ( std::random_device{}()                   )
     {
     }
 
@@ -36,8 +35,7 @@ namespace
            << "   -t <thread count>: Sets the number of threads (default is 1)."        << std::endl
            << "   -d <max depth>   : Sets the maximum tree depth (default is +inf)."    << std::endl
            << "   -c <tree count>  : Sets the number of trees (default is 150)."        << std::endl
-           << "   -s <random seed> : Sets the random seed (default is a random value)." << std::endl
-           << "   -2               : Use V2 trainer." << std::endl;
+           << "   -s <random seed> : Sets the random seed (default is a random value)." << std::endl;
         return ss.str();
     }
 
@@ -76,10 +74,6 @@ namespace
             {
                 if ( !(args >> options.seed) ) throw ParseError( "Missing parameter to -s option." );
             }
-            else if ( token == "-2" )
-            {
-                options.v2 = true;
-            }
             else
             {
                 throw ParseError( std::string( "Unknown option: " ) + token );
@@ -103,8 +97,6 @@ namespace
     unsigned int                    treeCount  ;
     unsigned int                    threadCount;
     std::random_device::result_type seed       ;
-    bool                            v2         ;
-
   };
 }
 
@@ -123,7 +115,6 @@ int main( int argc, char **argv )
         std::cout <<  "Tree Count     : " << options.treeCount        << std::endl;
         std::cout <<  "Threads        : " << options.threadCount      << std::endl;
         std::cout <<  "Random Seed    : " << options.seed             << std::endl;
-        std::cout <<  "Trainer Version: " << (options.v2 ? "2" : "1") << std::endl;
 
         // Seed master seed sequence.
         getMasterSeedSequence().seed( options.seed );
@@ -138,8 +129,7 @@ int main( int argc, char **argv )
         // Train a random forest on the data.
         std::cout << "Building indices..." << std::endl;
         watch.start();
-
-        BinaryRandomForestTrainer trainer( options.outputFile, options.maxDepth, options.treeCount, options.threadCount, options.v2 );
+        BinaryRandomForestTrainer trainer( options.outputFile, options.maxDepth, options.treeCount, options.threadCount );
         std::cout <<"Done (" << watch.stop() << " seconds)." << std::endl;
 
         std::cout << "Training..." << std::endl;

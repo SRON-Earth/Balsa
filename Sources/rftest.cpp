@@ -2,6 +2,7 @@
 #include <cassert>
 
 #include "decisiontrees.h"
+#include "decisiontreeclassifier.h"
 
 // Tests classification on a relatively simple, but non-trivial decision tree.
 bool testClassification()
@@ -22,7 +23,7 @@ bool testClassification()
     // Construct a relatively simple, but non-trivial decision tree.
     typedef typename std::decay_t<decltype( points.getData() )>::const_iterator FeatureIteratorType;
     typedef typename decltype( labels )::iterator OutputIteratorType;
-    typedef DecisionTree<FeatureIteratorType, OutputIteratorType> DecisionTreeType;
+    typedef DecisionTree<double, unsigned char> DecisionTreeType;
     typedef typename DecisionTreeType::DecisionTreeNode DecisionTreeNodeType;
 
     DecisionTreeType tree( points.getFeatureCount() );
@@ -47,7 +48,9 @@ bool testClassification()
 
     // Classify the dataset using the bulk classification method.
     tree.dump();
-    tree.classify( points.getData().begin(), points.getData().end(), labels.begin() );
+
+    DecisionTreeClassifier<FeatureIteratorType, OutputIteratorType> classifier( tree );
+    classifier.classify( points.getData().begin(), points.getData().end(), labels.begin() );
 
     // Check the classification against the expected result.
     bool success = true;
