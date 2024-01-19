@@ -3,7 +3,7 @@
 #include <cmath>
 
 #include "decisiontrees.h"
-#include "trainermark2.h"
+#include "trainers.h"
 #include "utilities.h"
 #include "weightedcoin.h"
 

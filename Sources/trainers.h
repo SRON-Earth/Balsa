@@ -1,5 +1,5 @@
-#ifndef TRAINER_MARK_2_H
-#define TRAINER_MARK_2_H
+#ifndef TRAINERS_H
+#define TRAINERS_H
 
 #include "traininginterfaces.h"
 
