@@ -6,8 +6,8 @@
 
 template <typename FeatureIterator,
     typename OutputIterator,
-    typename FeatureType = std::iterator_traits<FeatureIterator>::value_type,
-    typename LabelType   = std::iterator_traits<OutputIterator>::value_type>
+    typename FeatureType = typename std::iterator_traits<FeatureIterator>::value_type,
+    typename LabelType   = typename std::iterator_traits<OutputIterator>::value_type>
 class RandomForestClassifier: public Classifier<FeatureIterator, OutputIterator>
 {
 public:

@@ -14,8 +14,8 @@
  */
 template <typename FeatureIterator,
     typename OutputIterator,
-    typename FeatureType = std::iterator_traits<FeatureIterator>::value_type,
-    typename LabelType   = std::iterator_traits<OutputIterator>::value_type>
+    typename FeatureType = typename std::iterator_traits<FeatureIterator>::value_type,
+    typename LabelType   = typename std::iterator_traits<OutputIterator>::value_type>
 class DecisionTreeClassifier: public Classifier<FeatureIterator, OutputIterator>
 {
     static_assert( std::is_arithmetic<FeatureType>::value,
