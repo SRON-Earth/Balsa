@@ -3,6 +3,8 @@
 
 #include <thread>
 
+#include "classifier.h"
+#include "classifierstream.h"
 #include "messagequeue.h"
 
 template <typename FeatureIterator, typename OutputIterator>

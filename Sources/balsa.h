@@ -3,6 +3,6 @@
 
 #include "ensembleclassifier.h"
 #include "decisiontreeclassifier.h"
-
+#include "randomforestclassifier.h"
 
 #endif // LIBBALSA_H

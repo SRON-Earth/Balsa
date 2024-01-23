@@ -1,6 +1,8 @@
 #ifndef DECISIONTREECLASSIFIERSTREAM_H
 #define DECISIONTREECLASSIFIERSTREAM_H
 
+#include <fstream>
+
 #include "classifierstream.h"
 #include "decisiontreeclassifier.h"
 #include "decisiontrees.h"

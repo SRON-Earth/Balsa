@@ -28,7 +28,7 @@ public:
         std::stringstream ss;
         ss << "Usage:" << std::endl
            << std::endl
-           << "   rfclassify [options] <model file> <datapoint file> <output file>" << std::endl
+           << "   balsa_classify [options] <model file> <datapoint file> <output file>" << std::endl
            << std::endl
            << " Options:" << std::endl
            << std::endl

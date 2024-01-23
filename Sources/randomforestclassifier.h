@@ -4,10 +4,10 @@
 #include "decisiontreeclassifierstream.h"
 #include "ensembleclassifier.h"
 
-template <typename FeatureIterator,
-    typename OutputIterator,
-    typename FeatureType = typename std::iterator_traits<FeatureIterator>::value_type,
-    typename LabelType   = typename std::iterator_traits<OutputIterator>::value_type>
+template <typename FeatureIterator = double *,
+          typename OutputIterator  = bool   *,
+          typename FeatureType     = typename std::iterator_traits<FeatureIterator>::value_type,
+          typename LabelType       = typename std::iterator_traits<OutputIterator>::value_type>
 class RandomForestClassifier: public Classifier<FeatureIterator, OutputIterator>
 {
 public:

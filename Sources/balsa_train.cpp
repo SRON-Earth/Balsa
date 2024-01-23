@@ -28,7 +28,7 @@ public:
         std::stringstream ss;
         ss << "Usage:" << std::endl
            << std::endl
-           << "   rftrain [options] <data input file> <label input file> <model output file>" << std::endl
+           << "   balsa_train [options] <data input file> <label input file> <model output file>" << std::endl
            << std::endl
            << " Options:" << std::endl
            << std::endl
