@@ -2,12 +2,18 @@
  ABOUT
 --------------------------------------------------------------------------------
 
-This repository contains the (as of yet unnamed) binary classification software
-of SRON. This document contains a minimal introduction to the jargon, and an
-overview and usage instructions of the software in this package.
+This repository contains the source code of 'Balsa', a fast, light-weight
+implementation of the Random Forest classificiation algorithm. Balsa is
+optimised for low memory footprint and CPU usage during classification.
+
+This document contains a minimal introduction to the theory and the jargon, and
+an overview and usage instructions of the software in this package.
+
+N.B. The present version of Balsa only supports binary classification (see
+THEORY). This restriction will likely be removed in future versions.
 
 --------------------------------------------------------------------------------
- INTRODUCTION
+ THEORY
 --------------------------------------------------------------------------------
 
 Binary classification is the process of applying one of two labels to a
@@ -76,24 +82,31 @@ classifiers.
 
 This repository contains the following software:
 
- - rf_train: An application that can train binary Random Forest Classifiers on
-   an appropriate training data set. The output is a model file.
+- The 'balsa' library: a C++ library that can be used for binary classification.
 
- = rf_classify: An application that uses the model files of rf_train to do
+ - balsa_train: A command-line application that can train binary Random Forest
+   Classifiers on an appropriate training data set. The output is a model file
+   that can be loaded by 'balsa_classify', or directly by programs that use
+   the Balsa library.
+
+ - balsa_classify: An application that uses the model files of balsa_train to do
    predictions on unlabeled data points.
 
  - classifiert: A tool that can be used to compare the predictive quality and
    the system resource usage of various trainers and classifiers, and to split
    large training sets into proper training- and test sets.
 
+- A number of example programs that demonstrate how the Balsa library can be
+  used directly from a C++ application.
 
 --------------------------------------------------------------------------------
  REQUIREMENTS
 --------------------------------------------------------------------------------
 
-The rf_train/rf_classify tools require a C++ compiler and a CMake installation.
-The exact version requirements of CMake and the C++ standard are subject to
-change. The versions are checked by CMake during the build process.
+Balsa requires a C++ compiler and a CMake installation. The exact version
+requirements of CMake and the C++ standard are subject to change. The versions
+are checked by CMake during the build process. There are no external library
+dependencies.
 
 The classifiert tool requires Python 3.
 
@@ -103,7 +116,7 @@ There are no specific operating system requirements to the software.
  FILE FORMATS
 --------------------------------------------------------------------------------
 
-Data sets for rf_train and rf_classify are ingested from a simple binary file
+Data sets for balsa_train and balsa_classify are ingested from a simple binary file
 format, consisting of a 32-bit unsigned integer that indicates the feature count
 'N' of each data point, followed by an arbitrary number of points. Each point
 consists of N double precision floating point values, representing the features.
@@ -114,6 +127,13 @@ Training data sets consist of a data point file as described above, and a
 separate label file. The label files have the same structure as the data files,
 except that the number of 'features' is always one. Nonzero values are
 interpreted as 'true' or 'label 1', zero values as 'false' or 'label 0'.
+
+The Balsa library writes trained models in its own file format. These models are
+ingested by balsa_train.
+
+Users that use Balsa library directly from a C++ program have some degree of
+freedom in choosing their data structures. The various options are demonstrated
+in the example programs in this package.
 
 --------------------------------------------------------------------------------
  BUILDING
@@ -149,12 +169,18 @@ proceed.
  USAGE
 --------------------------------------------------------------------------------
 
-In order to use the rf_train/rf_classifier tools, one needs a set of appropriate
-data files, as described in the FILE FORMAT section. Examples of such files are
-provided in the Data/ directory.
+Command-line Training and Classification:
+-----------------------------------------
 
-Usage information of rf_train or rf_classify is available by running either tool
-without any arguments.
+In order to use the balsa_train/balsa_classifier tools, one needs a set of
+appropriate data files, as described in the FILE FORMAT section. Examples of
+such files are provided in the Data/ directory.
+
+Usage information of balsa_train or balsa_classify is available by running
+either tool without any arguments.
+
+Classifier Tool:
+----------------
 
 The 'classifiert' tool can be run by executing the python interpreter in the
 Tools directory, where the 'classifiert' Python package is located:
@@ -166,14 +192,18 @@ Further usage information is available by passing the '-h' option:
 
     python -m classifiert -h
 
+Use of the Balsa library from C++:
+----------------------------------
+
+The example programs in the Examples directory demonstrate how the library can
+be used directly from C++.
+
 --------------------------------------------------------------------------------
  SUPPORT
 --------------------------------------------------------------------------------
 
-Support queries may be directed to info@jigsaw.nl
+Support queries may be directed at info@jigsaw.nl
 
 --------------------------------------------------------------------------------
  END
 --------------------------------------------------------------------------------
-
-
