@@ -11,15 +11,17 @@ class SingleTreeTrainerMark2: public SingleTreeTrainer<FeatureValueType, LabelVa
 {
 public:
 
-  SingleTreeTrainerMark2( unsigned int maxDepth = std::numeric_limits<unsigned int>::max()  ):
-  SingleTreeTrainer<FeatureValueType, LabelValueType>( maxDepth )
-  {
-  }
+    SingleTreeTrainerMark2( unsigned int maxDepth = std::numeric_limits<unsigned int>::max() )
+    : SingleTreeTrainer<FeatureValueType, LabelValueType>( maxDepth )
+    {
+    }
 
-  typename DecisionTree<FeatureValueType, LabelValueType>::SharedPointer train( const FeatureIndex &featureIndex, const TrainingDataSet &dataSet );
+    typename DecisionTree<FeatureValueType, LabelValueType>::SharedPointer train( const FeatureIndex & featureIndex,
+        const TrainingDataSet & dataSet );
 };
 
 template <>
-DecisionTree<>::SharedPointer SingleTreeTrainerMark2<>::train( const FeatureIndex &featureIndex, const TrainingDataSet &dataSet );
+DecisionTree<>::SharedPointer SingleTreeTrainerMark2<>::train( const FeatureIndex & featureIndex,
+    const TrainingDataSet & dataSet );
 
 #endif // TRAINERS_H

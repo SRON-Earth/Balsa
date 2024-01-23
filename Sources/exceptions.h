@@ -10,32 +10,32 @@ class Exception
 {
 public:
 
-  /**
-   * Constructor.
-   */
-  Exception( const std::string &message ):
-  m_message( message )
-  {
-  }
+    /**
+     * Constructor.
+     */
+    Exception( const std::string & message )
+    : m_message( message )
+    {
+    }
 
-  /**
-   * Destructor.
-   */
-  virtual ~Exception()
-  {
-  }
+    /**
+     * Destructor.
+     */
+    virtual ~Exception()
+    {
+    }
 
-  /**
-   * Returns the error message.
-   */
-  std::string getMessage() const
-  {
-      return m_message;
-  }
+    /**
+     * Returns the error message.
+     */
+    std::string getMessage() const
+    {
+        return m_message;
+    }
 
 private:
 
-  std::string m_message;
+    std::string m_message;
 };
 
 /**
@@ -45,21 +45,22 @@ class ClientError: public Exception
 {
 public:
 
-  ClientError( const std::string &message ):
-  Exception( message )
-  {
-  }
+    ClientError( const std::string & message )
+    : Exception( message )
+    {
+    }
 };
 
 /**
- * An exception thrown when an error occurs that is due to a problem on the callee-side of a function (the supplier-side).
+ * An exception thrown when an error occurs that is due to a problem on the callee-side of a function (the
+ * supplier-side).
  */
 class SupplierError: public Exception
 {
 public:
 
-    SupplierError( const std::string &message ):
-    Exception( message )
+    SupplierError( const std::string & message )
+    : Exception( message )
     {
     }
 };
@@ -71,10 +72,10 @@ class ParseError: public ClientError
 {
 public:
 
-  ParseError( const std::string &message ):
-  ClientError( message )
-  {
-  }
+    ParseError( const std::string & message )
+    : ClientError( message )
+    {
+    }
 };
 
 #endif // EXCEPTIONS_H

@@ -1,8 +1,8 @@
 #ifndef WEIGHTEDCOIN_H
 #define WEIGHTEDCOIN_H
 
-#include <random>
 #include <mutex>
+#include <random>
 
 /**
  * A thread safe random number generator.
@@ -12,39 +12,38 @@ class ThreadSafeRandomNumberGenerator
 {
 public:
 
-  typedef typename T_RNG::result_type ValueType;
+    typedef typename T_RNG::result_type ValueType;
 
-  /**
-   * Constructor.
-   */
-  ThreadSafeRandomNumberGenerator()
-  : m_rng( std::random_device{}() )
-  {
-  }
+    /**
+     * Constructor.
+     */
+    ThreadSafeRandomNumberGenerator()
+    : m_rng( std::random_device{}() )
+    {
+    }
 
-  /**
-   * Seed the random number generator.
-   */
-  void seed( ValueType value )
-  {
-      std::lock_guard lock( m_mutex );
-      m_rng.seed( value );
-  }
+    /**
+     * Seed the random number generator.
+     */
+    void seed( ValueType value )
+    {
+        std::lock_guard lock( m_mutex );
+        m_rng.seed( value );
+    }
 
-  /**
-   * Generate a random number.
-   */
-  ValueType next()
-  {
-      std::lock_guard lock( m_mutex );
-      return m_rng();
-  }
+    /**
+     * Generate a random number.
+     */
+    ValueType next()
+    {
+        std::lock_guard lock( m_mutex );
+        return m_rng();
+    }
 
 private:
 
-  T_RNG      m_rng;
-  std::mutex m_mutex;
-
+    T_RNG m_rng;
+    std::mutex m_mutex;
 };
 
 /**
@@ -66,20 +65,19 @@ class WeightedCoin
 {
 public:
 
-  /**
-   * Constructor.
-   */
-  WeightedCoin();
+    /**
+     * Constructor.
+     */
+    WeightedCoin();
 
-  /**
-   * Returns a random boolean, with probability of being true equal to an integer fraction.
-   */
-  bool flip( unsigned int numerator, unsigned int denominator );
+    /**
+     * Returns a random boolean, with probability of being true equal to an integer fraction.
+     */
+    bool flip( unsigned int numerator, unsigned int denominator );
 
 private:
 
-  std::mt19937 m_rng;
-
+    std::mt19937 m_rng;
 };
 
 #endif // WEIGHTEDCOIN_H

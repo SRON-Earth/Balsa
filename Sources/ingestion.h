@@ -8,11 +8,11 @@
 /**
  * Load a data set from file.
  */
-DataSet::SharedPointer loadDataSet(const std::string &dataFile);
+DataSet::SharedPointer loadDataSet( const std::string & dataFile );
 
 /**
  * Load a labelled data set from file.
  */
-TrainingDataSet::SharedPointer loadTrainingDataSet(const std::string &dataFile, const std::string &labelFile);
+TrainingDataSet::SharedPointer loadTrainingDataSet( const std::string & dataFile, const std::string & labelFile );
 
 #endif // INGESION_H

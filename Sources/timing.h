@@ -8,15 +8,15 @@
  */
 class StopWatch
 {
-  public:
+public:
 
     typedef std::chrono::time_point<std::chrono::system_clock> Timestamp;
     typedef double Seconds;
 
-    StopWatch():
-    m_running( false ),
-    m_start( std::chrono::system_clock::now() ),
-    m_end  ( std::chrono::system_clock::now() )
+    StopWatch()
+    : m_running( false )
+    , m_start( std::chrono::system_clock::now() )
+    , m_end( std::chrono::system_clock::now() )
     {
     }
 
@@ -26,9 +26,9 @@ class StopWatch
     Seconds start()
     {
         auto elapsed = getElapsedTime();
-        m_running = true;
-        m_start = std::chrono::system_clock::now();
-        m_end   = m_start;
+        m_running    = true;
+        m_start      = std::chrono::system_clock::now();
+        m_end        = m_start;
         return elapsed;
     }
 
@@ -54,11 +54,11 @@ class StopWatch
         return std::chrono::duration<double>( end - m_start ).count();
     }
 
-  private:
+private:
 
-    bool      m_running;
-    Timestamp m_start  ;
-    Timestamp m_end    ;
+    bool m_running;
+    Timestamp m_start;
+    Timestamp m_end;
 };
 
 #endif // TIMING_H

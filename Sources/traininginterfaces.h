@@ -1,10 +1,10 @@
 #ifndef TRAININGINTERFACES_H
 #define TRAININGINTERFACES_H
 
+#include <iostream>
 #include <limits>
 #include <string>
 #include <tuple>
-#include <iostream>
 
 #include "decisiontrees.h"
 
@@ -19,31 +19,32 @@ class SingleTreeTrainer
 {
 public:
 
-  SingleTreeTrainer( unsigned int maxDepth = std::numeric_limits<unsigned int>::max()  ):
-  m_maxDepth( maxDepth )
-  {
-      // TODO:
-      // Min samples split = 2
-      // Min samples leaf = 1
-      // Max features = sqrt(nfeatures)
-      // Max leaf nodes = None
-      // Min impurity decrease = 0.0
-      // Bootstrap = True
-  }
+    SingleTreeTrainer( unsigned int maxDepth = std::numeric_limits<unsigned int>::max() )
+    : m_maxDepth( maxDepth )
+    {
+        // TODO:
+        // Min samples split = 2
+        // Min samples leaf = 1
+        // Max features = sqrt(nfeatures)
+        // Max leaf nodes = None
+        // Min impurity decrease = 0.0
+        // Bootstrap = True
+    }
 
-  virtual ~SingleTreeTrainer()
-  {
-  }
+    virtual ~SingleTreeTrainer()
+    {
+    }
 
-  /**
-   * Train a tree on the provided dataset.
-   */
-  virtual typename DecisionTree<FeatureValueType, LabelValueType>::SharedPointer train( const FeatureIndex &featureIndex, const TrainingDataSet &dataSet ) = 0;
+    /**
+     * Train a tree on the provided dataset.
+     */
+    virtual typename DecisionTree<FeatureValueType, LabelValueType>::SharedPointer train(
+        const FeatureIndex & featureIndex,
+        const TrainingDataSet & dataSet ) = 0;
 
 protected:
 
-  const unsigned int m_maxDepth;
-
+    const unsigned int m_maxDepth;
 };
 
 #endif // TRAININGINTERFACES_H

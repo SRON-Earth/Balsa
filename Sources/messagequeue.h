@@ -1,22 +1,22 @@
 #ifndef MESSAGEQUEUE_H
 #define MESSAGEQUEUE_H
 
-#include <queue>
-#include <mutex>
 #include <condition_variable>
+#include <mutex>
+#include <queue>
 
 /**
  * A thread-safe queue for distributing messages over threads.
  */
-template<typename Message>
+template <typename Message>
 class MessageQueue
 {
-  public:
+public:
 
     /**
      * Append a message to the back of the queue.
      */
-    void send( const Message &message )
+    void send( const Message & message )
     {
         // Critical section.
         {
@@ -40,7 +40,7 @@ class MessageQueue
         std::unique_lock<std::mutex> lock( m_mutex );
 
         // Wait for the queue to contain at least one item.
-        while( m_queue.empty() ) m_condition.wait(lock);
+        while ( m_queue.empty() ) m_condition.wait( lock );
 
         // Pop and return the first item.
         auto message = m_queue.front();
@@ -48,12 +48,11 @@ class MessageQueue
         return message;
     }
 
-  private:
+private:
 
-      std::queue<Message>     m_queue    ;
-      mutable std::mutex      m_mutex    ;
-      std::condition_variable m_condition;
-
+    std::queue<Message> m_queue;
+    mutable std::mutex m_mutex;
+    std::condition_variable m_condition;
 };
 
 #endif // MESSAGEQUEUE_H

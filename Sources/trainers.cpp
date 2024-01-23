@@ -9,9 +9,9 @@
 
 namespace
 {
-  class Mark2TreeTrainer
-  {
-  public:
+class Mark2TreeTrainer
+{
+public:
 
     // typedef DecisionTree<>::NodeID NodeID;
     typedef DecisionTree<>::DecisionTreeNode DecisionTreeNode;
@@ -21,40 +21,43 @@ namespace
     {
     public:
 
-      SplitStatistics( unsigned int splitsMade = 0, unsigned int pointsLeftToImprove = 0 ):
-      splitsMade         ( splitsMade          ),
-      pointsLeftToImprove( pointsLeftToImprove )
-      {
-      }
+        SplitStatistics( unsigned int splitsMade = 0, unsigned int pointsLeftToImprove = 0 )
+        : splitsMade( splitsMade )
+        , pointsLeftToImprove( pointsLeftToImprove )
+        {
+        }
 
-      unsigned int splitsMade         ; // The number of splits made in this pass.
-      unsigned int pointsLeftToImprove; // The total number of points that can be classified better after the split. N.B. if max. depth is exceeded this will be 0 for those points.
+        unsigned int splitsMade;          // The number of splits made in this pass.
+        unsigned int pointsLeftToImprove; // The total number of points that can be classified better after the split.
+                                          // N.B. if max. depth is exceeded this will be 0 for those points.
     };
 
     // Per node annotations used by the training algorithm.
     struct NodeAnnotations
     {
-      double       lastVisitedValue   ;
-      unsigned int totalCount         ; // Total number of points in this node.
-      unsigned int trueCount          ; // Total number of points labeled 'true' in this node.
-      unsigned int totalCountLeftHalf ; // Total number of points that have been visited during traversal of the current feature.
-      unsigned int trueCountLeftHalf  ; // Totol number of visited points labeled 'true'.
-      unsigned int trueCountRightHalf ; // Remaining unvisited points labeled 'true'.
-      unsigned int currentFeature     ; // The feature that is currently being traversed.
-      unsigned int bestSplitFeature   ; // Best feature for splitting found so far.
-      unsigned int bestSplitMislabeled; // Number of mislabeled points that would occur if the split was made here.
-      double       bestSplitValue     ; // Best value to split at found so far.
-      double       bestSplitGiniIndex ; // Gini-index of the best split point found so far (lowest index).
-      unsigned int featuresToConsider ; // The number of randomly chosen features that this node still has to consider during the feature traversal phase.
-      bool         ignoringThisFeature; // Whether or not the currently traversed feature is taken into account by this node.
+        double lastVisitedValue;
+        unsigned int totalCount;          // Total number of points in this node.
+        unsigned int trueCount;           // Total number of points labeled 'true' in this node.
+        unsigned int totalCountLeftHalf;  // Total number of points that have been visited during traversal of the
+                                          // current feature.
+        unsigned int trueCountLeftHalf;   // Totol number of visited points labeled 'true'.
+        unsigned int trueCountRightHalf;  // Remaining unvisited points labeled 'true'.
+        unsigned int currentFeature;      // The feature that is currently being traversed.
+        unsigned int bestSplitFeature;    // Best feature for splitting found so far.
+        unsigned int bestSplitMislabeled; // Number of mislabeled points that would occur if the split was made here.
+        double bestSplitValue;            // Best value to split at found so far.
+        double bestSplitGiniIndex;        // Gini-index of the best split point found so far (lowest index).
+        unsigned int featuresToConsider;  // The number of randomly chosen features that this node still has to consider
+                                          // during the feature traversal phase.
+        bool ignoringThisFeature; // Whether or not the currently traversed feature is taken into account by this node.
     };
 
     /**
      * Constructor.
      * \param maxDepth Decision tree depth cut-off used during training.
      */
-    Mark2TreeTrainer( unsigned int maxDepth ):
-    m_maxDepth( maxDepth )
+    Mark2TreeTrainer( unsigned int maxDepth )
+    : m_maxDepth( maxDepth )
     {
         m_nodes.reserve( 1024 * 1024 );
         m_annotations.reserve( 1024 * 1024 );
@@ -66,7 +69,7 @@ namespace
      * \param dataSet Set of data points and associated labels to use for training.
      * \return A trained decision tree instance.
      */
-    DecisionTree<>::SharedPointer train( const FeatureIndex &featureIndex, const TrainingDataSet &dataSet )
+    DecisionTree<>::SharedPointer train( const FeatureIndex & featureIndex, const TrainingDataSet & dataSet )
     {
         // Create a tree containing a single node.
         m_nodes.clear();
@@ -79,13 +82,14 @@ namespace
         // Create a mapping from data points to the nodeIDs of their current parent nodes.
         std::vector<NodeID> pointParents( featureIndex.size(), NodeID( 0 ) );
 
-        // Split all leaf nodes in the tree until the there is no more room to improve, or until the depth limit is reached.
+        // Split all leaf nodes in the tree until the there is no more room to improve, or until the depth limit is
+        // reached.
         for ( unsigned int depth = 1; depth < m_maxDepth; ++depth )
         {
             std::cout << "Depth = " << depth << std::endl;
 
             // Tell all nodes that a round of optimal split searching is starting.
-            unsigned int featureCount = featureIndex.getFeatureCount();
+            unsigned int featureCount       = featureIndex.getFeatureCount();
             unsigned int featuresToConsider = std::ceil( std::sqrt( featureCount ) );
             assert( featuresToConsider > 0 );
             initializeOptimalSplitSearch( featuresToConsider );
@@ -97,17 +101,21 @@ namespace
                 assert( pointParents[pointID] < m_nodes.size() );
             }
 
-            // Traverse all data points once for each feature, in order, so the tree nodes can find the best possible split for them.
-            for ( unsigned int featureID = 0; featureID < featureCount; ++featureID ) // TODO: random trees should not use all features.
+            // Traverse all data points once for each feature, in order, so the tree nodes can find the best possible
+            // split for them.
+            for ( unsigned int featureID = 0; featureID < featureCount;
+                  ++featureID ) // TODO: random trees should not use all features.
             {
                 // Tell the tree that traversal is starting for this feature.
                 startFeatureTraversal( featureID, featureCount - featureID );
 
                 // Traverse all datapoints in order of this feature.
-                for ( auto it( featureIndex.featureBegin( featureID ) ), end( featureIndex.featureEnd( featureID ) ); it != end; ++it )
+                for ( auto it( featureIndex.featureBegin( featureID ) ), end( featureIndex.featureEnd( featureID ) );
+                      it != end;
+                      ++it )
                 {
                     // Let the parent node of the data point know that it is being traversed.
-                    auto &tuple = *it;
+                    auto & tuple      = *it;
                     auto featureValue = std::get<0>( tuple );
                     auto label        = std::get<1>( tuple );
                     auto pointID      = std::get<2>( tuple );
@@ -144,11 +152,11 @@ namespace
         for ( auto & nodeStats : m_annotations )
         {
             // Reset the point counts. Points will be re-counted during the point registration phase.
-            nodeStats.trueCount           = 0;
-            nodeStats.totalCount          = 0;
+            nodeStats.trueCount  = 0;
+            nodeStats.totalCount = 0;
 
             // Reset the number of features that will be considered by this node.
-            nodeStats.featuresToConsider  = featuresToConsider;
+            nodeStats.featuresToConsider = featuresToConsider;
 
             // Reset the best split found so far. This will be re-determined during the feature traversal phase.
             nodeStats.bestSplitFeature    = 0;
@@ -159,16 +167,15 @@ namespace
     }
 
     /**
-     * Allows this node to count a data point as one of its descendants, and returns the leaf-node that contains the point.
-     * \return A pointer to the leaf node that contains the point (direct parent).
+     * Allows this node to count a data point as one of its descendants, and returns the leaf-node that contains the
+     * point. \return A pointer to the leaf node that contains the point (direct parent).
      */
     unsigned int registerPoint( NodeID nodeID, const TrainingDataSet & dataSet, DataPointID pointID )
     {
         while ( true )
         {
             const DecisionTreeNode & node = m_nodes[nodeID];
-            if ( isLeafNode<double, bool>( node ) )
-                break;
+            if ( isLeafNode<double, bool>( node ) ) break;
 
             // Defer the registration to the correct child.
             // N.B. The comparison must be strictly-less. DO NOT change to <=, or the algorithm will break.
@@ -180,7 +187,7 @@ namespace
 
         // Count the point if this is a leaf-node, and return this node as the parent.
         NodeAnnotations & nodeStats = m_annotations[nodeID];
-        bool label = dataSet.getLabel( pointID );
+        bool label                  = dataSet.getLabel( pointID );
         ++nodeStats.totalCount;
         if ( label ) ++nodeStats.trueCount;
         return nodeID;
@@ -195,16 +202,15 @@ namespace
     {
         for ( NodeID nodeID( 0 ), end( m_nodes.size() ); nodeID != end; ++nodeID )
         {
-            if ( !isLeafNode<double, bool>( m_nodes[nodeID] ) )
-                continue;
+            if ( !isLeafNode<double, bool>( m_nodes[nodeID] ) ) continue;
 
             // Reset the feature traversal statistics.
-            NodeAnnotations & nodeStats = m_annotations[nodeID];
+            NodeAnnotations & nodeStats  = m_annotations[nodeID];
             nodeStats.lastVisitedValue   = std::numeric_limits<double>::min(); // Arbitrary.
-            nodeStats.totalCountLeftHalf = 0          ;
-            nodeStats.trueCountLeftHalf  = 0          ;
+            nodeStats.totalCountLeftHalf = 0;
+            nodeStats.trueCountLeftHalf  = 0;
             nodeStats.trueCountRightHalf = nodeStats.trueCount;
-            nodeStats.currentFeature     = featureID  ;
+            nodeStats.currentFeature     = featureID;
 
             // Determine whether or not this node will consider this feature during this pass.
             nodeStats.ignoringThisFeature = m_coin.flip( nodeStats.featuresToConsider, featuresLeft );
@@ -225,24 +231,27 @@ namespace
         NodeAnnotations & nodeStats = m_annotations[nodeID];
         if ( nodeStats.ignoringThisFeature ) return;
 
-        // If this is the start of a block of previously unseen feature values, calculate what the gain of a split would be.
+        // If this is the start of a block of previously unseen feature values, calculate what the gain of a split would
+        // be.
         if ( ( featureValue != nodeStats.lastVisitedValue ) && ( nodeStats.totalCountLeftHalf > 0 ) )
         {
             // Compute the Gini gain, assuming a split is made at this point.
             auto totalCountRightHalf = nodeStats.totalCount - nodeStats.totalCountLeftHalf;
-            auto giniLeft  = giniImpurity( nodeStats.trueCountLeftHalf , nodeStats.totalCountLeftHalf );
-            auto giniRight = giniImpurity( nodeStats.trueCountRightHalf, totalCountRightHalf  );
-            auto giniTotal = ( giniLeft * nodeStats.totalCountLeftHalf + giniRight * totalCountRightHalf ) / nodeStats.totalCount;
+            auto giniLeft            = giniImpurity( nodeStats.trueCountLeftHalf, nodeStats.totalCountLeftHalf );
+            auto giniRight           = giniImpurity( nodeStats.trueCountRightHalf, totalCountRightHalf );
+            auto giniTotal =
+                ( giniLeft * nodeStats.totalCountLeftHalf + giniRight * totalCountRightHalf ) / nodeStats.totalCount;
 
             // Save this split if it is the best one so far.
             if ( giniTotal < nodeStats.bestSplitGiniIndex )
             {
-                auto falseCountLeft   = nodeStats.totalCountLeftHalf  - nodeStats.trueCountLeftHalf ;
-                auto falseCountRight  = totalCountRightHalf - nodeStats.trueCountRightHalf;
+                auto falseCountLeft           = nodeStats.totalCountLeftHalf - nodeStats.trueCountLeftHalf;
+                auto falseCountRight          = totalCountRightHalf - nodeStats.trueCountRightHalf;
                 nodeStats.bestSplitFeature    = nodeStats.currentFeature;
-                nodeStats.bestSplitMislabeled = std::min( nodeStats.trueCountLeftHalf, falseCountLeft ) + std::min( nodeStats.trueCountRightHalf, falseCountRight );
-                nodeStats.bestSplitValue      = featureValue;
-                nodeStats.bestSplitGiniIndex  = giniTotal   ;
+                nodeStats.bestSplitMislabeled = std::min( nodeStats.trueCountLeftHalf, falseCountLeft ) +
+                                                std::min( nodeStats.trueCountRightHalf, falseCountRight );
+                nodeStats.bestSplitValue     = featureValue;
+                nodeStats.bestSplitGiniIndex = giniTotal;
             }
         }
 
@@ -254,7 +263,8 @@ namespace
         }
         ++nodeStats.totalCountLeftHalf;
 
-        // Update the last visited value. This is necessary to detect the end of a block during the visit of the next point.
+        // Update the last visited value. This is necessary to detect the end of a block during the visit of the next
+        // point.
         nodeStats.lastVisitedValue = featureValue;
     }
 
@@ -270,13 +280,11 @@ namespace
         for ( NodeID nodeID = NodeID( 0 ), end( m_nodes.size() ); nodeID != end; ++nodeID )
         {
             // Do not attempt to split interior nodes.
-            if ( !isLeafNode<double, bool>( m_nodes[nodeID] ) )
-                continue;
+            if ( !isLeafNode<double, bool>( m_nodes[nodeID] ) ) continue;
 
             // Determine whether it's time to stop permanently.
             const NodeAnnotations & nodeStats = m_annotations[nodeID];
-            if ( nodeStats.trueCount == 0 || nodeStats.trueCount == nodeStats.totalCount )
-                continue;
+            if ( nodeStats.trueCount == 0 || nodeStats.trueCount == nodeStats.totalCount ) continue;
 
             // Split this node at the best point that was found. First, add two
             // new nodes to the tree. Note that this could cause the vector of
@@ -289,10 +297,10 @@ namespace
 
             // Update node attributes.
             DecisionTreeNode & node = m_nodes[nodeID];
-            node.leftChildID    = leftChildID;
-            node.rightChildID   = rightChildID;
-            node.splitFeatureID = nodeStats.bestSplitFeature;
-            node.splitValue     = nodeStats.bestSplitValue;
+            node.leftChildID        = leftChildID;
+            node.rightChildID       = rightChildID;
+            node.splitFeatureID     = nodeStats.bestSplitFeature;
+            node.splitValue         = nodeStats.bestSplitValue;
 
             // Update statistics.
             splitStats.splitsMade++;
@@ -317,7 +325,7 @@ namespace
             if ( isLeafNode<double, bool>( node ) )
             {
                 const NodeAnnotations & nodeStats = m_annotations[nodeID];
-                node.label = nodeStats.totalCount < 2 * nodeStats.trueCount;
+                node.label                        = nodeStats.totalCount < 2 * nodeStats.trueCount;
             }
         }
     }
@@ -325,25 +333,26 @@ namespace
     // Debug
     void dump( NodeID nodeID = 0, unsigned int indent = 0 )
     {
-        const DecisionTreeNode & node = m_nodes[nodeID];
+        const DecisionTreeNode & node     = m_nodes[nodeID];
         const NodeAnnotations & nodeStats = m_annotations[nodeID];
 
         auto tab = std::string( indent, ' ' );
         std::cout << tab << "Node:" << std::endl
-                  << tab << "m_totalCount          = " << nodeStats.totalCount          << std::endl
-                  << tab << "m_trueCount           = " << nodeStats.trueCount           << std::endl
-                  << tab << "m_totalCountLeftHalf  = " << nodeStats.totalCountLeftHalf  << std::endl
-                  << tab << "m_trueCountLeftHalf   = " << nodeStats.trueCountLeftHalf   << std::endl
-                  << tab << "m_trueCountRightHalf  = " << nodeStats.trueCountRightHalf  << std::endl
-                  << tab << "m_currentFeature      = " << nodeStats.currentFeature      << std::endl
-                  << tab << "m_bestSplitFeature    = " << nodeStats.bestSplitFeature    << std::endl
+                  << tab << "m_totalCount          = " << nodeStats.totalCount << std::endl
+                  << tab << "m_trueCount           = " << nodeStats.trueCount << std::endl
+                  << tab << "m_totalCountLeftHalf  = " << nodeStats.totalCountLeftHalf << std::endl
+                  << tab << "m_trueCountLeftHalf   = " << nodeStats.trueCountLeftHalf << std::endl
+                  << tab << "m_trueCountRightHalf  = " << nodeStats.trueCountRightHalf << std::endl
+                  << tab << "m_currentFeature      = " << nodeStats.currentFeature << std::endl
+                  << tab << "m_bestSplitFeature    = " << nodeStats.bestSplitFeature << std::endl
                   << tab << "m_bestSplitMislabeled = " << nodeStats.bestSplitMislabeled << std::endl
-                  << tab << "m_bestSplitValue      = " << nodeStats.bestSplitValue      << std::endl
-                  << tab << "m_bestSplitGiniIndex  = " << nodeStats.bestSplitGiniIndex  << std::endl;
+                  << tab << "m_bestSplitValue      = " << nodeStats.bestSplitValue << std::endl
+                  << tab << "m_bestSplitGiniIndex  = " << nodeStats.bestSplitGiniIndex << std::endl;
 
         if ( !isLeafNode<double, bool>( node ) )
         {
-            std::cout << tab << "Split feature #" << node.splitFeatureID << ", value = " <<  node.splitValue << std::endl;
+            std::cout << tab << "Split feature #" << node.splitFeatureID << ", value = " << node.splitValue
+                      << std::endl;
             std::cout << tab << "Left: " << std::endl;
             dump( node.leftChildID, indent + 1 );
             std::cout << tab << "Right: " << std::endl;
@@ -351,22 +360,23 @@ namespace
         }
     }
 
-    unsigned int                  m_maxDepth;
-    WeightedCoin                  m_coin;
-    std::vector<NodeAnnotations>  m_annotations;
+    unsigned int m_maxDepth;
+    WeightedCoin m_coin;
+    std::vector<NodeAnnotations> m_annotations;
     std::vector<DecisionTreeNode> m_nodes;
-
-  };
+};
 } // Anonymous namespace.
 
-// DecisionTree<>::SharedPointer trainDefault( unsigned int maxDepth, const FeatureIndex &featureIndex, const TrainingDataSet &dataSet )
+// DecisionTree<>::SharedPointer trainDefault( unsigned int maxDepth, const FeatureIndex &featureIndex, const
+// TrainingDataSet &dataSet )
 // {
 //     Mark2TreeTrainer trainer( maxDepth );
 //     return trainer.train( featureIndex, dataSet );
 // }
 
 template <>
-DecisionTree<>::SharedPointer SingleTreeTrainerMark2<>::train( const FeatureIndex &featureIndex, const TrainingDataSet &dataSet )
+DecisionTree<>::SharedPointer SingleTreeTrainerMark2<>::train( const FeatureIndex & featureIndex,
+    const TrainingDataSet & dataSet )
 {
     Mark2TreeTrainer trainer( m_maxDepth );
     return trainer.train( featureIndex, dataSet );

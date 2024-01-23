@@ -4,8 +4,8 @@
 
 MasterSeedSequence & getMasterSeedSequence()
 {
-	static MasterSeedSequence seedSequence;
-	return seedSequence;
+    static MasterSeedSequence seedSequence;
+    return seedSequence;
 }
 
 WeightedCoin::WeightedCoin()
@@ -15,7 +15,7 @@ WeightedCoin::WeightedCoin()
 
 bool WeightedCoin::flip( unsigned int numerator, unsigned int denominator )
 {
-    assert( numerator <=  denominator );
+    assert( numerator <= denominator );
     if ( numerator == denominator ) return true;
     std::uniform_int_distribution<unsigned int> dist( 1, denominator );
     return dist( m_rng ) <= numerator;

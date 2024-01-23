@@ -47,7 +47,7 @@ T deserialize( std::istream & is )
 template <>
 inline bool deserialize( std::istream & is )
 {
-    return (deserialize<std::uint8_t>( is ) != 0);
+    return ( deserialize<std::uint8_t>( is ) != 0 );
 }
 
 #endif // SERDES_H
