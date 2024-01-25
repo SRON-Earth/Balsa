@@ -1,6 +1,7 @@
 #ifndef ENSEMBLECLASSIFIER_H
 #define ENSEMBLECLASSIFIER_H
 
+#include <cassert>
 #include <thread>
 
 #include "classifier.h"
