@@ -64,7 +64,7 @@ There are several other common metrics for binary classifiers:
 
 The *P4 metric* is calculated by taking the harmonic mean of the PPV, TPR, TNR, and NPV:
 
-	P4 = 4 / ( (1/p) + (1/r) + (1/s) + (1/n) )
+	P4 = 4 / ( (1/PPV) + (1/TPR) + (1/TNR) + (1/NPV) )
 
 ### Resource Usage
 
