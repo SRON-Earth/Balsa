@@ -367,13 +367,6 @@ public:
 };
 } // Anonymous namespace.
 
-// DecisionTree<>::SharedPointer trainDefault( unsigned int maxDepth, const FeatureIndex &featureIndex, const
-// TrainingDataSet &dataSet )
-// {
-//     Mark2TreeTrainer trainer( maxDepth );
-//     return trainer.train( featureIndex, dataSet );
-// }
-
 template <>
 DecisionTree<>::SharedPointer SingleTreeTrainerMark2<>::train( const FeatureIndex & featureIndex,
     const TrainingDataSet & dataSet )
