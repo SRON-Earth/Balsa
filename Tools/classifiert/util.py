@@ -1,5 +1,6 @@
 import numpy as np
 import pathlib
+import re
 import struct
 import subprocess
 
@@ -25,25 +26,41 @@ def run_program(program, *args, log=False, time_file=None, timeout=None, cwd=Non
     return result
 
 
-def get_statistics_from_time_file(time_file, *, target_dict=None, key_prefix=""):
+def parse_elapsed_time(text):
 
-    def rekey(key):
-        return key_prefix + key
+    match = re.match(r"(?:([0-9]+)\:)?([0-9]+)\:([0-9]+(?:\.[0-9]+)?)", text)
+    assert match is None or len(match.groups()) == 3
+
+    if match is None:
+        return None
+
+    elapsed_time = 0.0
+    for value, weight in zip(match.groups(), (3600.0, 60.0, 1.0)):
+        if value is not None:
+            elapsed_time += float(value) * weight
+    return elapsed_time
+
+
+def get_statistics_from_time_file(time_file, *, target_dict=None, key_prefix=""):
 
     if target_dict is None:
         target_dict = {}
 
     for line in pathlib.Path(time_file).read_text().split("\n"):
         if "User time" in line:
-            target_dict[rekey("user-time")] = float(line.split()[-1])
+            target_dict[key_prefix + "user-time"] = float(line.split()[-1])
         elif "System time" in line:
-            target_dict[rekey("system-time")] = float(line.split()[-1])
+            target_dict[key_prefix + "system-time"] = float(line.split()[-1])
         elif "Percent of CPU" in line:
             text = line.split()[-1]
             assert text[-1] == "%"
-            target_dict[rekey("percent-cpu")] = float(text[:-1])
+            target_dict[key_prefix + "percent-cpu"] = float(text[:-1])
+        elif "Elapsed (wall clock) time" in line:
+            elapsed_time = parse_elapsed_time(line.split()[-1])
+            if elapsed_time is not None:
+                target_dict[key_prefix + "wall-clock-time"] = elapsed_time
         elif "Maximum resident set size" in line:
-            target_dict[rekey("max-rss")] = int(line.split()[-1])
+            target_dict[key_prefix + "max-rss"] = int(line.split()[-1])
 
     return target_dict
 
@@ -65,7 +82,7 @@ def P4_metric(num_true_positives, num_false_positives, num_true_negatives, num_f
     return (4.0 * num_true_positives * num_true_negatives) / denominator
 
 
-def precision(num_true_positives, num_false_positives, num_true_negatives, num_false_negatives):
+def positive_predictive_value(num_true_positives, num_false_positives, num_true_negatives, num_false_negatives):
 
     denominator = num_true_positives + num_false_positives
     if denominator == 0:
@@ -73,7 +90,7 @@ def precision(num_true_positives, num_false_positives, num_true_negatives, num_f
     return num_true_positives / denominator
 
 
-def recall(num_true_positives, num_false_positives, num_true_negatives, num_false_negatives):
+def true_positive_rate(num_true_positives, num_false_positives, num_true_negatives, num_false_negatives):
 
     denominator = num_true_positives + num_false_negatives
     if denominator == 0:
@@ -81,7 +98,7 @@ def recall(num_true_positives, num_false_positives, num_true_negatives, num_fals
     return num_true_positives / denominator
 
 
-def specificity(num_true_positives, num_false_positives, num_true_negatives, num_false_negatives):
+def true_negative_rate(num_true_positives, num_false_positives, num_true_negatives, num_false_negatives):
 
     denominator = num_true_negatives + num_false_positives
     if denominator == 0:
@@ -109,18 +126,21 @@ def get_classification_scores(predicted_labels, labels, *, target_dict=None, key
     num_total = num_true_positives + num_false_positives + num_true_negatives + num_false_negatives
     assert num_total == len(labels)
 
-    def rekey(key):
-        return key_prefix + key
-
     if target_dict is None:
         target_dict = {}
 
-    target_dict[rekey("accuracy"   )] = accuracy                 (num_true_positives, num_false_positives, num_true_negatives, num_false_negatives)
-    target_dict[rekey("P4-metric"  )] = P4_metric                (num_true_positives, num_false_positives, num_true_negatives, num_false_negatives)
-    target_dict[rekey("precision"  )] = precision                (num_true_positives, num_false_positives, num_true_negatives, num_false_negatives)
-    target_dict[rekey("recall"     )] = recall                   (num_true_positives, num_false_positives, num_true_negatives, num_false_negatives)
-    target_dict[rekey("specificity")] = specificity              (num_true_positives, num_false_positives, num_true_negatives, num_false_negatives)
-    target_dict[rekey("npv"        )] = negative_predictive_value(num_true_positives, num_false_positives, num_true_negatives, num_false_negatives)
+    target_dict[key_prefix + "accuracy"] = \
+        accuracy(num_true_positives, num_false_positives, num_true_negatives, num_false_negatives)
+    target_dict[key_prefix + "P4-metric"] = \
+        P4_metric(num_true_positives, num_false_positives, num_true_negatives, num_false_negatives)
+    target_dict[key_prefix + "ppv"] = \
+        positive_predictive_value(num_true_positives, num_false_positives, num_true_negatives, num_false_negatives)
+    target_dict[key_prefix + "tpr"] = \
+        true_positive_rate(num_true_positives, num_false_positives, num_true_negatives, num_false_negatives)
+    target_dict[key_prefix + "tnr"] = \
+        true_negative_rate(num_true_positives, num_false_positives, num_true_negatives, num_false_negatives)
+    target_dict[key_prefix + "npv"] = \
+        negative_predictive_value(num_true_positives, num_false_positives, num_true_negatives, num_false_negatives)
 
     return target_dict
 

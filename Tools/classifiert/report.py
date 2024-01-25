@@ -16,6 +16,7 @@ def plot_statistic(statistics, title, y_axis_label, *, key=None, getter_func=dic
 
 def write_report(report_filename, num_threads, statistics):
 
+    plot_statistic(statistics, f"Wall Clock Time (Train) :: {num_threads} thread(s)", "Time (s)", key="train-wall-clock-time")
     plot_statistic(statistics, f"CPU Time (Train) :: {num_threads} thread(s)", "Time (s)",
                    getter_func=lambda d, _: d["train-user-time"] + d["train-system-time"])
     plot_statistic(statistics, f"Percent CPU (Train) :: {num_threads} thread(s)", "%", key="train-percent-cpu")
@@ -24,6 +25,7 @@ def write_report(report_filename, num_threads, statistics):
     plot_statistic(statistics, f"Maximum node count", "No. of nodes", key="train-max-node-count")
     plot_statistic(statistics, f"Maximum tree depth", "Levels", key="train-max-tree-depth")
 
+    plot_statistic(statistics, f"Wall Clock Time (Train) :: {num_threads} thread(s)", "Time (s)", key="test-wall-clock-time")
     plot_statistic(statistics, f"CPU Time (Test) :: {num_threads} thread(s)", "Time (s)",
                    getter_func=lambda d, _: d["test-user-time"] + d["test-system-time"])
     plot_statistic(statistics, f"Percent CPU (Test) :: {num_threads} thread(s)", "%", key="test-percent-cpu")
@@ -35,9 +37,9 @@ def write_report(report_filename, num_threads, statistics):
     plot_statistic(statistics, f"Label Store Wall Clock Time", "Time (s)", key="test-label-store-time")
     plot_statistic(statistics, f"Accuracy", "Accuracy", key="test-accuracy")
     plot_statistic(statistics, f"P4-metric", "P4-metric", key="test-P4-metric")
-    plot_statistic(statistics, f"Precision", "Precision", key="test-precision")
-    plot_statistic(statistics, f"Recall", "Recall", key="test-recall")
-    plot_statistic(statistics, f"Specificity", "Specificity", key="test-specificity")
+    plot_statistic(statistics, f"Positive Predictive Value", "PPV", key="test-ppv")
+    plot_statistic(statistics, f"True Positive Rate", "True Positive Rate", key="test-tpr")
+    plot_statistic(statistics, f"True Negative Rate", "True Negative Rate", key="test-tnr")
     plot_statistic(statistics, f"Negative Predictive Value", "NPV", key="test-npv")
 
     from matplotlib.backends.backend_pdf import PdfPages
