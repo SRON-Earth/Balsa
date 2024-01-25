@@ -11,11 +11,11 @@ def run(run_path, train_data_filename, train_label_filename, test_data_filename,
     if max_tree_depth is not None:
         args += ["-d", str(max_tree_depth)]
     args += [str(train_data_filename), str(train_label_filename), "jigsaw.model"]
-    result = run_program("rftrain", *args, log=True, time_file="train.time", cwd=run_path)
+    result = run_program("balsa_train", *args, log=True, time_file="train.time", cwd=run_path)
     get_statistics_from_time_file(run_path / "train.time", target_dict=run_statistics, key_prefix="train-")
 
     args = ["-t", str(num_threads), "-p", str(num_threads)]
-    result = run_program("rfclassify", *args, "jigsaw.model", str(test_data_filename), "labels.bin", log=True, time_file="test.time", cwd=run_path)
+    result = run_program("balsa_classify", *args, "jigsaw.model", str(test_data_filename), "labels.bin", log=True, time_file="test.time", cwd=run_path)
     get_statistics_from_time_file(run_path / "test.time", target_dict=run_statistics, key_prefix="test-")
 
     for line in result.stdout.split("\n"):
@@ -38,4 +38,4 @@ def run(run_path, train_data_filename, train_label_filename, test_data_filename,
 
     return run_statistics
 
-register_classifier("jigsaw", "bin", run)
+register_classifier("balsa", "bin", run)
