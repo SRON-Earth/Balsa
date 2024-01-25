@@ -57,14 +57,14 @@ There are various metrics for the quality of the model. Arguably the simplest an
 
 There are several other common metrics for binary classifiers:
 
-* The *precision* is the probability that the ground truth is positive ("true") when the classifier returns a positive label.
-* The *recall* is the probability that the classifier returns a positive label when the ground truth is positive.
-* The *specificity* is the probability that the classifier returns a negative label ("false") when the ground truth is negative.
+* The *Positive Predictive Value* or *PPV*, also *precision*, is the probability that the ground truth is positive ("true") when the classifier returns a positive label.
+* The *True Positive Rate* or *TPR*, also *sensitivity*, is the probability that the classifier returns a positive label when the ground truth is positive.
+* The *True Negative Rate* or *TNR*, also *specificity*, is the probability that the classifier returns a negative label ("false") when the ground truth is negative.
 * The *Negative Predictive Value* or *NPV* is the probability that the ground truth is negative when the classifier returns a negative label.
 
-The *P4 metric* is calculated by taking the harmonic mean of the precision, recall, specificity, and NPV:
+The *P4 metric* is calculated by taking the harmonic mean of the PPV, TPR, TNR, and NPV:
 
-	P4 = 4 / ( (1/p) + (1/r) + (1/s) + (1/n) ) )
+	P4 = 4 / ( (1/p) + (1/r) + (1/s) + (1/n) )
 
 ### Resource Usage
 
@@ -145,12 +145,12 @@ For point data files, the row length indicates the number of features in each po
 To train a binary forest model on the command-line, run the following command, substituting the appropriate filenames (see [input file format)](#### Input File Format):
 
 ```
-balsa-train yourinputfile yourlabelfile yourmodelfile
+balsa_train yourinputfile yourlabelfile yourmodelfile
 ```
 
 This command creates "yourmodelfile", a random forest model trained on "yourinputfile" and "yourlabelfile".
 
-Various parameters of the training process can be controlled to make trade-offs between the disk usage of the generated model files, the processor/multi-core utilization, wall-clock time, etc. Running `balsa-train` without any arguments displays the full range of options:
+Various parameters of the training process can be controlled to make trade-offs between the disk usage of the generated model files, the processor/multi-core utilization, wall-clock time, etc. Running `balsa_train` without any arguments displays the full range of options:
 
 ```
 Usage:
@@ -219,7 +219,7 @@ c++ -std=c++17 example1.cpp -L balsa -o example1
 ./example1
 ```
 
-#### Using Diffent Containers
+#### Using Different Containers
 
 In the first example, the point data was stored in an array of doubles, and the output labels were written to an array of bools. While this is the most syntactically simple way to use Balsa, it has several drawbacks. First, a real-world application will often have its data stored in different types of containers, and copying it to a flat array before classification is inefficient. Second, it is error-prone to deal with explicit, hard-coded array sizes. 
 
