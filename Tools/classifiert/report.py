@@ -25,7 +25,7 @@ def write_report(report_filename, num_threads, statistics):
     plot_statistic(statistics, f"Maximum node count", "No. of nodes", key="train-max-node-count")
     plot_statistic(statistics, f"Maximum tree depth", "Levels", key="train-max-tree-depth")
 
-    plot_statistic(statistics, f"Wall Clock Time (Train) :: {num_threads} thread(s)", "Time (s)", key="test-wall-clock-time")
+    plot_statistic(statistics, f"Wall Clock Time (Test) :: {num_threads} thread(s)", "Time (s)", key="test-wall-clock-time")
     plot_statistic(statistics, f"CPU Time (Test) :: {num_threads} thread(s)", "Time (s)",
                    getter_func=lambda d, _: d["test-user-time"] + d["test-system-time"])
     plot_statistic(statistics, f"Percent CPU (Test) :: {num_threads} thread(s)", "%", key="test-percent-cpu")
