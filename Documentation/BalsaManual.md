@@ -1,4 +1,4 @@
-![](Images/balsalogo.png)
+![](Images/BalsaLogo.png)
 
 # Balsa: A Fast C++ Random Forest Classifier
 
