@@ -30,8 +30,8 @@ AlwaysBreakTemplateDeclarations: Yes
 BinPackArguments: false
 BinPackParameters: false
 BreakBeforeBraces: Allman
-BreakConstructorInitializers: BeforeComma
-BreakInheritanceList: BeforeComma
+BreakConstructorInitializers: AfterColon
+BreakInheritanceList: AfterColon
 ColumnLimit: 120
 ConstructorInitializerIndentWidth: 0
 EmptyLineAfterAccessModifier: Always
