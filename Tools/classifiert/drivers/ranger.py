@@ -1,29 +1,28 @@
 import csv
 import numpy as np
+import pathlib
 
-from .. import register_classifier
-from ..util import run_program, get_statistics_from_time_file, get_classification_scores
+from ..util import run_program, get_statistics_from_time_file, \
+                   get_classification_scores
 
 
-def load_dataset_bin(filename):
+def get_data_format():
 
-    import struct
+    return "csv"
 
-    with open(filename, "rb") as inf:
-        num_columns, = struct.unpack("<I", inf.read(4))
-        unpacker = struct.Struct("<" + "f" * num_columns)
-        if num_columns == 1:
-            result = [row[0] for row in unpacker.iter_unpack(inf.read())]
-        else:
-            result = [list(row) for row in unpacker.iter_unpack(inf.read())]
-    return result
+
+def add_default_config(config):
+
+    config.add_classifier("ranger", driver="ranger", path="/path/to/dir/that/contains/ranger/binary")
 
 
 def run(run_path, train_data_filename, train_label_filename, test_data_filename, test_label_filename, *,
-        num_estimators, max_tree_depth, num_threads):
+        config, num_estimators, max_tree_depth, num_threads):
 
     assert train_label_filename is None
     assert test_label_filename is None
+
+    ranger_path = pathlib.Path(config["path"])
 
     run_statistics = {}
 
@@ -41,10 +40,10 @@ def run(run_path, train_data_filename, train_label_filename, test_data_filename,
     if max_tree_depth is not None:
         args += ["--maxdepth", str(max_tree_depth)]
 
-    result = run_program("ranger", *args, log=True, time_file="train.time", cwd=run_path)
+    result = run_program(ranger_path / "ranger", *args, log=True, time_file="train.time", cwd=run_path)
     get_statistics_from_time_file(run_path / "train.time", target_dict=run_statistics, key_prefix="train-")
 
-    run_program("ranger",
+    run_program(ranger_path / "ranger",
                 "--file", str(test_data_filename),
                 "--depvarname", "label",
                 "--predict", "ranger.forest",
@@ -69,5 +68,3 @@ def run(run_path, train_data_filename, train_label_filename, test_data_filename,
     get_classification_scores(predicted_labels, labels, target_dict=run_statistics, key_prefix="test-")
 
     return run_statistics
-
-register_classifier("ranger", "csv", run)

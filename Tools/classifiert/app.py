@@ -4,18 +4,37 @@ import numpy as np
 import pathlib
 import sys
 
-from .        import CLASSIFIERS
-from .        import runners
+from .config  import Configuration, load_config, store_config
+from .drivers import get_drivers, get_driver
 from .datagen import get_train_dataset_filenames, get_test_dataset_filenames, \
                      generate_train_datasets, ingest_test_dataset, \
                      load_dataset_json, sample_dataset, store_dataset_bin
 from .report  import write_report
 
-RUN_DIR = pathlib.Path("run")
+
+def generate_default_config_file(filename):
+
+    config = Configuration()
+    for driver_name in get_drivers():
+        driver = get_driver(driver_name)
+        driver.add_default_config(config)
+    store_config(filename, config)
 
 
-def profile(train_data_filename, test_data_filename, classifiers, data_sizes,
-            num_estimators, max_tree_depth, num_threads, timeout, use_cache):
+def profile(train_data_filename, test_data_filename, classifiers, config_file,
+            data_sizes, num_estimators, max_tree_depth, num_threads, timeout,
+            use_cache):
+
+    # Load configuration. If the configuration file does not exist, generate a
+    # default configuration file.
+    try:
+        config = load_config(config_file)
+    except FileNotFoundError:
+        print("\033[35m" + f"Generating default configuration file..." + "\033[0m")
+        generate_default_config_file(config_file)
+        print(f"Generated configuration file: '{config_file}'.")
+        print("Please edit the generated configuration file and try again.")
+        return
 
     print("\033[35m" + f"Generating train datasets..." + "\033[0m")
     generate_train_datasets(train_data_filename, data_sizes, use_cache=use_cache)
@@ -23,22 +42,28 @@ def profile(train_data_filename, test_data_filename, classifiers, data_sizes,
     print("\033[35m" + f"Ingesting test dataset..." + "\033[0m")
     ingest_test_dataset(test_data_filename)
 
-    run_path = RUN_DIR / datetime.datetime.now().isoformat()
+    run_path = config.run_dir / datetime.datetime.now().isoformat()
     run_path.mkdir()
 
     statistics = {}
-    for classifier in classifiers:
-        print("\033[35m" + f"Running {classifier} using {num_threads} threads..." + "\033[0m")
+    for classifier_name in classifiers:
 
-        classifier_run_path = run_path / classifier
+        print("\033[35m" + f"Running {classifier_name} using {num_threads} threads..." + "\033[0m")
+
+        try:
+            classifier = config.get_classifier(classifier_name)
+        except KeyError:
+            print("\033[31m" + "Unknown classifier: '" + classifier_name + "'." + "\033[0m")
+            continue
+
+        classifier_run_path = run_path / classifier_name
         classifier_run_path.mkdir()
 
-        classifier_descriptor = CLASSIFIERS[classifier]
-        data_format = classifier_descriptor["data_format"]
-        runner = classifier_descriptor["runner"]
+        driver = get_driver(classifier["driver"])
+        args = classifier["args"]
+        data_format = driver.get_data_format()
 
         classifier_statistics = []
-
         for data_size in data_sizes:
             print("\033[32m" + str(data_size) + "\033[0m")
             train_data_filename, train_label_filename = get_train_dataset_filenames(data_size, data_format)
@@ -48,16 +73,22 @@ def profile(train_data_filename, test_data_filename, classifiers, data_sizes,
             test_run_path = classifier_run_path / str(data_size)
             test_run_path.mkdir()
             try:
-                run_statistics.update(runner(test_run_path, train_data_filename, train_label_filename, test_data_filename,
-                                             test_label_filename, num_estimators=num_estimators,
-                                             max_tree_depth=max_tree_depth, num_threads=num_threads))
+                run_statistics.update(driver.run(test_run_path,
+                                                 train_data_filename,
+                                                 train_label_filename,
+                                                 test_data_filename,
+                                                 test_label_filename,
+                                                 config=args,
+                                                 num_estimators=num_estimators,
+                                                 max_tree_depth=max_tree_depth,
+                                                 num_threads=num_threads))
             except Exception as exception:
                 print("\033[31m" + "Run failed: '" + str(exception) + "'." + "\033[0m")
             else:
                 classifier_statistics.append(run_statistics)
 
-        write_report(run_path / f"{classifier}.pdf", num_threads, {classifier: classifier_statistics})
-        statistics[classifier] = classifier_statistics
+        write_report(run_path / f"{classifier_name}.pdf", num_threads, {classifier_name: classifier_statistics})
+        statistics[classifier_name] = classifier_statistics
 
     write_report(run_path / f"all.pdf", num_threads, statistics)
 
@@ -101,7 +132,8 @@ def parse_command_line_arguments():
     profile = subparsers.add_parser("profile", help="profile random forest classifiers")
     profile.add_argument("train_data_filename", metavar="TRAIN_DATA_FILE")
     profile.add_argument("test_data_filename", metavar="TEST_DATA_FILE")
-    profile.add_argument("classifiers", metavar="CLASSIFIER", choices=CLASSIFIERS.keys(), nargs="+")
+    profile.add_argument("classifiers", metavar="CLASSIFIER", nargs="+")
+    profile.add_argument("-c", "--config-file", type=pathlib.Path, default="classifiert.ini")
     profile.add_argument("-n", "--data-sizes", type=data_size_list, default="100,1000,2500,5000,10_000,25_000,50_000")
     profile.add_argument("-d", "--max-tree-depth", type=positive_integer, default="50")
     profile.add_argument("-e", "--num-estimators", type=positive_integer, default="150")

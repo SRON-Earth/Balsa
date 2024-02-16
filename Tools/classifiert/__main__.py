@@ -6,4 +6,5 @@ try:
     sys.exit(main())
 except Exception as exception:
     print(f"INTERNAL ERROR: '{exception}'.", file=sys.stderr)
+    raise
     sys.exit(1)
