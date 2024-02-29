@@ -7,5 +7,5 @@ target_link_libraries( balsa_train balsa )
 add_executable( balsa_classify balsa_classify.cpp )
 target_link_libraries( balsa_classify balsa )
 
-add_executable( balsa_dataproc balsa_dataproc.cpp )
-target_link_libraries( balsa_dataproc balsa )
+add_executable( balsa_generate balsa_generate.cpp )
+target_link_libraries( balsa_generate balsa )
