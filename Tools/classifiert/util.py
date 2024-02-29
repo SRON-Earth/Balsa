@@ -4,7 +4,6 @@ import re
 import struct
 import subprocess
 
-
 def run_program(program, *args, log=False, time_file=None, timeout=None, cwd=None):
 
     program = pathlib.Path(program)
@@ -25,7 +24,6 @@ def run_program(program, *args, log=False, time_file=None, timeout=None, cwd=Non
     assert result.returncode == 0, f"Program '{program}' failed with exit code: {result.returncode}"
     return result
 
-
 def parse_elapsed_time(text):
 
     match = re.match(r"(?:([0-9]+)\:)?([0-9]+)\:([0-9]+(?:\.[0-9]+)?)", text)
@@ -39,7 +37,6 @@ def parse_elapsed_time(text):
         if value is not None:
             elapsed_time += float(value) * weight
     return elapsed_time
-
 
 def get_statistics_from_time_file(time_file, *, target_dict=None, key_prefix=""):
 
@@ -64,14 +61,12 @@ def get_statistics_from_time_file(time_file, *, target_dict=None, key_prefix="")
 
     return target_dict
 
-
 def accuracy(num_true_positives, num_false_positives, num_true_negatives, num_false_negatives):
 
     denominator = num_true_positives + num_false_positives + num_true_negatives + num_false_negatives
     if denominator == 0:
         return 0
     return (num_true_positives + num_true_negatives) / denominator
-
 
 def P4_metric(num_true_positives, num_false_positives, num_true_negatives, num_false_negatives):
 
@@ -81,14 +76,12 @@ def P4_metric(num_true_positives, num_false_positives, num_true_negatives, num_f
         return 0
     return (4.0 * num_true_positives * num_true_negatives) / denominator
 
-
 def positive_predictive_value(num_true_positives, num_false_positives, num_true_negatives, num_false_negatives):
 
     denominator = num_true_positives + num_false_positives
     if denominator == 0:
         return 0
     return num_true_positives / denominator
-
 
 def true_positive_rate(num_true_positives, num_false_positives, num_true_negatives, num_false_negatives):
 
@@ -97,7 +90,6 @@ def true_positive_rate(num_true_positives, num_false_positives, num_true_negativ
         return 0
     return num_true_positives / denominator
 
-
 def true_negative_rate(num_true_positives, num_false_positives, num_true_negatives, num_false_negatives):
 
     denominator = num_true_negatives + num_false_positives
@@ -105,14 +97,12 @@ def true_negative_rate(num_true_positives, num_false_positives, num_true_negativ
         return 0
     return num_true_negatives / denominator
 
-
 def negative_predictive_value(num_true_positives, num_false_positives, num_true_negatives, num_false_negatives):
 
     denominator = num_true_negatives + num_false_negatives
     if denominator == 0:
         return 0
     return num_true_negatives / denominator
-
 
 def get_classification_scores(predicted_labels, labels, *, target_dict=None, key_prefix=""):
 

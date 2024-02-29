@@ -12,7 +12,6 @@ from .data    import get_train_dataset_filenames, get_test_dataset_filenames, \
                      store_labelled_dataset
 from .report  import write_report
 
-
 def generate_default_config_file(filename):
 
     config = Configuration()
@@ -20,7 +19,6 @@ def generate_default_config_file(filename):
         driver = get_driver(driver_name)
         driver.add_default_config(config)
     store_config(filename, config)
-
 
 def profile(train_data_filename, test_data_filename, classifiers, config_file,
             data_sizes, num_estimators, max_tree_depth, num_threads, timeout,
@@ -91,7 +89,6 @@ def profile(train_data_filename, test_data_filename, classifiers, config_file,
 
     write_report(run_path / f"all.pdf", num_threads, statistics)
 
-
 def sample(data_input_filename, data_output_filename, label_output_filename,
            data_format, sample_size, with_replacement, random_seed):
 
@@ -105,7 +102,6 @@ def sample(data_input_filename, data_output_filename, label_output_filename,
         new_data_points, new_labels = sample_dataset(data_points, labels, sample_size, random_generator=random_generator, replace=with_replacement)
 
     store_labelled_dataset(data_format, data_output_filename, label_output_filename, new_data_points, new_labels)
-
 
 def parse_command_line_arguments():
 
@@ -150,7 +146,6 @@ def parse_command_line_arguments():
     sample.add_argument("-s", "--random-seed", type=positive_integer)
 
     return parser.parse_args()
-
 
 def main():
 

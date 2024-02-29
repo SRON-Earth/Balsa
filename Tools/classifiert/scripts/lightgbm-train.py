@@ -2,7 +2,6 @@ import argparse
 import lightgbm as lgb
 import numpy as np
 
-
 def load_dataset_bin(filename):
 
     import struct
@@ -15,7 +14,6 @@ def load_dataset_bin(filename):
         else:
             result = [list(row) for row in unpacker.iter_unpack(inf.read())]
     return result
-
 
 def load_lgb_dataset(data_filename, label_filename):
 
@@ -145,7 +143,6 @@ def main(data_filename, label_filename, model_filename, num_estimators, max_tree
     model = lgb.train(params, train_set)
     model.save_model(model_filename)
 
-
 def parse_command_line_arguments():
 
     def positive_integer(text):
@@ -162,7 +159,6 @@ def parse_command_line_arguments():
     parser.add_argument("-e", "--num-estimators", type=positive_integer, default="150")
     parser.add_argument("-t", "--num-threads", type=positive_integer, default="1")
     return parser.parse_args()
-
 
 if __name__ == "__main__":
 

@@ -4,7 +4,6 @@ import sys
 
 from sklearn.ensemble import RandomForestClassifier
 
-
 def load_dataset_bin(filename):
 
     import struct
@@ -17,7 +16,6 @@ def load_dataset_bin(filename):
         else:
             result = [list(row) for row in unpacker.iter_unpack(inf.read())]
     return result
-
 
 def main(data_filename, label_filename, model_filename, num_estimators, max_tree_depth, num_threads):
 
@@ -39,7 +37,6 @@ def main(data_filename, label_filename, model_filename, num_estimators, max_tree
     with open(model_filename, "wb") as outf:
         pickle.dump(random_forest, outf)
 
-
 def parse_command_line_arguments():
 
     def positive_integer(text):
@@ -56,7 +53,6 @@ def parse_command_line_arguments():
     parser.add_argument("-e", "--num-estimators", type=positive_integer, default="150")
     parser.add_argument("-t", "--num-threads", type=positive_integer, default="1")
     return parser.parse_args()
-
 
 if __name__ == "__main__":
 

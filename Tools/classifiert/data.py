@@ -8,7 +8,6 @@ jsonpickle.ext.numpy.register_handlers()
 
 CACHE_DIR = pathlib.Path("cache")
 
-
 def load_labelled_dataset_json(filename):
 
     with open(filename) as json_file:
@@ -21,7 +20,6 @@ def load_labelled_dataset_json(filename):
     assert len(data_points) == len(labels)
     return data_points, labels
 
-
 def load_dataset_bin(filename):
 
     with open(filename, "rb") as inf:
@@ -32,7 +30,6 @@ def load_dataset_bin(filename):
         else:
             result = [list(row) for row in unpacker.iter_unpack(inf.read())]
     return result
-
 
 def load_dataset_balsa(filename):
 
@@ -52,7 +49,6 @@ def load_dataset_balsa(filename):
     assert len(result) == num_rows, "The number of rows read does not match the row count stored in the header."
     return result
 
-
 def store_labelled_dataset_csv(filename, data_points, labels):
 
     assert data_points.ndim == 2 and data_points.dtype == np.float32
@@ -66,7 +62,6 @@ def store_labelled_dataset_csv(filename, data_points, labels):
         for i in range(num_rows):
             outf.write(",".join([f"{value:.16f}" for value in data_points[i]] + [str(int(labels[i]))]) + "\n")
 
-
 def store_dataset_bin(filename, dataset):
 
     assert dataset.ndim == 1 or dataset.ndim == 2
@@ -78,7 +73,6 @@ def store_dataset_bin(filename, dataset):
         for i in range(num_rows):
             outf.write(dataset[i].tobytes())
 
-
 def store_labelled_dataset_bin(data_filename, label_filename, data_points, labels):
 
     assert data_points.ndim == 2 and data_points.dtype == np.float32
@@ -87,7 +81,6 @@ def store_labelled_dataset_bin(data_filename, label_filename, data_points, label
 
     store_dataset_bin(data_filename, data_points)
     store_dataset_bin(label_filename, labels)
-
 
 def store_dataset_balsa(filename, dataset):
 
@@ -106,7 +99,6 @@ def store_dataset_balsa(filename, dataset):
         for i in range(num_rows):
             outf.write(dataset[i].tobytes())
 
-
 def store_labelled_dataset_balsa(data_filename, label_filename, data_points, labels):
 
     assert data_points.ndim == 2 and data_points.dtype == np.float32
@@ -115,7 +107,6 @@ def store_labelled_dataset_balsa(data_filename, label_filename, data_points, lab
 
     store_dataset_balsa(data_filename, data_points)
     store_dataset_balsa(label_filename, labels)
-
 
 def store_labelled_dataset(data_format, data_filename, label_filename, data_points, labels):
 
@@ -134,7 +125,6 @@ def store_labelled_dataset(data_format, data_filename, label_filename, data_poin
     else:
         raise RuntimeError("Unsupported data format: " + str(data_format) + ".")
 
-
 def get_train_dataset_filenames(data_size, data_format):
 
     train_data_file = pathlib.Path(CACHE_DIR / f"train-data-{data_size}.{data_format}").absolute()
@@ -142,7 +132,6 @@ def get_train_dataset_filenames(data_size, data_format):
         return train_data_file, None
     train_label_file = pathlib.Path(CACHE_DIR / f"train-label-{data_size}.{data_format}").absolute()
     return train_data_file, train_label_file
-
 
 def get_test_dataset_filenames(data_format):
 
@@ -152,7 +141,6 @@ def get_test_dataset_filenames(data_format):
     train_label_file = pathlib.Path(CACHE_DIR / f"test-label.{data_format}").absolute()
     return train_data_file, train_label_file
 
-
 def is_cached(data_size):
 
     for data_format in ("csv", "bin", "balsa"):
@@ -161,14 +149,12 @@ def is_cached(data_size):
             return False
     return True
 
-
 def remove_from_cache(data_size):
 
     for data_format in ("csv", "bin", "balsa"):
         for filename in get_train_dataset_filenames(data_size, data_format):
             if filename is not None:
                 filename.unlink(missing_ok=True)
-
 
 def sample_dataset(data_points, labels, data_size, *, random_generator=None, replace=False):
 
@@ -180,7 +166,6 @@ def sample_dataset(data_points, labels, data_size, *, random_generator=None, rep
     assert (data_size <= len(data_points)) or replace
     index = random_generator.choice(len(data_points), data_size, replace=replace)
     return data_points[index], labels[index]
-
 
 def generate_train_datasets(train_data_filename, data_sizes, *, use_cache=True, seed=None):
 
@@ -212,7 +197,6 @@ def generate_train_datasets(train_data_filename, data_sizes, *, use_cache=True, 
         for data_format in ("csv", "bin", "balsa"):
             train_data_filename, train_label_filename = get_train_dataset_filenames(data_size, data_format)
             store_labelled_dataset(data_format, train_data_filename, train_label_filename, new_data_points, new_labels)
-
 
 def ingest_test_dataset(test_data_filename):
 

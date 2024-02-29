@@ -1,7 +1,6 @@
 import configparser
 import pathlib
 
-
 class Configuration:
 
 	def __init__(self):
@@ -17,7 +16,6 @@ class Configuration:
 	def get_classifier(self, name):
 
 		return self.classifiers[name]
-
 
 def load_config(filename):
 
@@ -41,7 +39,6 @@ def load_config(filename):
 			config.add_classifier(section_name, driver=driver, **arguments)
 
 	return config
-
 
 def store_config(filename, config):
 

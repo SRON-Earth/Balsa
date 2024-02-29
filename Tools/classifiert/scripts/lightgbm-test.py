@@ -3,7 +3,6 @@ import lightgbm as lgb
 import numpy as np
 import time
 
-
 def load_dataset_bin(filename):
 
     import struct
@@ -17,7 +16,6 @@ def load_dataset_bin(filename):
             result = [list(row) for row in unpacker.iter_unpack(inf.read())]
     return result
 
-
 def store_dataset_bin(filename, data):
 
     assert data.ndim >= 1 and data.ndim <= 2 and data.dtype == np.float32
@@ -26,7 +24,6 @@ def store_dataset_bin(filename, data):
         outf.write(int.to_bytes(num_columns, length=4, byteorder="little"))
         for i in range(len(data)):
             outf.write(data[i].tobytes())
-
 
 def main(model_filename, data_filename, label_filename):
 
@@ -55,7 +52,6 @@ def main(model_filename, data_filename, label_filename):
     print("Classification Time: ", classification_time)
     print("Label Store Time:", label_store_time)
 
-
 def parse_command_line_arguments():
 
     parser = argparse.ArgumentParser(description="Classify data using a pre-trained LightGBM classifier.")
@@ -63,7 +59,6 @@ def parse_command_line_arguments():
     parser.add_argument("data_filename", metavar="DATA_INPUT_FILE")
     parser.add_argument("label_filename", metavar="LABEL_OUTPUT_FILE")
     return parser.parse_args()
-
 
 if __name__ == "__main__":
 

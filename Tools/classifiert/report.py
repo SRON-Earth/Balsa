@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 
-
 def plot_statistic(statistics, title, y_axis_label, *, key=None, getter_func=dict.get):
 
     plt.figure()
@@ -13,7 +12,6 @@ def plot_statistic(statistics, title, y_axis_label, *, key=None, getter_func=dic
         plt.plot(x_values, y_values, linestyle="-", marker=".", label=classifier_name)
     if len(statistics) > 0:
         plt.legend()
-
 
 def write_report(report_filename, num_threads, statistics):
 
