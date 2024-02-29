@@ -8,6 +8,11 @@ jsonpickle.ext.numpy.register_handlers()
 
 CACHE_DIR = pathlib.Path("cache")
 
+def set_cache_dir(path):
+
+    global CACHE_DIR
+    CACHE_DIR = pathlib.Path(path)
+
 def load_labelled_dataset_json(filename):
 
     with open(filename) as json_file:

@@ -35,6 +35,9 @@ def profile(train_data_filename, test_data_filename, classifiers, config_file,
         print("Please edit the generated configuration file and try again.")
         return
 
+    # Set cache directory based on configuration.
+    set_cache_dir(config.cache_dir)
+
     print("\033[35m" + f"Generating train datasets..." + "\033[0m")
     generate_train_datasets(train_data_filename, data_sizes, use_cache=use_cache)
 
