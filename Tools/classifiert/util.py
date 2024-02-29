@@ -1,7 +1,6 @@
 import numpy as np
 import pathlib
 import re
-import struct
 import subprocess
 
 def run_program(program, *args, log=False, time_file=None, timeout=None, cwd=None):
