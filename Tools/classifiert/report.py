@@ -11,7 +11,8 @@ def plot_statistic(statistics, title, y_axis_label, *, key=None, getter_func=dic
         x_values = [run_statistics["data_size"] for run_statistics in classifier_statistics]
         y_values = [getter_func(run_statistics, key) for run_statistics in classifier_statistics]
         plt.plot(x_values, y_values, linestyle="-", marker=".", label=classifier_name)
-    plt.legend()
+    if len(statistics) > 0:
+        plt.legend()
 
 
 def write_report(report_filename, num_threads, statistics):
