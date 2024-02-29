@@ -143,15 +143,3 @@ def get_classification_scores(predicted_labels, labels, *, target_dict=None, key
         negative_predictive_value(num_true_positives, num_false_positives, num_true_negatives, num_false_negatives)
 
     return target_dict
-
-
-def load_dataset_bin(filename):
-
-    with open(filename, "rb") as inf:
-        num_columns, = struct.unpack("<I", inf.read(4))
-        unpacker = struct.Struct("<" + "f" * num_columns)
-        if num_columns == 1:
-            result = [row[0] for row in unpacker.iter_unpack(inf.read())]
-        else:
-            result = [list(row) for row in unpacker.iter_unpack(inf.read())]
-    return result

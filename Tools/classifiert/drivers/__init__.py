@@ -5,16 +5,15 @@ from . import ranger
 from . import sklearn
 
 _DRIVERS = {
-	"balsa": balsa,
-	"lightgbm": lightgbm,
-	"ranger": ranger,
-	"sklearn": sklearn
+	"balsa": balsa.Driver,
+	"lightgbm": lightgbm.Driver,
+	"ranger": ranger.Driver,
+	"sklearn": sklearn.Driver
 }
 
 def get_drivers():
 
 	return [name for name in _DRIVERS.keys()]
-
 
 def get_driver(name):
 

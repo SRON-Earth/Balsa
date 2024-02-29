@@ -6,9 +6,10 @@ import sys
 
 from .config  import Configuration, load_config, store_config
 from .drivers import get_drivers, get_driver
-from .datagen import get_train_dataset_filenames, get_test_dataset_filenames, \
-                     generate_train_datasets, ingest_test_dataset, \
-                     load_dataset_json, sample_dataset, store_dataset_bin
+from .data    import get_train_dataset_filenames, get_test_dataset_filenames, \
+                     generate_train_datasets, ingest_test_dataset,            \
+                     load_labelled_dataset_json, sample_dataset,              \
+                     store_labelled_dataset
 from .report  import write_report
 
 
@@ -59,8 +60,7 @@ def profile(train_data_filename, test_data_filename, classifiers, config_file,
         classifier_run_path = run_path / classifier_name
         classifier_run_path.mkdir()
 
-        driver = get_driver(classifier["driver"])
-        args = classifier["args"]
+        driver = get_driver(classifier["driver"])(**classifier["args"])
         data_format = driver.get_data_format()
 
         classifier_statistics = []
@@ -78,7 +78,6 @@ def profile(train_data_filename, test_data_filename, classifiers, config_file,
                                                  train_label_filename,
                                                  test_data_filename,
                                                  test_label_filename,
-                                                 config=args,
                                                  num_estimators=num_estimators,
                                                  max_tree_depth=max_tree_depth,
                                                  num_threads=num_threads))
@@ -94,9 +93,9 @@ def profile(train_data_filename, test_data_filename, classifiers, config_file,
 
 
 def sample(data_input_filename, data_output_filename, label_output_filename,
-           sample_size, with_replacement, random_seed):
+           data_format, sample_size, with_replacement, random_seed):
 
-    data_points, labels = load_dataset_json(data_input_filename)
+    data_points, labels = load_labelled_dataset_json(data_input_filename)
     assert len(data_points) == len(labels)
 
     if sample_size is None:
@@ -105,7 +104,7 @@ def sample(data_input_filename, data_output_filename, label_output_filename,
         random_generator = np.random.default_rng(random_seed)
         new_data_points, new_labels = sample_dataset(data_points, labels, sample_size, random_generator=random_generator, replace=with_replacement)
 
-    store_dataset_bin(data_output_filename, label_output_filename, new_data_points, new_labels)
+    store_labelled_dataset(data_format, data_output_filename, label_output_filename, new_data_points, new_labels)
 
 
 def parse_command_line_arguments():
@@ -144,7 +143,8 @@ def parse_command_line_arguments():
     sample = subparsers.add_parser("sample", help="draw a sample from an existing (json-pickle) dataset")
     sample.add_argument("data_input_filename", metavar="DATA_INPUT_FILE")
     sample.add_argument("data_output_filename", metavar="DATA_OUTPUT_FILE")
-    sample.add_argument("label_output_filename", metavar="LABEL_OUTPUT_FILE")
+    sample.add_argument("label_output_filename", nargs="?", metavar="LABEL_OUTPUT_FILE")
+    sample.add_argument("-f", "--data-format", choices=("csv", "bin", "balsa"), default="bin")
     sample.add_argument("-n", "--sample-size", type=positive_integer)
     sample.add_argument("-r", "--with-replacement", action="store_true")
     sample.add_argument("-s", "--random-seed", type=positive_integer)

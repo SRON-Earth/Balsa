@@ -5,66 +5,68 @@ import pathlib
 from ..util import run_program, get_statistics_from_time_file, \
                    get_classification_scores
 
+class Driver:
 
-def get_data_format():
+    def __init__(self, path):
 
-    return "csv"
+        self.path = pathlib.Path(path)
 
+    @staticmethod
+    def add_default_config(config):
 
-def add_default_config(config):
+        config.add_classifier("ranger", driver="ranger", path="/path/to/dir/that/contains/ranger/binary")
 
-    config.add_classifier("ranger", driver="ranger", path="/path/to/dir/that/contains/ranger/binary")
+    def get_data_format(self):
 
+        return "csv"
 
-def run(run_path, train_data_filename, train_label_filename, test_data_filename, test_label_filename, *,
-        config, num_estimators, max_tree_depth, num_threads):
+    def run(self, run_path, train_data_filename, train_label_filename, test_data_filename, test_label_filename, *,
+            num_estimators, max_tree_depth, num_threads):
 
-    assert train_label_filename is None
-    assert test_label_filename is None
+        assert train_label_filename is None
+        assert test_label_filename is None
 
-    ranger_path = pathlib.Path(config["path"])
+        run_statistics = {}
 
-    run_statistics = {}
-
-    args = ["--file", str(train_data_filename),
-            "--depvarname", "label",
-            "--treetype", "1",
-            "--ntree", str(num_estimators),
-            "--skipoob",
-            "--noreplace",
-            "--fraction", "1",
-            "--outprefix", "ranger",
-            "--write",
-            "--nthreads", str(num_threads)]
-
-    if max_tree_depth is not None:
-        args += ["--maxdepth", str(max_tree_depth)]
-
-    result = run_program(ranger_path / "ranger", *args, log=True, time_file="train.time", cwd=run_path)
-    get_statistics_from_time_file(run_path / "train.time", target_dict=run_statistics, key_prefix="train-")
-
-    run_program(ranger_path / "ranger",
-                "--file", str(test_data_filename),
+        args = ["--file", str(train_data_filename),
                 "--depvarname", "label",
-                "--predict", "ranger.forest",
-                "--nthreads", str(num_threads),
-                log=True,
-                time_file="test.time",
-                cwd=run_path)
-    get_statistics_from_time_file(run_path / "test.time", target_dict=run_statistics, key_prefix="test-")
+                "--treetype", "1",
+                "--ntree", str(num_estimators),
+                "--skipoob",
+                "--noreplace",
+                "--fraction", "1",
+                "--outprefix", "ranger",
+                "--write",
+                "--nthreads", str(num_threads)]
 
-    with open(run_path / "ranger_out.prediction", "r") as infile:
-        assert infile.readline().startswith("Predictions")
-        predicted_labels = [int(line) for line in infile]
+        if max_tree_depth is not None:
+            args += ["--maxdepth", str(max_tree_depth)]
 
-    with open(test_data_filename, "r") as infile:
-        reader = csv.reader(infile)
-        headers = next(reader, None)
-        assert headers[-1] == "label"
-        labels = [int(row[-1]) for row in reader]
+        result = run_program(self.path / "ranger", *args, log=True, time_file="train.time", cwd=run_path)
+        get_statistics_from_time_file(run_path / "train.time", target_dict=run_statistics, key_prefix="train-")
 
-    assert len(labels) == len(predicted_labels)
+        run_program(self.path / "ranger",
+                    "--file", str(test_data_filename),
+                    "--depvarname", "label",
+                    "--predict", "ranger.forest",
+                    "--nthreads", str(num_threads),
+                    log=True,
+                    time_file="test.time",
+                    cwd=run_path)
+        get_statistics_from_time_file(run_path / "test.time", target_dict=run_statistics, key_prefix="test-")
 
-    get_classification_scores(predicted_labels, labels, target_dict=run_statistics, key_prefix="test-")
+        with open(run_path / "ranger_out.prediction", "r") as infile:
+            assert infile.readline().startswith("Predictions")
+            predicted_labels = [int(line) for line in infile]
 
-    return run_statistics
+        with open(test_data_filename, "r") as infile:
+            reader = csv.reader(infile)
+            headers = next(reader, None)
+            assert headers[-1] == "label"
+            labels = [int(row[-1]) for row in reader]
+
+        assert len(labels) == len(predicted_labels)
+
+        get_classification_scores(predicted_labels, labels, target_dict=run_statistics, key_prefix="test-")
+
+        return run_statistics
