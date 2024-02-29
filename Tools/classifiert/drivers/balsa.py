@@ -1,7 +1,7 @@
 import pathlib
 
 from ..data import load_dataset_bin, load_dataset_balsa
-from ..util import run_program, get_statistics_from_time_file,  \
+from ..util import run_program, get_statistics_from_time_file, \
                    get_classification_scores
 
 class Driver:

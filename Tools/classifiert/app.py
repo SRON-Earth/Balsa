@@ -6,10 +6,10 @@ import sys
 
 from .config  import Configuration, load_config, store_config
 from .drivers import get_drivers, get_driver
-from .data    import get_train_dataset_filenames, get_test_dataset_filenames, \
-                     generate_train_datasets, ingest_test_dataset,            \
-                     load_labelled_dataset_json, sample_dataset,              \
-                     store_labelled_dataset
+from .data    import set_cache_dir, get_train_dataset_filenames, \
+                     get_test_dataset_filenames, generate_train_datasets, \
+                     ingest_test_dataset, load_labelled_dataset_json, \
+                     sample_dataset, store_labelled_dataset
 from .report  import write_report
 
 def generate_default_config_file(filename):
