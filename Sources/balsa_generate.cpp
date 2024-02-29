@@ -4,6 +4,7 @@
 #include <cassert>
 #include <random>
 
+#include "datatypes.h"
 #include "table.h"
 #include "exceptions.h"
 
@@ -17,7 +18,8 @@ public:
     Options():
     seed( 0 ),
     featureCount( 3 ),
-    pointCount( 1000 )
+    pointCount( 1000 ),
+    labelCount( 2 )
     {
     }
 
@@ -26,13 +28,14 @@ public:
         std::stringstream ss;
         ss << "Usage:" << std::endl
            << std::endl
-           << "   balsa_generate [options] <output_file>" << std::endl
+           << "   balsa_generate [options] <point_outfile> <label_outfile>" << std::endl
            << std::endl
            << " Options:" << std::endl
            << std::endl
            << "   -s <seed>  : Sets the random seed for data generation (default is 0)." << std::endl
            << "   -f <count> : Sets the feature count (default is 3)."                   << std::endl
-           << "   -p <points>: Sets the point count (default is 1000)."                  << std::endl;
+           << "   -p <points>: Sets the point count (default is 1000)."                  << std::endl
+           << "   -l <labels>: Sets the label count (default is 2)."                     << std::endl;
         return ss.str();
     }
 
@@ -75,17 +78,19 @@ public:
 
         // Parse the filename.
         if ( token.size() == 0 ) throw ParseError( getUsage() );
-        options.outputFile = token;
+        options.pointFile = token;
+        if ( !( args >> options.labelFile) ) throw ParseError( getUsage() );
 
         // Return results.
         return options;
     }
 
-    std::string  outputFile;
+    std::string    pointFile;
+    std::string  labelFile;  
     unsigned int seed;
     unsigned int featureCount;
     unsigned int pointCount;
-
+    unsigned int labelCount;
 };
 
 } // namespace
@@ -99,17 +104,29 @@ int main( int argc, char ** argv )
 
         // Generate a table full of points.
         std::mt19937 gen( options.seed ); // mersenne_twister_engine seeded with rd()
-         std::uniform_int_distribution<> distribution(0, 1000.0);
+        std::uniform_int_distribution<> distribution(0, 1000.0);
         Table<double> points( options.pointCount, options.featureCount );
         for ( auto it( points.begin() ), end( points.end() ); it != end; ++it )
         {
             *it = distribution(gen);
         }
 
-        // Write the output file.
+        // Generate labels.
+        Table<Label> labels( options.pointCount, 1 );
+        std::uniform_int_distribution<> labelDistribution( 0, options.labelCount - 1 );
+        for ( auto it ( labels.begin() ), end( labels.end()); it != end; ++it )
+        {
+            *it = labelDistribution(gen);
+        }
+
+        // Write the output files.
         std::ofstream out;
-        out.open( options.outputFile, std::ios::binary );
+        out.open( options.pointFile, std::ios::binary );
         out << points;
+        out.close();
+
+        out.open( options.labelFile, std::ios::binary );
+        out << labels;
         out.close();
     }
     catch ( Exception & e )
