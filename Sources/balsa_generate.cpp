@@ -85,8 +85,8 @@ public:
         return options;
     }
 
-    std::string    pointFile;
-    std::string  labelFile;  
+    std::string  pointFile;
+    std::string  labelFile;
     unsigned int seed;
     unsigned int featureCount;
     unsigned int pointCount;

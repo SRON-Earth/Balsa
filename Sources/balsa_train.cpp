@@ -128,6 +128,9 @@ int main( int argc, char ** argv )
         watch.start();
         auto dataSet = Table<double>::readFileAs( options.dataFile );
         auto labels  = Table<Label>::readFileAs( options.labelFile );
+        if ( labels.getRowCount() != dataSet.getRowCount() ) throw ParseError( "Point file and label file have different row counts." );
+        if ( labels.getColumnCount() != 1 ) throw ParseError( "Invalid label file: table has too many columns." );
+
         std::cout << "Dataset loaded: " << dataSet.getRowCount() << " points. (" << watch.stop() << " seconds)." << std::endl;
 
         // Train a random forest on the data.
