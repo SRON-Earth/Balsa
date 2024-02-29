@@ -242,7 +242,7 @@ public:
         // Write the dimensions.
         binOut.write( "rows", 4 );
         ::serialize( binOut, static_cast<uint32_t>( getRowCount() ) );
-        binOut.write(  "cols", 4 );
+        binOut.write( "cols", 4 );
         ::serialize( binOut, static_cast<uint32_t>( getColumnCount() ) );
 
         // Write the data
@@ -264,9 +264,9 @@ public:
 
         // Parse the table dimensions.
         expect( binIn, "rows", "Missing rows marker." );
-        rowCount = deserialize<std::size_t>( binIn );
+        rowCount = deserialize<std::uint32_t>( binIn );
         expect( binIn, "cols", "Missing cols marker." );
-        columnCount = deserialize<std::size_t>( binIn );
+        columnCount = deserialize<std::uint32_t>( binIn );
     }
 
 private:

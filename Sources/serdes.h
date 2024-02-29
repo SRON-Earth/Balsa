@@ -57,7 +57,9 @@ inline bool deserialize( std::istream & is )
 inline std::string getFixedSizeToken( std::istream & is, std::size_t size )
 {
     std::string token;
-    std::copy_n( std::istreambuf_iterator<char>( is ), size, std::back_inserter( token ) );
+    auto it = std::istreambuf_iterator<char>( is );
+    std::copy_n( it, size, std::back_inserter( token ) );
+    ++it;
     if ( is.fail() ) throw ParseError( "Read failed." );
     return token;
 }
@@ -75,6 +77,7 @@ template<typename Type>
 std::string getTypeName()
 {
     static_assert( sizeof( Type ) != sizeof( Type ), "Unsupported type." );
+    return "";
 }
 
 template<>
