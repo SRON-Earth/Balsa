@@ -29,7 +29,7 @@ public:
         for ( auto label( labelBegin ); label != labelEnd; ++label )
         {
             // Grow the count table if a large label is found.
-            if ( *label > m_data.size() ) m_data.resize( *label );
+            if ( *label >= m_data.size() ) m_data.resize( *label + 1 );
 
             // Count the label.
             ++m_data[*label];

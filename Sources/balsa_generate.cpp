@@ -66,6 +66,10 @@ public:
             {
                 if ( !( args >> options.featureCount ) ) throw ParseError( "Missing parameter to -f option." );
             }
+            else if ( token == "-l" )
+            {
+                if ( !( args >> options.labelCount ) ) throw ParseError( "Missing parameter to -l option." );
+            }
             else if ( token == "-p" )
             {
                 if ( !( args >> options.pointCount ) ) throw ParseError( "Missing parameter to -p option." );

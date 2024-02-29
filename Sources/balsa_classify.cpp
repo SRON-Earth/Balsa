@@ -117,8 +117,10 @@ int main( int argc, char ** argv )
         // Classify the data points.
         watch.start();
         Table<Label> labels( dataSet.getRowCount(), 1 );
+        std::cout << labels.getRowCount() << " before " << std::endl;
         RandomForestClassifier<decltype(dataSet)::ConstIterator,decltype(labels)::Iterator>  classifier( options.modelFile, dataSet.getColumnCount(), options.threadCount - 1, options.maxPreload );
         classifier.classify( dataSet.begin(), dataSet.end(), labels.begin() );
+        std::cout << labels.getRowCount() << " after " << std::endl;
         watch.stop();
         const auto classificationTime = watch.getElapsedTime();
 
@@ -131,8 +133,8 @@ int main( int argc, char ** argv )
 
         std::cout << "Timings:"
                   << std::endl
-                  // << "Model Load Time: " << modelLoadTime << std::endl
-                  << "Data Load Time: " << dataLoadTime << std::endl
+        // << "Model Load Time: " << modelLoadTime << std::endl
+                  << "Data Load Time: "   << dataLoadTime << std::endl
                   << "Classification Time: " << classificationTime << std::endl
                   << "Label Store Time: " << labelStoreTime << std::endl;
     }
