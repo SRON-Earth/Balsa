@@ -20,6 +20,10 @@ AlignConsecutiveMacros:
   AcrossComments:  false
   AlignCompound:   true
   PadOperators:    true
+AlignConsecutiveDeclarations:
+  Enabled:         true
+  AcrossEmptyLines: false
+  AcrossComments:  false
 AllowAllArgumentsOnNextLine: false
 AllowAllParametersOfDeclarationOnNextLine: false
 AllowShortFunctionsOnASingleLine: None
@@ -30,9 +34,9 @@ AlwaysBreakTemplateDeclarations: Yes
 BinPackArguments: false
 BinPackParameters: false
 BreakBeforeBraces: Allman
-BreakConstructorInitializers: BeforeComma
+BreakConstructorInitializers: AfterColon
 BreakInheritanceList: BeforeComma
-ColumnLimit: 120
+ColumnLimit: 600
 ConstructorInitializerIndentWidth: 0
 EmptyLineAfterAccessModifier: Always
 EmptyLineBeforeAccessModifier: Always

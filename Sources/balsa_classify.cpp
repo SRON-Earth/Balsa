@@ -5,8 +5,9 @@
 #include <string>
 #include <vector>
 
+#include "datatypes.h"
+#include "table.h"
 #include "exceptions.h"
-#include "ingestion.h"
 #include "randomforestclassifier.h"
 #include "serdes.h"
 #include "timing.h"
@@ -17,9 +18,9 @@ class Options
 {
 public:
 
-    Options()
-    : threadCount( 1 )
-    , maxPreload( 1 )
+    Options():
+    threadCount( 1 ),
+    maxPreload( 1 )
     {
     }
 
@@ -87,18 +88,6 @@ public:
     unsigned int maxPreload;
 };
 
-void writeLabels( const std::vector<bool> & labels, const std::string & filename )
-{
-    // Open the output file stream.
-    std::ofstream os( filename.c_str(), std::ofstream::binary );
-    assert( os.good() );
-
-    // Write the number of columns.
-    serialize<std::uint32_t>( os, 1 );
-
-    // Write the label values.
-    for ( const bool & label : labels ) serialize<float>( os, label );
-}
 } // namespace
 
 int main( int argc, char ** argv )
@@ -121,28 +110,22 @@ int main( int argc, char ** argv )
         StopWatch watch;
         std::cout << "Ingesting data..." << std::endl;
         watch.start();
-        auto dataSet = loadDataSet( options.dataFile );
-        std::cout << "Dataset loaded: " << dataSet->getFeatureCount() << " features x " << dataSet->size() << " points."
-                  << std::endl;
+        auto dataSet = Table<double>::readFileAs( options.dataFile );
+        std::cout << "Dataset loaded: " << dataSet.getColumnCount() << " features x " << dataSet.getRowCount() << " points." << std::endl;
         const auto dataLoadTime = watch.getElapsedTime();
 
         // Classify the data points.
         watch.start();
-        std::vector<bool> labels( dataSet->size(), false );
-        typedef typename std::decay_t<decltype( dataSet->getData() )>::const_iterator FeatureIteratorType;
-        typedef typename std::vector<bool>::iterator OutputIteratorType;
-        typedef RandomForestClassifier<FeatureIteratorType, OutputIteratorType, double, bool> ClassifierType;
-        ClassifierType classifier( options.modelFile,
-            dataSet->getFeatureCount(),
-            options.threadCount - 1,
-            options.maxPreload );
-        classifier.classify( dataSet->getData().begin(), dataSet->getData().end(), labels.begin() );
+        Table<Label> labels( dataSet.getRowCount(), 1 );
+        RandomForestClassifier<decltype(dataSet)::ConstIterator,decltype(labels)::Iterator>  classifier( options.modelFile, dataSet.getColumnCount(), options.threadCount - 1, options.maxPreload );
+        classifier.classify( dataSet.begin(), dataSet.end(), labels.begin() );
         watch.stop();
         const auto classificationTime = watch.getElapsedTime();
 
         // Store the labels.
         watch.start();
-        writeLabels( labels, options.outputFile );
+        std::ofstream outFile( options.outputFile, std::ios::binary );
+        outFile << labels;
         watch.stop();
         const auto labelStoreTime = watch.getElapsedTime();
 

@@ -2,12 +2,15 @@
 #include <random>
 #include <sstream>
 #include <string>
+#include <cassert>
 
 #include "exceptions.h"
-#include "ingestion.h"
+#include "table.h"
 #include "randomforesttrainer.h"
+#include "serdes.h"
 #include "timing.h"
 #include "weightedcoin.h"
+
 
 namespace
 {
@@ -15,11 +18,11 @@ class Options
 {
 public:
 
-    Options()
-    : maxDepth( std::numeric_limits<unsigned int>::max() )
-    , treeCount( 150 )
-    , threadCount( 1 )
-    , seed( std::random_device{}() )
+    Options():
+    maxDepth( std::numeric_limits<unsigned int>::max() ),
+    treeCount( 150 ),
+    threadCount( 1 ),
+    seed( std::random_device{}() )
     {
     }
 
@@ -90,12 +93,12 @@ public:
         return options;
     }
 
-    std::string dataFile;
-    std::string labelFile;
-    std::string outputFile;
-    unsigned int maxDepth;
-    unsigned int treeCount;
-    unsigned int threadCount;
+    std::string                     dataFile;
+    std::string                     labelFile;
+    std::string                     outputFile;
+    unsigned int                    maxDepth;
+    unsigned int                    treeCount;
+    unsigned int                    threadCount;
     std::random_device::result_type seed;
 };
 } // namespace
@@ -123,21 +126,15 @@ int main( int argc, char ** argv )
         StopWatch watch;
         std::cout << "Ingesting data..." << std::endl;
         watch.start();
-        auto dataSet = loadTrainingDataSet( options.dataFile, options.labelFile );
-        std::cout << "Dataset loaded: " << dataSet->size() << " points. (" << watch.stop() << " seconds)." << std::endl;
+        auto dataSet = Table<double>::readFileAs( options.dataFile );
+        auto labels  = Table<Label>::readFileAs( options.labelFile );
+        std::cout << "Dataset loaded: " << dataSet.getRowCount() << " points. (" << watch.stop() << " seconds)." << std::endl;
 
         // Train a random forest on the data.
-        std::cout << "Building indices..." << std::endl;
-        watch.start();
-        BinaryRandomForestTrainer trainer( options.outputFile,
-            options.maxDepth,
-            options.treeCount,
-            options.threadCount );
-        std::cout << "Done (" << watch.stop() << " seconds)." << std::endl;
-
         std::cout << "Training..." << std::endl;
+        RandomForestTrainer trainer( options.outputFile, options.maxDepth, options.treeCount, options.threadCount );
         watch.start();
-        trainer.train( dataSet );
+        trainer.train( dataSet, labels );
         std::cout << "Done (" << watch.stop() << " seconds)." << std::endl;
     }
     catch ( Exception & e )

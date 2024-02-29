@@ -4,23 +4,17 @@
 #include "decisiontreeclassifierstream.h"
 #include "ensembleclassifier.h"
 
-template <typename FeatureIterator = double *,
-          typename OutputIterator  = bool   *,
-          typename FeatureType     = typename std::iterator_traits<FeatureIterator>::value_type,
-          typename LabelType       = typename std::iterator_traits<OutputIterator>::value_type>
+template <typename FeatureIterator = double *, typename OutputIterator = Label *, typename FeatureType = typename std::iterator_traits<FeatureIterator>::value_type, typename LabelType = typename std::iterator_traits<OutputIterator>::value_type>
 class RandomForestClassifier: public Classifier<FeatureIterator, OutputIterator>
 {
 public:
 
     using typename Classifier<FeatureIterator, OutputIterator>::VoteTable;
 
-    RandomForestClassifier( const std::string & modelFileName,
-        unsigned int featureCount,
-        unsigned int maxThreads = 0,
-        unsigned int maxPreload = 1 )
-    : Classifier<FeatureIterator, OutputIterator>( featureCount )
-    , m_treeStream( modelFileName, maxPreload )
-    , m_classifier( featureCount, m_treeStream, maxThreads )
+    RandomForestClassifier( const std::string & modelFileName, unsigned int featureCount, unsigned int maxThreads = 0, unsigned int maxPreload = 1 ):
+    Classifier<FeatureIterator, OutputIterator>( featureCount ),
+    m_treeStream( modelFileName, maxPreload ),
+    m_classifier( featureCount, m_treeStream, maxThreads )
     {
     }
 
@@ -44,7 +38,7 @@ public:
 private:
 
     DecisionTreeClassifierStream<FeatureIterator, OutputIterator, FeatureType, LabelType> m_treeStream;
-    EnsembleClassifier<FeatureIterator, OutputIterator> m_classifier;
+    EnsembleClassifier<FeatureIterator, OutputIterator>                                   m_classifier;
 };
 
 #endif // RANDOMFORESTCLASSIFIER_H

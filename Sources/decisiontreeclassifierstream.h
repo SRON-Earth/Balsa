@@ -5,7 +5,6 @@
 
 #include "classifierstream.h"
 #include "decisiontreeclassifier.h"
-#include "decisiontrees.h"
 #include "exceptions.h"
 
 /**
@@ -23,10 +22,7 @@
  * `maxPreload` to zero. This will cause all classifiers to be loaded into
  * memory once.
  */
-template <typename FeatureIterator,
-    typename OutputIterator,
-    typename FeatureType = typename std::iterator_traits<FeatureIterator>::value_type,
-    typename LabelType   = typename std::iterator_traits<OutputIterator>::value_type>
+template <typename FeatureIterator, typename OutputIterator, typename FeatureType = typename std::iterator_traits<FeatureIterator>::value_type, typename LabelType = typename std::iterator_traits<OutputIterator>::value_type>
 class DecisionTreeClassifierStream: public ClassifierStream<FeatureIterator, OutputIterator>
 {
 public:
@@ -35,10 +31,10 @@ public:
 
     typedef DecisionTreeClassifier<FeatureIterator, OutputIterator, FeatureType, LabelType> DecisionTreeClassifierType;
 
-    DecisionTreeClassifierStream( const std::string & filename, unsigned int maxPreload = 0 )
-    : m_filename( filename )
-    , m_maxPreload( maxPreload )
-    , m_cacheIndex( 0 )
+    DecisionTreeClassifierStream( const std::string & filename, unsigned int maxPreload = 0 ):
+    m_filename( filename ),
+    m_maxPreload( maxPreload ),
+    m_cacheIndex( 0 )
     {
     }
 
@@ -145,10 +141,10 @@ private:
         }
     }
 
-    std::string m_filename;
-    std::size_t m_maxPreload;
-    std::ifstream m_modelFile;
-    std::size_t m_cacheIndex;
+    std::string                                         m_filename;
+    std::size_t                                         m_maxPreload;
+    std::ifstream                                       m_modelFile;
+    std::size_t                                         m_cacheIndex;
     std::vector<typename ClassifierType::SharedPointer> m_cache;
 };
 

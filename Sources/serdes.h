@@ -1,10 +1,13 @@
 #ifndef SERDES_H
 #define SERDES_H
 
+#include <algorithm>
 #include <cstdint>
 #include <istream>
 #include <ostream>
 #include <type_traits>
+
+#include "exceptions.h"
 
 /**
  * Serialize a POD (plain old data) value to a binary output stream.
@@ -12,8 +15,7 @@
 template <typename T>
 void serialize( std::ostream & os, const T & value )
 {
-    static_assert( std::is_standard_layout<T>::value && std::is_trivial<T>::value,
-        "Generic serialization is implemented for POD types only." );
+    static_assert( std::is_standard_layout<T>::value && std::is_trivial<T>::value, "Generic serialization is implemented for POD types only." );
     os.write( reinterpret_cast<const char *>( &value ), sizeof( T ) );
 }
 
@@ -33,8 +35,7 @@ inline void serialize( std::ostream & os, const bool & value )
 template <typename T>
 T deserialize( std::istream & is )
 {
-    static_assert( std::is_standard_layout<T>::value && std::is_trivial<T>::value,
-        "Generic deserialization is implemented for POD types only." );
+    static_assert( std::is_standard_layout<T>::value && std::is_trivial<T>::value, "Generic deserialization is implemented for POD types only." );
     T result;
     is.read( reinterpret_cast<char *>( &result ), sizeof( T ) );
     return result;
@@ -48,6 +49,80 @@ template <>
 inline bool deserialize( std::istream & is )
 {
     return ( deserialize<std::uint8_t>( is ) != 0 );
+}
+
+/**
+ * Read a fixed-size token from a stream.
+ */
+inline std::string getFixedSizeToken( std::istream & is, std::size_t size )
+{
+    std::string token;
+    std::copy_n( std::istreambuf_iterator<char>( is ), size, std::back_inserter( token ) );
+    if ( is.fail() ) throw ParseError( "Read failed." );
+    return token;
+}
+
+/**
+ * Read an expected sequence of characters from a stream, throw an exception if the is a mismatch.
+ */
+inline void expect( std::istream & is, const std::string & sequence, const std::string & errorMessage )
+{
+    std::string token = getFixedSizeToken( is, sequence.size() );
+    if ( token != sequence ) throw ParseError( errorMessage );
+}
+
+template<typename Type>
+std::string getTypeName()
+{
+    static_assert( sizeof( Type ) != sizeof( Type ), "Unsupported type." );
+}
+
+template<>
+std::string getTypeName<bool>()
+{
+    return "bool";
+}
+
+template<>
+std::string getTypeName<float>()
+{
+    return "fl32";
+}
+
+template<>
+std::string getTypeName<double>()
+{
+    return "fl64";
+}
+
+template<>
+std::string getTypeName<uint32_t>()
+{
+    return "ui32";
+}
+
+template<>
+std::string getTypeName<int32_t>()
+{
+    return "in32";
+}
+
+template<>
+std::string getTypeName<int16_t>()
+{
+    return "in16";
+}
+
+template<>
+std::string getTypeName<uint16_t>()
+{
+    return "ui16";
+}
+
+template<>
+std::string getTypeName<uint8_t>()
+{
+    return "ui08";
 }
 
 #endif // SERDES_H
