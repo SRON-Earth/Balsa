@@ -1,7 +1,10 @@
 #ifndef DATATOOLS_H
 #define DATATOOLS_H
 
+#include <algorithm>
 #include <sstream>
+#include <valarray>
+#include <vector>
 
 #include "datatypes.h"
 
@@ -28,14 +31,21 @@ public:
     template <typename InputIterator>
     LabelFrequencyTable( InputIterator labelBegin, InputIterator labelEnd )
     {
+        // Create a temporary vector of label frequency counts (since valarray's
+        // resize() function initializes the entire valarray to zero).
+        std::vector<std::size_t> counts;
         for ( auto label( labelBegin ); label != labelEnd; ++label )
         {
             // Grow the count table if a large label is found.
-            if ( *label >= m_data.size() ) m_data.resize( *label + 1 );
+            if ( *label >= counts.size() ) counts.resize( *label + 1 );
 
             // Count the label.
-            ++m_data[*label];
+            ++counts[*label];
         }
+
+        // Copy the computed frequency counts to the valarray member variable.
+        m_data.resize( counts.size() );
+        std::copy( counts.begin(), counts.end(), std::begin( m_data ) );
 
         // Calculate the total size.
         m_total = m_data.sum();
