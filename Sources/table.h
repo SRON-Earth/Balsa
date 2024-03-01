@@ -199,6 +199,7 @@ public:
         Table<CellType> result( rows, cols );
 
         // Read the table, convert if necessary.
+        expect( binIn, "data", "Missing data marker." );
         auto destinationType = getTypeName<CellType>();
         if ( destinationType == sourceType )
         {
@@ -306,13 +307,36 @@ std::istream & operator>>( std::istream & binIn, Table<CellType> & table )
 }
 
 /**
- * Serializes a Table to a binary output stream.
+ * Writes table contents to a text stream in human-readable form.
  */
 template <typename CellType>
-std::ostream & operator<<( std::ostream & binOut, const Table<CellType> & table )
+std::ostream & operator<<( std::ostream & out, const Table<CellType> & table )
 {
-    table.serialize( binOut );
-    return binOut;
+    // Write the cell data and row numbers.
+    for ( unsigned int row = 0; row < table.getRowCount(); ++row )
+    {
+        out << std::setw(4) << std::left << row << ':';
+        for ( unsigned int col = 0; col < table.getColumnCount(); ++col ) out << ' ' << std::setw( 8 ) << std::left << table(row,col);
+        out << std::endl;
+    }
+
+    return out;
+}
+
+/**
+ * Specialization for uint8_t tables.
+ */
+std::ostream & operator<<( std::ostream & out, const Table<uint8_t> & table )
+{
+    // Write the cell data and row numbers.
+    for ( unsigned int row = 0; row < table.getRowCount(); ++row )
+    {
+        out << std::setw(4) << std::left << row << ':';
+        for ( unsigned int col = 0; col < table.getColumnCount(); ++col ) out << ' ' << std::setw( 4 ) << std::left << static_cast<unsigned int>( table(row,col) );
+        out << std::endl;
+    }
+
+    return out;
 }
 
 #endif // TABLE_H

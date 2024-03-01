@@ -105,46 +105,52 @@ public:
 
 int main( int argc, char ** argv )
 {
-    try
-    {
-        // Parse the command-line arguments.
-        Options options = Options::parseOptions( argc, argv );
+   try
+   {
+       // Parse the command-line arguments.
+       Options options = Options::parseOptions( argc, argv );
 
-        // Debug.
-        std::cout << "Data File      : " << options.dataFile << std::endl;
-        std::cout << "Label File     : " << options.labelFile << std::endl;
-        std::cout << "Output File    : " << options.outputFile << std::endl;
-        std::cout << "Max. Depth     : " << options.maxDepth << std::endl;
-        std::cout << "Tree Count     : " << options.treeCount << std::endl;
-        std::cout << "Threads        : " << options.threadCount << std::endl;
-        std::cout << "Random Seed    : " << options.seed << std::endl;
+       // Debug.
+       std::cout << "Data File      : " << options.dataFile << std::endl;
+       std::cout << "Label File     : " << options.labelFile << std::endl;
+       std::cout << "Output File    : " << options.outputFile << std::endl;
+       std::cout << "Max. Depth     : " << options.maxDepth << std::endl;
+       std::cout << "Tree Count     : " << options.treeCount << std::endl;
+       std::cout << "Threads        : " << options.threadCount << std::endl;
+       std::cout << "Random Seed    : " << options.seed << std::endl;
 
-        // Seed master seed sequence.
-        getMasterSeedSequence().seed( options.seed );
+       // Seed master seed sequence.
+       getMasterSeedSequence().seed( options.seed );
 
-        // Load training data set.
-        StopWatch watch;
-        std::cout << "Ingesting data..." << std::endl;
-        watch.start();
-        auto dataSet = Table<double>::readFileAs( options.dataFile );
-        auto labels  = Table<Label>::readFileAs( options.labelFile );
-        if ( labels.getRowCount() != dataSet.getRowCount() ) throw ParseError( "Point file and label file have different row counts." );
-        if ( labels.getColumnCount() != 1 ) throw ParseError( "Invalid label file: table has too many columns." );
+       // Load training data set.
+       StopWatch watch;
+       std::cout << "Ingesting data..." << std::endl;
+       watch.start();
+       auto dataSet = Table<double>::readFileAs( options.dataFile );
+       auto labels  = Table<Label>::readFileAs( options.labelFile );
+       if ( labels.getRowCount() != dataSet.getRowCount() ) throw ParseError( "Point file and label file have different row counts." );
+       if ( labels.getColumnCount() != 1 ) throw ParseError( "Invalid label file: table has too many columns." );
 
-        std::cout << "Dataset loaded: " << dataSet.getRowCount() << " points. (" << watch.stop() << " seconds)." << std::endl;
+       std::cout << "Dataset loaded: " << dataSet.getRowCount() << " points. (" << watch.stop() << " seconds)." << std::endl;
 
-        // Train a random forest on the data.
-        std::cout << "Training..." << std::endl;
-        RandomForestTrainer trainer( options.outputFile, options.maxDepth, options.treeCount, options.threadCount );
-        watch.start();
-        trainer.train( dataSet, labels );
-        std::cout << "Done (" << watch.stop() << " seconds)." << std::endl;
-    }
-    catch ( Exception & e )
-    {
-        std::cerr << e.getMessage() << std::endl;
-        return EXIT_FAILURE;
-    }
+       // DEBUG
+       for ( DataPointID p = 0; p < labels.getRowCount(); ++p )
+       {
+           if ( labels( p, 0 ) > 1 ) std::cout << "Label of point " << p << " is " << labels( p, 0 ) << std::endl;
+       }
+
+       // Train a random forest on the data.
+       std::cout << "Training..." << std::endl;
+       RandomForestTrainer trainer( options.outputFile, options.maxDepth, options.treeCount, options.threadCount );
+       watch.start();
+       trainer.train( dataSet, labels );
+       std::cout << "Done (" << watch.stop() << " seconds)." << std::endl;
+   }
+   catch ( Exception & e )
+   {
+       std::cerr << e.getMessage() << std::endl;
+       return EXIT_FAILURE;
+   }
 
     // Finish.
     return EXIT_SUCCESS;

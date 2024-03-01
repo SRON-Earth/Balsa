@@ -127,7 +127,7 @@ int main( int argc, char ** argv )
         // Store the labels.
         watch.start();
         std::ofstream outFile( options.outputFile, std::ios::binary );
-        outFile << labels;
+        labels.serialize( outFile );
         watch.stop();
         const auto labelStoreTime = watch.getElapsedTime();
 

@@ -126,11 +126,11 @@ int main( int argc, char ** argv )
         // Write the output files.
         std::ofstream out;
         out.open( options.pointFile, std::ios::binary );
-        out << points;
+        points.serialize( out );
         out.close();
 
         out.open( options.labelFile, std::ios::binary );
-        out << labels;
+        labels.serialize( out );
         out.close();
     }
     catch ( Exception & e )

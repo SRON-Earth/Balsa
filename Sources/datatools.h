@@ -1,6 +1,8 @@
 #ifndef DATATOOLS_H
 #define DATATOOLS_H
 
+#include <sstream>
+
 #include "datatypes.h"
 
 /**
@@ -15,7 +17,7 @@ public:
      * \param exclusiveUpperLimit All counted values must be strictly below this limit.
      */
     LabelFrequencyTable( Label exclusiveUpperLimit ):
-    m_data( exclusiveUpperLimit ),
+    m_data( Label( 0 ), static_cast<std::size_t>( exclusiveUpperLimit ) ),
     m_total( 0 )
     {
     }
@@ -23,7 +25,7 @@ public:
     /**
      * Creates a frequency table from a list of labels.
      */
-    template<typename InputIterator>
+    template <typename InputIterator>
     LabelFrequencyTable( InputIterator labelBegin, InputIterator labelEnd )
     {
         for ( auto label( labelBegin ); label != labelEnd; ++label )
@@ -36,7 +38,7 @@ public:
         }
 
         // Calculate the total size.
-        m_total = std::distance( labelBegin, labelEnd );
+        m_total = m_data.sum();
     }
 
     /**
@@ -79,9 +81,9 @@ public:
         return m_total;
     }
 
-   /**
-    * Returns the number of distinct, consecutive label values that can be counted in this table.
-    */
+    /**
+     * Returns the number of distinct, consecutive label values that can be counted in this table.
+     */
     std::size_t size() const
     {
         return m_data.size();
@@ -96,24 +98,44 @@ public:
     {
         assert( m_total > 0 );
         auto squaredCounts = m_data * m_data;
-        return FloatType( 1.0 ) - static_cast<FloatType>( squaredCounts.sum() ) / m_total;
+        return FloatType( 1.0 ) - static_cast<FloatType>( squaredCounts.sum() ) / ( m_total * m_total );
     }
 
-  /**
-   * Returns the lowest label with the highest count.
-   */
-  Label getMostFrequentLabel() const
+    /**
+     * Returns the lowest label with the highest count.
+     */
+    Label getMostFrequentLabel() const
+    {
+        // Find the lowest label with the highest count.
+        std::size_t bestCount = 0;
+        Label       best      = 0;
+        for ( Label l = 0; l < m_data.size(); ++l )
+        {
+            if ( m_data[l] <= bestCount ) continue;
+            best      = l;
+            bestCount = m_data[l];
+        }
+        return best;
+    }
+
+    /**
+     * Class invariant. N.B. this is expensive to compute.
+     */
+    bool invariant()
+    {
+        return m_data.sum() == m_total;
+    }
+
+   /**
+    * Return a textual representation for debugging purposes.
+    */
+  const std::string asText() const
   {
-      // Find the lowest label with the highest count.
-      std::size_t bestCount = 0;
-      Label best = 0;
-      for ( Label l = 0; l < m_data.size(); ++l )
-      {
-          if ( m_data[l] <= bestCount ) continue;
-          best = l;
-          bestCount = m_data[l];
-      }
-      return best;
+      std::stringstream ss;
+      if ( m_data.size() == 0 ) return "(No entries)";
+      ss << m_data[0];
+      for ( Label l = 1; l < m_data.size(); ++l ) ss << " " << static_cast<unsigned int>( m_data[l] );
+      return ss.str();
   }
 
 private:

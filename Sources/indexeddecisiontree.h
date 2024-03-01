@@ -104,8 +104,9 @@ public:
         assert( isGrowable() );
 
         // Grow the next growable leaf.
-        // N.B. by popping the first element, removal by growLeaf() will be most efficient.
-        growLeaf( m_growableLeaves.front() );
+        auto leaf = m_growableLeaves.front();
+        m_growableLeaves.pop_front();
+        growLeaf( leaf );
     }
 
     /**
@@ -136,11 +137,11 @@ public:
         binOut.write( "tree", 4 );
         binOut.write( "fcnt", 4 );
         serialize( binOut, static_cast<uint32_t>( m_dataPoints.getColumnCount() ) );
-        binOut << leftChildID;
-        binOut << rightChildID;
-        binOut << splitFeatureID;
-        binOut << splitValue;
-        binOut << label;
+        leftChildID.serialize( binOut );
+        rightChildID.serialize( binOut );
+        splitFeatureID.serialize( binOut );
+        splitValue.serialize( binOut );
+        label.serialize( binOut );
     }
 
 private:
@@ -164,7 +165,8 @@ private:
     public:
 
         /**
-         * Constructs a 'zero' split candidate with no points and infinite impurity.
+         * Constructs an invalid split.
+         * Invalid splits have an impurity greater than 1. Any real split would have a lower impurity.
          */
         SplitCandidate():
         m_leftCounts( 0 ),
@@ -188,6 +190,14 @@ private:
             auto leftImpurity  = leftCounts.giniImpurity<ImpurityType>();
             auto rightImpurity = rightCounts.giniImpurity<ImpurityType>();
             m_impurity         = ( leftImpurity / leftCounts.getTotal() ) + ( rightImpurity / rightCounts.getTotal() );
+        }
+
+        /**
+         * Returns true iff this candidate represents a valid split.
+         */
+        bool isValid() const
+        {
+            return m_impurity <= 1.0;
         }
 
         const Split<FeatureType> & getSplit() const
@@ -259,7 +269,7 @@ private:
             m_split      = split;
             m_leftChild  = leftNodeID;
             m_rightChild = rightNodeID;
-            assert( !( m_leftChild ^ m_rightChild ) ); // Both children must be non-null.
+            assert( ( m_leftChild && m_rightChild ) || !( m_leftChild || m_rightChild ) ); // Both children must be non-null.
         }
 
         /**
@@ -326,6 +336,17 @@ private:
             return m_split;
         }
 
+        /**
+         * Returns a text representation of the node, for debugging purposes.
+         */
+        const std::string getInfo() const
+        {
+            std::stringstream ss;
+            ss << "Children: " << m_leftChild << ' ' << m_rightChild << " Level: " << m_distanceToRoot << " Label counts: " ;
+            ss << m_labelCounts.asText();
+            return ss.str();
+        }
+
     private:
 
         NodeID              m_leftChild;
@@ -369,27 +390,29 @@ private:
     void splitNode( NodeID nodeID, const SplitCandidate & splitCandidate )
     {
         // Check the precondition.
-        auto & node = m_nodes[nodeID];
+        Node &node = m_nodes[nodeID];
         assert( node.isLeafNode() );
 
         // Split the feature index.
         std::size_t leftPointCount = splitCandidate.getLeftCounts().getTotal();
-        ;
+        assert( node.isLeafNode() );
         for ( FeatureID featureID = 0; featureID < m_featureIndex.size(); ++featureID )
         {
             // No work is necessary for the feature on which the split is performed.
             auto splitFeature = splitCandidate.getSplit().getFeatureID();
             auto splitValue   = splitCandidate.getSplit().getFeatureValue();
-            if ( splitFeature ) continue;
+            if ( featureID == splitFeature ) continue;
 
             // For other features, partition the points in the index along the split edge, but keep them sorted.
-            auto nodeDataStart = m_featureIndex[featureID].begin() + node.getIndexOffset();;
+            auto nodeDataStart = m_featureIndex[featureID].begin() + node.getIndexOffset();
             auto nodeDataEnd   = nodeDataStart + node.getPointCount();
             auto predicate     = [this, splitFeature, splitValue]( const auto & entry ) -> bool
             {
-                return this->m_dataPoints( entry.m_pointID, splitFeature ) < splitValue;
+                return this->m_dataPoints( entry.m_pointID, splitFeature ) <= splitValue;
             };
+
             auto secondNodeData = std::stable_partition( nodeDataStart, nodeDataEnd, predicate );
+            assert( secondNodeData != nodeDataStart );
 
             // Make sure the point count is consistent with what is in the split candidate.
             auto distance = std::distance( nodeDataStart, secondNodeData );
@@ -397,14 +420,19 @@ private:
             auto newLeftPointCount = static_cast<std::size_t>( distance );
             assert( newLeftPointCount == leftPointCount );
         }
+        assert( node.isLeafNode() );
 
-        // Create the child nodes.
+        // Create the child nodes before adding them to the node table, because that will invalidate the 'node' reference.
         NodeID leftChildID  = m_nodes.size();
         NodeID rightChildID = leftChildID + 1;
         assert( leftPointCount );
-        m_nodes.push_back( Node( splitCandidate.getLeftCounts(), node.getIndexOffset(), node.getDistanceToRoot() + 1 ) );
-        m_nodes.push_back( Node( splitCandidate.getRightCounts(), node.getIndexOffset() + splitCandidate.getLeftCounts().getTotal(), node.getDistanceToRoot() + 1 ) );
+        Node leftChild = Node( splitCandidate.getLeftCounts(), node.getIndexOffset(), node.getDistanceToRoot() + 1 );
+        Node rightChild = Node( splitCandidate.getRightCounts(), node.getIndexOffset() + splitCandidate.getLeftCounts().getTotal(), node.getDistanceToRoot() + 1 );
         node.setSplit( splitCandidate.getSplit(), leftChildID, rightChildID );
+
+        // Put the created child nodes in the list.
+        m_nodes.push_back( leftChild  );
+        m_nodes.push_back( rightChild );
 
         // Add the children to the list of growable nodes, if applicable.
         if ( isGrowableNode( leftChildID ) ) m_growableLeaves.push_back( leftChildID );
@@ -423,13 +451,19 @@ private:
 
         // Randomly scan the required number of features.
         SplitCandidate bestSplit;
+        assert( bestSplit.getImpurity() > m_nodes[node].getLabelCounts().template giniImpurity<ImpurityType>() );
         auto           featuresToScan = m_featuresToConsider;
+        std::vector<FeatureID> skippedFeatures;
         for ( FeatureID featureID = 0; featureID < featureCount; ++featureID )
         {
             // Decide whether or not to consider this feature.
             auto featuresLeft        = featureCount - featureID;
             bool considerThisFeature = m_coin.flip( featuresToScan, featuresLeft );
-            if ( !considerThisFeature ) continue;
+            if ( !considerThisFeature )
+            {
+                skippedFeatures.push_back( featureID );
+                continue;
+            }
 
             // Use up one 'credit'.
             assert( featuresToScan > 0 );
@@ -438,6 +472,30 @@ private:
             // Scan the feature for a split that is better than what was already found.
             bestSplit = findBestSplitForFeature( m_nodes[node], featureID, bestSplit );
         }
+        assert( skippedFeatures.size() == featureCount - m_featuresToConsider );
+
+        // If a valid split has been found, return it.
+        if ( bestSplit.isValid() ) return bestSplit;
+
+        // Since no valid split was found, scan all features that were initially skipped.
+        for ( auto featureID: skippedFeatures )
+        {
+            // Return the first candidate split.
+            bestSplit = findBestSplitForFeature( m_nodes[node], featureID, bestSplit );
+            if ( bestSplit.isValid() ) return bestSplit;
+        }
+
+        // All points in this node must have exactly the same feature values. Issue a warning.
+        // TODO: proper warning object.
+        DataPointID anyPointInNode = m_featureIndex[0][ m_nodes[node].getIndexOffset() ].m_pointID;
+        std::cout << "WARNING: training data contains a cluster of identical points with different labels." << std::endl;
+        std::cout << "Feature values:";
+        for ( unsigned int f = 0; f < featureCount; ++f )
+        {
+            std::cout << ' ' << m_dataPoints( anyPointInNode, f );
+        }
+        std::cout << std::endl;
+        std::cout << "Label frequencies: " << m_nodes[node].getLabelCounts().asText() << std::endl;
 
         return bestSplit;
     }
@@ -461,6 +519,8 @@ private:
         LabelFrequencyTable leftSideLabelCounts( node.getLabelCounts().size() );
         LabelFrequencyTable rightSideLabelCounts( node.getLabelCounts() );
 
+        assert( leftSideLabelCounts.invariant() );
+        assert( rightSideLabelCounts.invariant() );
         for ( auto it( begin ); it != end; ++it )
         {
             // If this is the end of a block of equal-valued points, test if this split would be an improvement over the current best.
@@ -483,21 +543,13 @@ private:
 
     void growLeaf( NodeID nodeID )
     {
+        assert( m_nodes[nodeID].isLeafNode() );
+
         // Find the best split for the node.
         SplitCandidate split = findBestSplit( nodeID );
 
-        // Apply the split.
-        splitNode( nodeID, split );
-
-        // Remove the node from the growable leaves list (it is usually the first element).
-        auto pos = std::find( m_growableLeaves.begin(), m_growableLeaves.end(), nodeID );
-        assert( pos != m_growableLeaves.end() );
-        m_growableLeaves.erase( pos );
-
-        // Add the children of the grown leaf to the growable leaves list, if they are growable.
-        auto & node = m_nodes[nodeID];
-        if ( isGrowableNode( node.getLeftChild() ) ) m_growableLeaves.push_back( node.getLeftChild() );
-        if ( isGrowableNode( node.getRightChild() ) ) m_growableLeaves.push_back( node.getRightChild() );
+        // Apply the split if one was found (this will also add the created children to the growable list, if appropriate).
+        if ( split.isValid() ) splitNode( nodeID, split );
     }
 
     /**
@@ -514,7 +566,7 @@ private:
         if ( node.getDistanceToRoot() >= m_maximumDistanceToRoot ) return false;
 
         // Prohibit the growth of nodes that are already pure enough.
-        if ( node.getLabelCounts().template giniImpurity<ImpurityType>() < m_impurityThreshold ) return false;
+        if ( node.getLabelCounts().template giniImpurity<ImpurityType>() <= m_impurityThreshold ) return false;
 
         // If there are no further objections, the node is growable.
         return true;
