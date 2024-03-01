@@ -1,36 +1,37 @@
 import argparse
 import numpy as np
+import pathlib
 import pickle
+import struct
 import sys
 import time
 
 def load_dataset_bin(filename):
 
-    import struct
+    header_format = "<I"
+    header_size = struct.calcsize(header_format)
+    with open(filename, "rb") as infile:
+        num_columns, = struct.unpack(header_format, infile.read(header_size))
+        dataset = np.frombuffer(infile.read(), "<f4")
+        dataset.shape = (-1, num_columns)
+    return dataset
 
-    with open(filename, "rb") as inf:
-        num_columns, = struct.unpack("<I", inf.read(4))
-        unpacker = struct.Struct("<" + "f" * num_columns)
-        if num_columns == 1:
-            result = [row[0] for row in unpacker.iter_unpack(inf.read())]
-        else:
-            result = [list(row) for row in unpacker.iter_unpack(inf.read())]
-    return result
+def store_dataset_bin(filename, dataset):
 
-def store_dataset_bin(filename, data):
+    assert dataset.ndim == 1 or dataset.ndim == 2
+    assert dataset.dtype == np.float32
 
-    assert data.ndim >= 1 and data.ndim <= 2 and data.dtype == np.float32
-    num_columns = 1 if data.ndim == 1 else data.shape[-1]
-    with open(filename, "wb") as outf:
-        outf.write(int.to_bytes(num_columns, length=4, byteorder="little"))
-        for i in range(len(data)):
-            outf.write(data[i].tobytes())
+    num_rows, num_columns = (*dataset.shape, 1)[:2]
+    with open(filename, "wb") as outfile:
+        outfile.write(struct.pack("<I", num_columns))
+        for i in range(num_rows):
+            outfile.write(dataset[i].tobytes())
 
 def main(model_filename, data_filename, label_filename):
 
     start_time = time.time()
-    with open(model_filename, "rb") as inf:
-        random_forest = pickle.load(inf)
+    with open(model_filename, "rb") as infile:
+        random_forest = pickle.load(infile)
     end_time = time.time()
     model_load_time = end_time - start_time
 
@@ -57,9 +58,9 @@ def main(model_filename, data_filename, label_filename):
 def parse_command_line_arguments():
 
     parser = argparse.ArgumentParser(description="Classify data using a pre-trained sklearn classifier.")
-    parser.add_argument("model_filename", metavar="MODEL_INPUT_FILE")
-    parser.add_argument("data_filename", metavar="DATA_INPUT_FILE")
-    parser.add_argument("label_filename", metavar="LABEL_OUTPUT_FILE")
+    parser.add_argument("model_filename", type=pathlib.Path, metavar="MODEL_INPUT_FILE")
+    parser.add_argument("data_filename", type=pathlib.Path, metavar="DATA_INPUT_FILE")
+    parser.add_argument("label_filename", type=pathlib.Path, metavar="LABEL_OUTPUT_FILE")
     return parser.parse_args()
 
 if __name__ == "__main__":

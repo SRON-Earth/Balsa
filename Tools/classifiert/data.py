@@ -27,32 +27,30 @@ def load_labelled_dataset_json(filename):
 
 def load_dataset_bin(filename):
 
-    with open(filename, "rb") as inf:
-        num_columns, = struct.unpack("<I", inf.read(4))
-        unpacker = struct.Struct("<" + str(num_columns) + "f")
-        if num_columns == 1:
-            result = [row[0] for row in unpacker.iter_unpack(inf.read())]
-        else:
-            result = [list(row) for row in unpacker.iter_unpack(inf.read())]
-    return result
+    header_format = "<I"
+    header_size = struct.calcsize(header_format)
+    with open(filename, "rb") as infile:
+        num_columns, = struct.unpack(header_format, infile.read(header_size))
+        dataset = np.frombuffer(infile.read(), "<f4")
+        dataset.shape = (-1, num_columns)
+    return dataset
 
 def load_dataset_balsa(filename):
 
-    with open(filename, "rb") as inf:
-        _, value_type, _, num_rows, _, num_columns, _ = struct.unpack("<4s4s4sI4sI4s", inf.read(28))
-        value_type = value_type.decode("ascii", errors="ignore")
+    header_format = "<4s4s4sI4sI4s"
+    header_size = struct.calcsize(header_format)
+    with open(filename, "rb") as infile:
+        _, raw_value_type, _, num_rows, _, num_columns, _ = struct.unpack(header_format, infile.read(header_size))
+        value_type = raw_value_type.decode("ascii", errors="ignore")
         if value_type == "fl32":
-            unpacker = struct.Struct("<" + str(num_columns) + "f")
+            dataset = np.frombuffer(infile.read(), "<f4")
         elif value_type == "ui08":
-            unpacker = struct.Struct("<" + str(num_columns) + "B")
+            dataset = np.frombuffer(infile.read(), "<u1")
         else:
-            raise RuntimeError("Unsupported value type: " + value_type)
-        if num_columns == 1:
-            result = [row[0] for row in unpacker.iter_unpack(inf.read())]
-        else:
-            result = [list(row) for row in unpacker.iter_unpack(inf.read())]
-    assert len(result) == num_rows, "The number of rows read does not match the row count stored in the header."
-    return result
+            raise RuntimeError("Unsupported value type: '" + value_type + "'.")
+    dataset.shape = (-1, num_columns)
+    assert len(dataset) == num_rows, "The number of rows read does not match the row count stored in the header."
+    return dataset
 
 def store_labelled_dataset_csv(filename, data_points, labels):
 
@@ -61,11 +59,11 @@ def store_labelled_dataset_csv(filename, data_points, labels):
     assert len(data_points) == len(labels)
 
     num_rows, num_features = len(data_points), data_points.shape[-1]
-    with open(filename, "w") as outf:
+    with open(filename, "w") as outfile:
         header = [f"feature-{i}" for i in range(num_features)] + ["label"]
-        outf.write(",".join(header) + "\n")
+        outfile.write(",".join(header) + "\n")
         for i in range(num_rows):
-            outf.write(",".join([f"{value:.16f}" for value in data_points[i]] + [str(int(labels[i]))]) + "\n")
+            outfile.write(",".join([f"{value:.16f}" for value in data_points[i]] + [str(int(labels[i]))]) + "\n")
 
 def store_dataset_bin(filename, dataset):
 
@@ -73,10 +71,10 @@ def store_dataset_bin(filename, dataset):
     assert dataset.dtype == np.float32
 
     num_rows, num_columns = (*dataset.shape, 1)[:2]
-    with open(filename, "wb") as outf:
-        outf.write(struct.pack("<I", num_columns))
+    with open(filename, "wb") as outfile:
+        outfile.write(struct.pack("<I", num_columns))
         for i in range(num_rows):
-            outf.write(dataset[i].tobytes())
+            outfile.write(dataset[i].tobytes())
 
 def store_labelled_dataset_bin(data_filename, label_filename, data_points, labels):
 
@@ -93,16 +91,16 @@ def store_dataset_balsa(filename, dataset):
     assert dataset.dtype == np.float32
 
     num_rows, num_columns = (*dataset.shape, 1)[:2]
-    with open(filename, "wb") as outf:
-        outf.write(b"tabl")
-        outf.write(b"fl32")
-        outf.write(b"rows")
-        outf.write(struct.pack("<I", num_rows))
-        outf.write(b"cols")
-        outf.write(struct.pack("<I", num_columns))
-        outf.write(b"data")
+    with open(filename, "wb") as outfile:
+        outfile.write(b"tabl")
+        outfile.write(b"fl32")
+        outfile.write(b"rows")
+        outfile.write(struct.pack("<I", num_rows))
+        outfile.write(b"cols")
+        outfile.write(struct.pack("<I", num_columns))
+        outfile.write(b"data")
         for i in range(num_rows):
-            outf.write(dataset[i].tobytes())
+            outfile.write(dataset[i].tobytes())
 
 def store_labelled_dataset_balsa(data_filename, label_filename, data_points, labels):
 

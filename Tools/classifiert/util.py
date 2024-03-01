@@ -3,20 +3,21 @@ import pathlib
 import re
 import subprocess
 
-def run_program(program, *args, log=False, time_file=None, timeout=None, cwd=None):
+def run_program(program, *args, log=False, log_prefix=None, time_file=None, timeout=None, cwd=None):
 
-    program = pathlib.Path(program)
     if time_file is not None:
         result = subprocess.run(["time", "-v", "-o", time_file, str(program), *args], capture_output=True, text=True,
                                 timeout=timeout, cwd=cwd)
     else:
         result = subprocess.run([str(program), *args], capture_output=True, text=True, timeout=timeout, cwd=cwd)
     if log:
-        stdout_filename = f"{program.name}-stdout.txt"
+        if log_prefix is None:
+            log_prefix = program.name
+        stdout_filename = f"{log_prefix}-stdout.txt"
         stdout_path = stdout_filename if cwd is None else cwd / stdout_filename
         with open(stdout_path, "w") as outputf:
             outputf.write(result.stdout)
-        stderr_filename = f"{program.name}-stderr.txt"
+        stderr_filename = f"{log_prefix}-stderr.txt"
         stderr_path = stderr_filename if cwd is None else cwd / stderr_filename
         with open(stderr_path, "w") as outputf:
             outputf.write(result.stderr)
@@ -57,6 +58,31 @@ def get_statistics_from_time_file(time_file, *, target_dict=None, key_prefix="")
                 target_dict[key_prefix + "wall-clock-time"] = elapsed_time
         elif "Maximum resident set size" in line:
             target_dict[key_prefix + "max-rss"] = int(line.split()[-1])
+
+    return target_dict
+
+def get_statistics_from_stdout(stdout, *, target_dict=None, key_prefix=""):
+
+    if target_dict is None:
+        target_dict = {}
+
+    for line in stdout.split("\n"):
+        if "Data Load Time:" in line:
+            target_dict[key_prefix + "data-load-time"] = float(line.split()[-1])
+        if "Model Load Time:" in line:
+            target_dict[key_prefix + "model-load-time"] = float(line.split()[-1])
+        if "Model Store Time:" in line:
+            target_dict[key_prefix + "model-store-time"] = float(line.split()[-1])
+        if "Training Time:" in line:
+            target_dict[key_prefix + "training-time"] = float(line.split()[-1])
+        if "Classification Time:" in line:
+            target_dict[key_prefix + "classification-time"] = float(line.split()[-1])
+        if "Label Store Time:" in line:
+            target_dict[key_prefix + "label-store-time"] = float(line.split()[-1])
+        if "Maximum Depth:" in line:
+            target_dict[key_prefix + "max-tree-depth"] = int(line.split()[-1])
+        if "Maximum Node Count:" in line:
+            target_dict[key_prefix + "max-node-count"] = int(line.split()[-1])
 
     return target_dict
 

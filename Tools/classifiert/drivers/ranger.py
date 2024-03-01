@@ -3,7 +3,7 @@ import numpy as np
 import pathlib
 
 from ..util import run_program, get_statistics_from_time_file, \
-                   get_classification_scores
+                   get_statistics_from_stdout, get_classification_scores
 
 class Driver:
 

@@ -128,8 +128,8 @@ def parse_command_line_arguments():
     subparsers = parser.add_subparsers(dest="command")
 
     profile = subparsers.add_parser("profile", help="profile random forest classifiers")
-    profile.add_argument("train_data_filename", metavar="TRAIN_DATA_FILE")
-    profile.add_argument("test_data_filename", metavar="TEST_DATA_FILE")
+    profile.add_argument("train_data_filename", type=pathlib.Path, metavar="TRAIN_DATA_FILE")
+    profile.add_argument("test_data_filename", type=pathlib.Path, metavar="TEST_DATA_FILE")
     profile.add_argument("classifiers", metavar="CLASSIFIER", nargs="+")
     profile.add_argument("-c", "--config-file", type=pathlib.Path, default="classifiert.ini")
     profile.add_argument("-n", "--data-sizes", type=data_size_list, default="100,1000,2500,5000,10_000,25_000,50_000")
@@ -140,9 +140,9 @@ def parse_command_line_arguments():
     profile.add_argument("-C", "--no-cache", dest="use_cache", action="store_false")
 
     sample = subparsers.add_parser("sample", help="draw a sample from an existing (json-pickle) dataset")
-    sample.add_argument("data_input_filename", metavar="DATA_INPUT_FILE")
-    sample.add_argument("data_output_filename", metavar="DATA_OUTPUT_FILE")
-    sample.add_argument("label_output_filename", nargs="?", metavar="LABEL_OUTPUT_FILE")
+    sample.add_argument("data_input_filename", type=pathlib.Path, metavar="DATA_INPUT_FILE")
+    sample.add_argument("data_output_filename", type=pathlib.Path, metavar="DATA_OUTPUT_FILE")
+    sample.add_argument("label_output_filename", type=pathlib.Path, nargs="?", metavar="LABEL_OUTPUT_FILE")
     sample.add_argument("-f", "--data-format", choices=("csv", "bin", "balsa"), default="bin")
     sample.add_argument("-n", "--sample-size", type=positive_integer)
     sample.add_argument("-r", "--with-replacement", action="store_true")
