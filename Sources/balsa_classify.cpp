@@ -146,9 +146,7 @@ int main( int argc, char ** argv )
         watch.stop();
         const auto labelStoreTime = watch.getElapsedTime();
 
-        std::cout << "Timings:"
-                  << std::endl
-                  // << "Model Load Time: " << modelLoadTime << std::endl
+        std::cout << "Timings:" << std::endl
                   << "Data Load Time: " << dataLoadTime << std::endl
                   << "Classification Time: " << classificationTime << std::endl
                   << "Label Store Time: " << labelStoreTime << std::endl;

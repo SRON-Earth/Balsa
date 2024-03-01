@@ -125,6 +125,7 @@ int main( int argc, char ** argv )
         watch.start();
         auto dataSet = loadTrainingDataSet( options.dataFile, options.labelFile );
         std::cout << "Dataset loaded: " << dataSet->size() << " points. (" << watch.stop() << " seconds)." << std::endl;
+        const auto dataLoadTime = watch.getElapsedTime();
 
         // Train a random forest on the data.
         std::cout << "Building indices..." << std::endl;
@@ -134,11 +135,17 @@ int main( int argc, char ** argv )
             options.treeCount,
             options.threadCount );
         std::cout << "Done (" << watch.stop() << " seconds)." << std::endl;
+        const auto indexTime = watch.getElapsedTime();
 
         std::cout << "Training..." << std::endl;
         watch.start();
         trainer.train( dataSet );
         std::cout << "Done (" << watch.stop() << " seconds)." << std::endl;
+        const auto trainingTime = watch.getElapsedTime();
+
+        std::cout << "Timings:" << std::endl
+                  << "Data Load Time: " << dataLoadTime << std::endl
+                  << "Training Time: " << indexTime + trainingTime << std::endl;
     }
     catch ( Exception & e )
     {
