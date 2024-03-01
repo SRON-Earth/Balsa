@@ -78,7 +78,7 @@ public:
     void train( const Table<FeatureType> & dataset, const Table<Label> & labels )
     {
         // Create an indexed tree with only one node. This is expensive to build, so it is shared for copying between threads.
-        IndexedDecisionTree sapling( dataset, labels );
+        IndexedDecisionTree sapling( dataset, labels, m_maxDepth );
 
         // Create message queues for communicating with the worker threads.
         JobQueue       jobOutbox;
