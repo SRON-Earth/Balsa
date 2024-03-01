@@ -1,9 +1,10 @@
 #ifndef TABLE_H
 #define TABLE_H
 
-#include <vector>
-#include <fstream>
 #include <cassert>
+#include <fstream>
+#include <iomanip>
+#include <vector>
 
 #include "serdes.h"
 #include "exceptions.h"
