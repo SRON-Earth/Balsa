@@ -138,10 +138,10 @@ void DecisionTreeClassifier<FeatureIterator, OutputIterator, FeatureType, LabelT
         // Retrieve feature count.
         auto featureCount = getFeatureCount();
 
-        // Split the point IDs in two halves: points that lie below and points that lie on or above the feature split value.
+        // Split the point IDs in two halves: points that lie below or on-, and points that lie above the feature split value.
         auto pointIsBelowLimit = [&pointsStart, featureCount, splitValue, featureID]( const unsigned int & pointID )
         {
-            return pointsStart[featureCount * pointID + featureID] < splitValue;
+            return pointsStart[featureCount * pointID + featureID] <= splitValue;
         };
         auto secondHalf = std::partition( pointIDsStart, pointIDsEnd, pointIsBelowLimit );
 
