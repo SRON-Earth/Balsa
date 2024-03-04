@@ -22,7 +22,8 @@ public:
     maxDepth( std::numeric_limits<unsigned int>::max() ),
     treeCount( 150 ),
     threadCount( 1 ),
-    seed( std::random_device{}() )
+    seed( std::random_device{}() ),
+    writeDotty( false )
     {
     }
 
@@ -38,7 +39,8 @@ public:
            << "   -t <thread count>: Sets the number of threads (default is 1)." << std::endl
            << "   -d <max depth>   : Sets the maximum tree depth (default is +inf)." << std::endl
            << "   -c <tree count>  : Sets the number of trees (default is 150)." << std::endl
-           << "   -s <random seed> : Sets the random seed (default is a random value)." << std::endl;
+           << "   -s <random seed> : Sets the random seed (default is a random value)." << std::endl
+           << "   -g               : Generates Graphviz/Dotty files of all trees." << std::endl;
         return ss.str();
     }
 
@@ -60,7 +62,7 @@ public:
             assert( token.size() );
             if ( token[0] != '-' ) break;
 
-            // Parse the '-t <threadcount>' option.
+
             if ( token == "-t" )
             {
                 if ( !( args >> options.threadCount ) ) throw ParseError( "Missing parameter to -t option." );
@@ -76,6 +78,10 @@ public:
             else if ( token == "-s" )
             {
                 if ( !( args >> options.seed ) ) throw ParseError( "Missing parameter to -s option." );
+            }
+            else if ( token == "-g" )
+            {
+                options.writeDotty = true;
             }
             else
             {
@@ -100,6 +106,7 @@ public:
     unsigned int                    treeCount;
     unsigned int                    threadCount;
     std::random_device::result_type seed;
+    bool                            writeDotty;
 };
 } // namespace
 
@@ -133,15 +140,9 @@ int main( int argc, char ** argv )
         std::cout << "Dataset loaded: " << dataSet.getRowCount() << " points. (" << watch.stop() << " seconds)." << std::endl;
         const auto dataLoadTime = watch.getElapsedTime();
 
-        // DEBUG
-        for ( DataPointID p = 0; p < labels.getRowCount(); ++p )
-        {
-           if ( labels( p, 0 ) > 1 ) std::cout << "Label of point " << p << " is " << labels( p, 0 ) << std::endl;
-        }
-
         // Train a random forest on the data.
         std::cout << "Training..." << std::endl;
-        RandomForestTrainer trainer( options.outputFile, options.maxDepth, options.treeCount, options.threadCount );
+        RandomForestTrainer trainer( options.outputFile, options.maxDepth, options.treeCount, options.threadCount, options.writeDotty );
         watch.start();
         trainer.train( dataSet, labels );
         std::cout << "Done (" << watch.stop() << " seconds)." << std::endl;

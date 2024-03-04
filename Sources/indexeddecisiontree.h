@@ -72,7 +72,6 @@ public:
 
         // Create a frequency table for all labels in the data set.
         LabelFrequencyTable labelCounts( m_labels.begin(), m_labels.end() );
-        std::cout << labelCount << " " << labelCounts.getTotal() << std::endl;
         assert( labelCount == labelCounts.getTotal() );
         assert( labelCounts.invariant() );
 
@@ -112,6 +111,42 @@ public:
         auto leaf = m_growableLeaves.front();
         m_growableLeaves.pop_front();
         growLeaf( leaf );
+    }
+
+    /**
+     * Write the tree model to a Dotty file, suitable for visualization
+     */
+    void writeGraphviz( const std::string & filename ) const
+    {
+        // Create the file.
+        std::ofstream out;
+        out.open( filename );
+        if ( !out.good() ) throw SupplierError( "Could not open file for writing." );
+
+        // Write the graph data.
+        out << "digraph G" << std::endl;
+        out << "{" << std::endl;
+        for ( NodeID nodeID = 0; nodeID < m_nodes.size(); ++nodeID )
+        {
+            // Write the node label.
+            auto &node = m_nodes[nodeID];
+            std::stringstream info;
+            info << 'N' << nodeID << " = " << static_cast<int>( node.getLabel() ) << " counts: " << node.getLabelCounts().asText();
+            out << "    node" << nodeID << "[shape=box label=\"" << info.str() << "\"]" << std::endl;
+
+            // Write the links to the children.
+            if ( !node.isLeafNode() )
+            {
+                auto splitFeature = node.getSplit().getFeatureID();
+                auto splitValue   = node.getSplit().getFeatureValue();
+                out << "    node" << nodeID << " -> " << "node" << node.getLeftChild()  << " [label=\"F" << static_cast<int>( splitFeature ) << " <= " << splitValue << "\"];" << std::endl;
+                out << "    node" << nodeID << " -> " << "node" << node.getRightChild() << ';' << std::endl;
+            }
+        }
+        out << "}" << std::endl;
+
+        // Close the file.
+        out.close();
     }
 
     /**
@@ -193,9 +228,12 @@ private:
         m_rightCounts( rightCounts )
         {
             // Calculate the post-split impurity.
+            auto leftCount     = leftCounts.getTotal();
+            auto rightCount    = rightCounts.getTotal();
+            auto totalCount    = leftCount + rightCount;
             auto leftImpurity  = leftCounts.giniImpurity<ImpurityType>();
             auto rightImpurity = rightCounts.giniImpurity<ImpurityType>();
-            m_impurity         = ( leftImpurity / leftCounts.getTotal() ) + ( rightImpurity / rightCounts.getTotal() );
+            m_impurity         = ( leftImpurity * leftCount + rightImpurity * rightCount ) / totalCount;
         }
 
         /**
@@ -533,7 +571,10 @@ private:
             if ( it->m_featureValue > splitValue )
             {
                 SplitCandidate possibleSplit( Split( featureID, splitValue ), leftSideLabelCounts, rightSideLabelCounts );
-                if ( possibleSplit.getImpurity() < bestSplit.getImpurity() ) bestSplit = possibleSplit;
+                if ( possibleSplit.getImpurity() < bestSplit.getImpurity() )
+                {
+                    bestSplit = possibleSplit;
+                }
             }
 
             // Move the current split value to the currently visited point.

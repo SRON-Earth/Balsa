@@ -54,14 +54,15 @@ public:
     /**
      * Constructor.
      * \param outputFile Name of the model file that will be written.
-     * \param dataset A const reference to a training dataset. Modifying the set after construction of the trainer
-     * invalidates the trainer. \param concurrentTrainers The maximum number of trees that may be trained concurrently.
+     * \param dataset A const reference to a training dataset. Modifying the set after construction of the trainer invalidates the trainer.
+     * \param concurrentTrainers The maximum number of trees that may be trained concurrently.
      */
-    RandomForestTrainer( const std::string & outputFile, unsigned maxDepth = std::numeric_limits<unsigned int>::max(), unsigned int treeCount = 10, unsigned int concurrentTrainers = 10 ):
+    RandomForestTrainer( const std::string & outputFile, unsigned maxDepth = std::numeric_limits<unsigned int>::max(), unsigned int treeCount = 10, unsigned int concurrentTrainers = 10, bool writeGraphviz = false ):
     m_outputFile( outputFile ),
     m_maxDepth( maxDepth ),
     m_trainerCount( concurrentTrainers ),
-    m_treeCount( treeCount )
+    m_treeCount( treeCount ),
+    m_writeGraphviz( writeGraphviz )
     {
     }
 
@@ -109,6 +110,14 @@ public:
 
             // Write the tree without the bulky index, which is no longer needed after training.
             tree->writeDecisionTreeClassifier( out );
+
+            // Write a Graphviz file for the tree, if necessary.
+            if ( m_writeGraphviz )
+            {
+                std::stringstream ss;
+                ss << "tree#" << i << ".dot";
+                tree->writeGraphviz( ss.str() );
+            }
         }
         out.close();
 
@@ -144,6 +153,7 @@ private:
     unsigned int m_maxDepth;
     unsigned int m_trainerCount;
     unsigned int m_treeCount;
+    bool         m_writeGraphviz;
 };
 
 #endif // RANDOMFORESTTRAINER_H
