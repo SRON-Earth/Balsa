@@ -65,6 +65,17 @@ inline std::string getFixedSizeToken( std::istream & is, std::size_t size )
 }
 
 /**
+ * Peek at a fixed-size token.
+ */
+inline std::string peekFixedSizeToken( std::istream & is, std::size_t size )
+{
+    auto position = is.tellg();
+    std::string token = getFixedSizeToken( is, size );
+    is.seekg( position );
+    return token;
+}
+
+/**
  * Read an expected sequence of characters from a stream, throw an exception if the is a mismatch.
  */
 inline void expect( std::istream & is, const std::string & sequence, const std::string & errorMessage )

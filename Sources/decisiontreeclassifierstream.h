@@ -107,9 +107,9 @@ private:
 
             // Parse the model header. This will advance the file stream to the
             // first tree.
-            char marker = 0;
-            m_modelFile >> marker;
-            if ( marker != 'f' )
+            auto marker = getFixedSizeToken( m_modelFile, 4 );
+            if ( m_modelFile.fail() ) throw ParseError( "Read failed." );
+            if ( marker != "frst" )
             {
                 throw ParseError( "Unexpected header block." );
             }

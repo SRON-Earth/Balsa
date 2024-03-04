@@ -9,3 +9,6 @@ target_link_libraries( balsa_classify balsa )
 
 add_executable( balsa_generate balsa_generate.cpp )
 target_link_libraries( balsa_generate balsa )
+
+add_executable( balsa_print balsa_print.cpp )
+target_link_libraries( balsa_print balsa )

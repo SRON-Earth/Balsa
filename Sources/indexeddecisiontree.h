@@ -42,6 +42,8 @@ public:
         // Determine the number of points and features in the dataset.
         auto pointCount   = dataPoints.getRowCount();
         auto featureCount = dataPoints.getColumnCount();
+        auto labelCount   = labels.getRowCount();
+        if ( labelCount != pointCount ) throw ClientError( "The number of points in the training set doesn't match the number of labels." );
 
         // Determine the number of features that will be considered during each randomized split.
         m_featuresToConsider = std::sqrt( featureCount );
@@ -70,6 +72,9 @@ public:
 
         // Create a frequency table for all labels in the data set.
         LabelFrequencyTable labelCounts( m_labels.begin(), m_labels.end() );
+        std::cout << labelCount << " " << labelCounts.getTotal() << std::endl;
+        assert( labelCount == labelCounts.getTotal() );
+        assert( labelCounts.invariant() );
 
         // Create the root node (it contains all points).
         m_nodes.push_back( Node( labelCounts, 0, 0 ) );
@@ -131,6 +136,7 @@ public:
             rightChildID  ( nodeID, 0 ) = node.getRightChild();
             splitFeatureID( nodeID, 0 ) = split.getFeatureID();
             splitValue    ( nodeID, 0 ) = split.getFeatureValue();
+            label         ( nodeID, 0 ) = node.getLabel();
         }
 
         // Write the header and the data tables of the classifier.

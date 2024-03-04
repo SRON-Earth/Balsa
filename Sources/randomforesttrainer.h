@@ -97,9 +97,9 @@ public:
         // Create 'stop' messages for all threads, to be picked up after all the work is done.
         for ( unsigned int i = 0; i < workers.size(); ++i ) jobOutbox.send( TrainingJob( dataset, sapling, 0, true ) );
 
-        // Create a forest model file and write the 'f' header marker.
+        // Create a forest model file and write the forest header marker ("frst").
         std::ofstream out( m_outputFile, std::ios::binary | std::ios::out );
-        serialize<char>( out, 'f' );
+        out.write( "frst", 4 );
 
         // Wait for all the trees to come in, and write each tree to a forest file.
         for ( unsigned int i = 0; i < m_treeCount; ++i )
