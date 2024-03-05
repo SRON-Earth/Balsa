@@ -138,8 +138,26 @@ public:
             }
         }
 
-        // Decide the label values for all leaf nodes.
-        finalize();
+        // Update the annotations for all leaf nodes.
+        initializeOptimalSplitSearch( 0 );
+
+        // Register all points with their respective parent nodes.
+        for ( DataPointID pointID( 0 ), end( pointParents.size() ); pointID < end; ++pointID )
+        {
+            pointParents[pointID] = registerPoint( pointParents[pointID], dataSet, pointID );
+            assert( pointParents[pointID] < m_nodes.size() );
+        }
+
+        // Decide the label value for all leaf nodes.
+        for ( NodeID nodeID( 0 ), end( m_nodes.size() ); nodeID != end; ++nodeID )
+        {
+            DecisionTreeNode & node = m_nodes[nodeID];
+            if ( isLeafNode<double, bool>( node ) )
+            {
+                const NodeAnnotations & nodeStats = m_annotations[nodeID];
+                node.label                        = nodeStats.totalCount < 2 * nodeStats.trueCount;
+            }
+        }
 
         // Write a Graphviz file for the tree, if necessary.
         if ( writeGraphviz )
@@ -159,20 +177,24 @@ public:
      */
     void initializeOptimalSplitSearch( unsigned int featuresToConsider )
     {
-        for ( auto & nodeStats : m_annotations )
+        for ( NodeID nodeID( 0 ), end( m_nodes.size() ); nodeID != end; ++nodeID )
         {
-            // Reset the point counts. Points will be re-counted during the point registration phase.
-            nodeStats.trueCount  = 0;
-            nodeStats.totalCount = 0;
+            if ( isLeafNode<double, bool>( m_nodes[nodeID] ) )
+            {
+                // Reset the point counts. Points will be re-counted during the point registration phase.
+                auto & nodeStats = m_annotations[nodeID];
+                nodeStats.trueCount  = 0;
+                nodeStats.totalCount = 0;
 
-            // Reset the number of features that will be considered by this node.
-            nodeStats.featuresToConsider = featuresToConsider;
+                // Reset the number of features that will be considered by this node.
+                nodeStats.featuresToConsider = featuresToConsider;
 
-            // Reset the best split found so far. This will be re-determined during the feature traversal phase.
-            nodeStats.bestSplitFeature    = 0;
-            nodeStats.bestSplitMislabeled = 0;
-            nodeStats.bestSplitValue      = 0;
-            nodeStats.bestSplitGiniIndex  = std::numeric_limits<double>::max();
+                // Reset the best split found so far. This will be re-determined during the feature traversal phase.
+                nodeStats.bestSplitFeature    = 0;
+                nodeStats.bestSplitMislabeled = 0;
+                nodeStats.bestSplitValue      = 0;
+                nodeStats.bestSplitGiniIndex  = std::numeric_limits<double>::max();
+            }
         }
     }
 
@@ -324,20 +346,6 @@ public:
             m_annotations.push_back( NodeAnnotations() );
         }
         return splitStats;
-    }
-
-    void finalize()
-    {
-        // Decide the label value for all leaf nodes.
-        for ( NodeID nodeID( 0 ), end( m_nodes.size() ); nodeID != end; ++nodeID )
-        {
-            DecisionTreeNode & node = m_nodes[nodeID];
-            if ( isLeafNode<double, bool>( node ) )
-            {
-                const NodeAnnotations & nodeStats = m_annotations[nodeID];
-                node.label                        = nodeStats.totalCount < 2 * nodeStats.trueCount;
-            }
-        }
     }
 
     /**
