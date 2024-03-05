@@ -34,6 +34,8 @@ def main(data_filename, label_filename, model_filename, num_estimators, max_tree
                                            min_samples_leaf=1,
                                            min_samples_split=2,
                                            bootstrap=False)
+    assert labels.shape == (len(data_points), 1)
+    labels.shape = (-1,)
     random_forest.fit(data_points, labels)
     end_time = time.time()
     training_time = end_time - start_time
