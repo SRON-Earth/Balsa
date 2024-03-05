@@ -84,6 +84,16 @@ inline void expect( std::istream & is, const std::string & sequence, const std::
     if ( token != sequence ) throw ParseError( errorMessage );
 }
 
+/**
+ * Read until a separator is encountered. Separators are not consumed.
+ */
+std::string getNextToken( std::istream &is, const std::string &separators )
+{
+    std::stringstream token;
+    while ( !separators.contains( is.peek() ) ) token << ( is.get() );
+    return token.str();
+}
+
 template<typename Type>
 std::string getTypeName()
 {
