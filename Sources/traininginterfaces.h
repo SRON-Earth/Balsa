@@ -40,7 +40,9 @@ public:
      */
     virtual typename DecisionTree<FeatureValueType, LabelValueType>::SharedPointer train(
         const FeatureIndex & featureIndex,
-        const TrainingDataSet & dataSet ) = 0;
+        const TrainingDataSet & dataSet,
+        bool writeGraphviz,
+        unsigned int treeID ) = 0;
 
 protected:
 

@@ -34,10 +34,14 @@ class BinaryRandomForestTrainer
         TrainingJob( const TrainingDataSet & dataSet,
             const FeatureIndex & featureIndex,
             unsigned int maxDepth,
+            bool writeGraphviz,
+            unsigned int treeID,
             bool stop )
         : dataSet( dataSet )
         , featureIndex( featureIndex )
         , maxDepth( maxDepth )
+        , writeGraphviz( writeGraphviz )
+        , treeID( treeID )
         , stop( stop )
         {
         }
@@ -45,6 +49,8 @@ class BinaryRandomForestTrainer
         const TrainingDataSet & dataSet;
         const FeatureIndex & featureIndex;
         unsigned int maxDepth;
+        bool writeGraphviz;
+        unsigned int treeID;
         bool stop;
     };
 
@@ -59,11 +65,13 @@ public:
     BinaryRandomForestTrainer( const std::string & outputFile,
         unsigned maxDepth               = std::numeric_limits<unsigned int>::max(),
         unsigned int treeCount          = 10,
-        unsigned int concurrentTrainers = 10 )
+        unsigned int concurrentTrainers = 10,
+        bool writeGraphviz = false)
     : m_outputFile( outputFile )
     , m_maxDepth( maxDepth )
     , m_trainerCount( concurrentTrainers )
     , m_treeCount( treeCount )
+    , m_writeGraphviz( writeGraphviz )
     {
     }
 
@@ -95,11 +103,11 @@ public:
 
         // Create jobs for all trees.
         for ( unsigned int i = 0; i < m_treeCount; ++i )
-            jobOutbox.send( TrainingJob( *dataset, featureIndex, m_maxDepth, false ) );
+            jobOutbox.send( TrainingJob( *dataset, featureIndex, m_maxDepth, m_writeGraphviz, i, false ) );
 
         // Create 'stop' messages for all threads, to be picked up after all the work is done.
         for ( unsigned int i = 0; i < workers.size(); ++i )
-            jobOutbox.send( TrainingJob( *dataset, featureIndex, 0, true ) );
+            jobOutbox.send( TrainingJob( *dataset, featureIndex, 0, false, 0, true ) );
 
         // Create a forest model file and write the 'f' header marker.
         std::ofstream out( m_outputFile, std::ios::binary | std::ios::out );
@@ -143,7 +151,7 @@ private:
 
             // Train a tree and send it to the main thread.
             SingleTreeTrainerMark2 trainer( job.maxDepth );
-            treeOutbox->send( trainer.train( job.featureIndex, job.dataSet ) );
+            treeOutbox->send( trainer.train( job.featureIndex, job.dataSet, job.writeGraphviz, job.treeID ) );
             std::cout << "Worker #" << workerID << ": job " << jobsPickedUp << " finished." << std::endl;
         }
 
@@ -154,6 +162,7 @@ private:
     unsigned int m_maxDepth;
     unsigned int m_trainerCount;
     unsigned int m_treeCount;
+    bool         m_writeGraphviz;
 };
 
 #endif // RANDOMFORESTTRAINER_H

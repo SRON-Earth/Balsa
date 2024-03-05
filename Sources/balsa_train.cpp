@@ -20,6 +20,7 @@ public:
     , treeCount( 150 )
     , threadCount( 1 )
     , seed( std::random_device{}() )
+    , writeDotty( false )
     {
     }
 
@@ -35,7 +36,8 @@ public:
            << "   -t <thread count>: Sets the number of threads (default is 1)." << std::endl
            << "   -d <max depth>   : Sets the maximum tree depth (default is +inf)." << std::endl
            << "   -c <tree count>  : Sets the number of trees (default is 150)." << std::endl
-           << "   -s <random seed> : Sets the random seed (default is a random value)." << std::endl;
+           << "   -s <random seed> : Sets the random seed (default is a random value)." << std::endl
+           << "   -g               : Generates Graphviz/Dotty files of all trees." << std::endl;
         return ss.str();
     }
 
@@ -74,6 +76,10 @@ public:
             {
                 if ( !( args >> options.seed ) ) throw ParseError( "Missing parameter to -s option." );
             }
+            else if ( token == "-g" )
+            {
+                options.writeDotty = true;
+            }
             else
             {
                 throw ParseError( std::string( "Unknown option: " ) + token );
@@ -97,6 +103,7 @@ public:
     unsigned int treeCount;
     unsigned int threadCount;
     std::random_device::result_type seed;
+    bool writeDotty;
 };
 } // namespace
 
@@ -130,10 +137,7 @@ int main( int argc, char ** argv )
         // Train a random forest on the data.
         std::cout << "Building indices..." << std::endl;
         watch.start();
-        BinaryRandomForestTrainer trainer( options.outputFile,
-            options.maxDepth,
-            options.treeCount,
-            options.threadCount );
+        BinaryRandomForestTrainer trainer( options.outputFile, options.maxDepth, options.treeCount, options.threadCount, options.writeDotty );
         std::cout << "Done (" << watch.stop() << " seconds)." << std::endl;
         const auto indexTime = watch.getElapsedTime();
 

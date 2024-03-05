@@ -17,11 +17,12 @@ public:
     }
 
     typename DecisionTree<FeatureValueType, LabelValueType>::SharedPointer train( const FeatureIndex & featureIndex,
-        const TrainingDataSet & dataSet );
+        const TrainingDataSet & dataSet, bool writeGraphviz, unsigned int treeID );
 };
 
 template <>
 DecisionTree<>::SharedPointer SingleTreeTrainerMark2<>::train( const FeatureIndex & featureIndex,
-    const TrainingDataSet & dataSet );
+    const TrainingDataSet & dataSet, bool writeGraphviz, unsigned int treeID );
+
 
 #endif // TRAINERS_H

@@ -1,6 +1,8 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <fstream>
+#include <sstream>
 
 #include "decisiontrees.h"
 #include "trainers.h"
@@ -69,7 +71,7 @@ public:
      * \param dataSet Set of data points and associated labels to use for training.
      * \return A trained decision tree instance.
      */
-    DecisionTree<>::SharedPointer train( const FeatureIndex & featureIndex, const TrainingDataSet & dataSet )
+    DecisionTree<>::SharedPointer train( const FeatureIndex & featureIndex, const TrainingDataSet & dataSet, bool writeGraphviz, unsigned int treeID )
     {
         // Create a tree containing a single node.
         m_nodes.clear();
@@ -138,6 +140,14 @@ public:
 
         // Decide the label values for all leaf nodes.
         finalize();
+
+        // Write a Graphviz file for the tree, if necessary.
+        if ( writeGraphviz )
+        {
+            std::stringstream ss;
+            ss << "tree#" << treeID << ".dot";
+            this->writeGraphviz( ss.str() );
+        }
 
         // Return a stripped version of the training tree.
         return DecisionTree<>::SharedPointer( new DecisionTree<>( m_nodes.begin(), m_nodes.end() ) );
@@ -330,7 +340,43 @@ public:
         }
     }
 
-    // Debug
+    /**
+     * Write the tree model to a Dotty file, suitable for visualization.
+     */
+    void writeGraphviz( const std::string & filename ) const
+    {
+        // Create the file.
+        std::ofstream out;
+        out.open( filename );
+        if ( !out.good() ) throw SupplierError( "Could not open file for writing." );
+
+        // Write the graph data.
+        out << "digraph G" << std::endl;
+        out << "{" << std::endl;
+        for ( NodeID nodeID = 0; nodeID < m_nodes.size(); ++nodeID )
+        {
+            // Write the node label.
+            auto &node = m_nodes[nodeID];
+            auto &stats = m_annotations[nodeID];
+            std::stringstream info;
+            info << 'N' << nodeID << " = " << static_cast<int>( node.label ) << " counts: " << (stats.totalCount - stats.trueCount) << " " << stats.trueCount;
+            out << "    node" << nodeID << "[shape=box label=\"" << info.str() << "\"]" << std::endl;
+
+            // Write the links to the children.
+            if ( !isLeafNode<double, bool>( node ) )
+            {
+                auto splitFeature = node.splitFeatureID;
+                auto splitValue   = node.splitValue;
+                out << "    node" << nodeID << " -> " << "node" << node.leftChildID  << " [label=\"F" << static_cast<int>( splitFeature ) << " <= " << splitValue << "\"];" << std::endl;
+                out << "    node" << nodeID << " -> " << "node" << node.rightChildID << ';' << std::endl;
+            }
+        }
+        out << "}" << std::endl;
+
+        // Close the file.
+        out.close();
+    }
+
     void dump( NodeID nodeID = 0, unsigned int indent = 0 )
     {
         const DecisionTreeNode & node     = m_nodes[nodeID];
@@ -369,8 +415,8 @@ public:
 
 template <>
 DecisionTree<>::SharedPointer SingleTreeTrainerMark2<>::train( const FeatureIndex & featureIndex,
-    const TrainingDataSet & dataSet )
+    const TrainingDataSet & dataSet, bool writeGraphviz, unsigned int treeID )
 {
     Mark2TreeTrainer trainer( m_maxDepth );
-    return trainer.train( featureIndex, dataSet );
+    return trainer.train( featureIndex, dataSet, writeGraphviz, treeID );
 }
