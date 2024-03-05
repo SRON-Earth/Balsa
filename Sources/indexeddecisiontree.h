@@ -450,7 +450,7 @@ private:
             auto nodeDataEnd   = nodeDataStart + node.getPointCount();
             auto predicate     = [this, splitFeature, splitValue]( const auto & entry ) -> bool
             {
-                return this->m_dataPoints( entry.m_pointID, splitFeature ) <= splitValue;
+                return this->m_dataPoints( entry.m_pointID, splitFeature ) < splitValue;
             };
 
             auto secondNodeData = std::stable_partition( nodeDataStart, nodeDataEnd, predicate );
