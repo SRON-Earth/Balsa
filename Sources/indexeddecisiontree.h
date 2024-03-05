@@ -32,10 +32,10 @@ public:
      * indices. When training multiple trees on the same data, it is much more
      * efficient to create one tree and to copy the initial tree multiple times.
      */
-    IndexedDecisionTree( const Table<FeatureType> & dataPoints, const Table<Label> & labels, unsigned int maximumDistanceToRoot = std::numeric_limits<unsigned int>::max() ):
+    IndexedDecisionTree( const Table<FeatureType> & dataPoints, const Table<Label> & labels, unsigned int featuresToConsider, unsigned int maximumDistanceToRoot = std::numeric_limits<unsigned int>::max() ):
     m_dataPoints( dataPoints ),
     m_labels( labels ),
-    m_featuresToConsider( 0 ),
+    m_featuresToConsider( featuresToConsider ),
     m_maximumDistanceToRoot( maximumDistanceToRoot ),
     m_impurityThreshold( 0 ) // Between 0 and 0.5. A value of 0 means any split that is an improvement will be made, 0.5 means no splits are made.
     {
@@ -44,9 +44,7 @@ public:
         auto featureCount = dataPoints.getColumnCount();
         auto labelCount   = labels.getRowCount();
         if ( labelCount != pointCount ) throw ClientError( "The number of points in the training set doesn't match the number of labels." );
-
-        // Determine the number of features that will be considered during each randomized split.
-        m_featuresToConsider = std::sqrt( featureCount );
+        assert( featuresToConsider > 0 && featuresToConsider <= featureCount );
 
         // Check preconditions.
         assert( pointCount == labels.getRowCount() );

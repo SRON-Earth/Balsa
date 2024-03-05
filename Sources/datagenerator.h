@@ -151,6 +151,7 @@ public:
 
   void addSource( FeatureType relativeFrequency, SingleSourceGenerator<FeatureType>::SharedPointer source )
   {
+      std::cout << "Added a source" << std::endl;
       // Add the source to the list of sources.
       m_sources.push_back( source );
       m_frequencies.push_back( relativeFrequency );
@@ -158,6 +159,12 @@ public:
       // Create a distribution to select the sources.
       std::vector<FeatureType> indices( m_sources.size() );
       std::iota( indices.begin(), indices.end(), 0 );
+      std::cout << "Indices: " << std::endl;
+      for ( auto i: indices )
+      {
+          std::cout << i << ' ' << m_frequencies[i] << std::endl;
+      }
+
       m_sourceDistribution = std::piecewise_constant_distribution<>( indices.begin(), indices.end(), m_frequencies.begin() );
   }
 
@@ -237,6 +244,9 @@ DataGenerator<FeatureType>::SharedPointer parseDataGenerator( std::istream &in, 
                 parser.consume( ')' );
                 parser.consume( ';' );
             }
+
+            // Consume the closing bracket of the source definition.
+            parser.consume( "}" );
 
             // Add the source to the multisource.
             multisource->addSource( relativeFrequency, source );

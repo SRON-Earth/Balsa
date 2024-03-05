@@ -22,6 +22,7 @@ public:
     maxDepth( std::numeric_limits<unsigned int>::max() ),
     treeCount( 150 ),
     threadCount( 1 ),
+    featuresToScan( 0 ), // Will be chosen internally by trainer if 0.
     seed( std::random_device{}() ),
     writeDotty( false )
     {
@@ -40,6 +41,7 @@ public:
            << "   -d <max depth>   : Sets the maximum tree depth (default is +inf)." << std::endl
            << "   -c <tree count>  : Sets the number of trees (default is 150)." << std::endl
            << "   -s <random seed> : Sets the random seed (default is a random value)." << std::endl
+           << "   -f <count>       : Sets the number of features to randomly scan per split (default is ceil(sqrt(feature count))." << std::endl
            << "   -g               : Generates Graphviz/Dotty files of all trees." << std::endl;
         return ss.str();
     }
@@ -79,6 +81,10 @@ public:
             {
                 if ( !( args >> options.seed ) ) throw ParseError( "Missing parameter to -s option." );
             }
+            else if ( token == "-f" )
+            {
+                if ( !( args >> options.featuresToScan ) ) throw ParseError( "Missing parameter to -f option." );
+            }
             else if ( token == "-g" )
             {
                 options.writeDotty = true;
@@ -105,6 +111,7 @@ public:
     unsigned int                    maxDepth;
     unsigned int                    treeCount;
     unsigned int                    threadCount;
+    unsigned int                    featuresToScan;
     std::random_device::result_type seed;
     bool                            writeDotty;
 };
@@ -124,6 +131,7 @@ int main( int argc, char ** argv )
         std::cout << "Max. Depth : " << options.maxDepth << std::endl;
         std::cout << "Tree Count : " << options.treeCount << std::endl;
         std::cout << "Threads    : " << options.threadCount << std::endl;
+        std::cout << "Feat. scan : " << options.featuresToScan << std::endl;
         std::cout << "Random Seed: " << options.seed << std::endl;
 
         // Seed master seed sequence.
@@ -142,7 +150,7 @@ int main( int argc, char ** argv )
 
         // Train a random forest on the data.
         std::cout << "Training..." << std::endl;
-        RandomForestTrainer trainer( options.outputFile, options.maxDepth, options.treeCount, options.threadCount, options.writeDotty );
+        RandomForestTrainer trainer( options.outputFile, options.maxDepth, options.treeCount, options.threadCount, options.featuresToScan, options.writeDotty );
         watch.start();
         trainer.train( dataSet, labels );
         std::cout << "Done (" << watch.stop() << " seconds)." << std::endl;

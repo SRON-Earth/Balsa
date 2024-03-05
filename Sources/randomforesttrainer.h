@@ -54,14 +54,14 @@ public:
     /**
      * Constructor.
      * \param outputFile Name of the model file that will be written.
-     * \param dataset A const reference to a training dataset. Modifying the set after construction of the trainer invalidates the trainer.
      * \param concurrentTrainers The maximum number of trees that may be trained concurrently.
      */
-    RandomForestTrainer( const std::string & outputFile, unsigned maxDepth = std::numeric_limits<unsigned int>::max(), unsigned int treeCount = 10, unsigned int concurrentTrainers = 10, bool writeGraphviz = false ):
+    RandomForestTrainer( const std::string & outputFile, unsigned maxDepth = std::numeric_limits<unsigned int>::max(), unsigned int treeCount = 10, unsigned int concurrentTrainers = 10, unsigned int featuresToScan = 0, bool writeGraphviz = false ):
     m_outputFile( outputFile ),
     m_maxDepth( maxDepth ),
     m_trainerCount( concurrentTrainers ),
     m_treeCount( treeCount ),
+    m_featuresToScan( featuresToScan ),
     m_writeGraphviz( writeGraphviz )
     {
     }
@@ -78,8 +78,13 @@ public:
      */
     void train( const Table<FeatureType> & dataset, const Table<Label> & labels )
     {
+        // Determine the number of features to consider during each randomized split. If the supplied value was 0, default to the ceil(sqrt(featurecount)).
+        unsigned int numberOfFeatures = dataset.getColumnCount();
+        unsigned int featuresToConsider = m_featuresToScan ? m_featuresToScan : std::ceil( std::sqrt( numberOfFeatures ) );
+        if ( featuresToConsider > numberOfFeatures ) throw ClientError( "The supplied number of features to scan exceeds the number of features in the dataset." );
+
         // Create an indexed tree with only one node. This is expensive to build, so it is shared for copying between threads.
-        IndexedDecisionTree sapling( dataset, labels, m_maxDepth );
+        IndexedDecisionTree sapling( dataset, labels, featuresToConsider, m_maxDepth );
 
         // Create message queues for communicating with the worker threads.
         JobQueue       jobOutbox;
@@ -153,6 +158,7 @@ private:
     unsigned int m_maxDepth;
     unsigned int m_trainerCount;
     unsigned int m_treeCount;
+    unsigned int m_featuresToScan;
     bool         m_writeGraphviz;
 };
 
