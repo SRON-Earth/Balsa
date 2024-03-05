@@ -137,7 +137,7 @@ public:
             {
                 auto splitFeature = node.getSplit().getFeatureID();
                 auto splitValue   = node.getSplit().getFeatureValue();
-                out << "    node" << nodeID << " -> " << "node" << node.getLeftChild()  << " [label=\"F" << static_cast<int>( splitFeature ) << " <= " << splitValue << "\"];" << std::endl;
+                out << "    node" << nodeID << " -> " << "node" << node.getLeftChild()  << " [label=\"F" << static_cast<int>( splitFeature ) << " < " << splitValue << "\"];" << std::endl;
                 out << "    node" << nodeID << " -> " << "node" << node.getRightChild() << ';' << std::endl;
             }
         }
@@ -556,8 +556,8 @@ private:
         assert( begin != end );
 
         // Search for a better split than the supplied minimal best split.
-        auto                bestSplit  = minimalBestSplit;
-        FeatureType         splitValue = begin->m_featureValue;
+        auto                bestSplit        = minimalBestSplit;
+        FeatureType         currentBlockValue = begin->m_featureValue;
         LabelFrequencyTable leftSideLabelCounts( node.getLabelCounts().size() );
         LabelFrequencyTable rightSideLabelCounts( node.getLabelCounts() );
 
@@ -566,17 +566,17 @@ private:
         for ( auto it( begin ); it != end; ++it )
         {
             // If this is the end of a block of equal-valued points, test if this split would be an improvement over the current best.
-            if ( it->m_featureValue > splitValue )
+            if ( it->m_featureValue > currentBlockValue )
             {
-                SplitCandidate possibleSplit( Split( featureID, splitValue ), leftSideLabelCounts, rightSideLabelCounts );
+                SplitCandidate possibleSplit( Split( featureID, it->m_featureValue ), leftSideLabelCounts, rightSideLabelCounts );
                 if ( possibleSplit.getImpurity() < bestSplit.getImpurity() )
                 {
                     bestSplit = possibleSplit;
                 }
             }
 
-            // Move the current split value to the currently visited point.
-            splitValue = it->m_featureValue;
+            // Move the current block value to the value of the currently visited point.
+            currentBlockValue = it->m_featureValue;
 
             // Update the left- and right-hand label counts as the point is visited.
             leftSideLabelCounts.increment( it->m_label );

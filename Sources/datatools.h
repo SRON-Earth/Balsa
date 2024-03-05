@@ -156,7 +156,7 @@ private:
 
 /**
  * An axis-aligned division between two sets of points in a multidimensional
- * feature-space.
+ * feature-space. N.B. the split feature value is an exclusive upper bound.
  */
 template <typename FeatureType>
 class Split
