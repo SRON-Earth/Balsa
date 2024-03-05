@@ -41,6 +41,7 @@ public:
     virtual typename DecisionTree<FeatureValueType, LabelValueType>::SharedPointer train(
         const FeatureIndex & featureIndex,
         const TrainingDataSet & dataSet,
+        unsigned int featuresToScan,
         bool writeGraphviz,
         unsigned int treeID ) = 0;
 

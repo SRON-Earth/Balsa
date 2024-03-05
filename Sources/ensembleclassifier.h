@@ -47,7 +47,7 @@ public:
 
         // Generate the labels by majority voting.
         auto limit = voterCount / 2;
-        for ( auto voteCount : voteCounts ) *labels++ = voteCount >= limit;
+        for ( auto voteCount : voteCounts ) *labels++ = voteCount > limit;
     }
 
     unsigned int classifyAndVote( FeatureIterator pointsStart, FeatureIterator pointsEnd, VoteTable & table ) const

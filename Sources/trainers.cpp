@@ -51,7 +51,7 @@ public:
         double bestSplitGiniIndex;        // Gini-index of the best split point found so far (lowest index).
         unsigned int featuresToConsider;  // The number of randomly chosen features that this node still has to consider
                                           // during the feature traversal phase.
-        bool ignoringThisFeature; // Whether or not the currently traversed feature is taken into account by this node.
+        bool scanningThisFeature; // Whether or not the currently traversed feature is taken into account by this node.
     };
 
     /**
@@ -71,7 +71,7 @@ public:
      * \param dataSet Set of data points and associated labels to use for training.
      * \return A trained decision tree instance.
      */
-    DecisionTree<>::SharedPointer train( const FeatureIndex & featureIndex, const TrainingDataSet & dataSet, bool writeGraphviz, unsigned int treeID )
+    DecisionTree<>::SharedPointer train( const FeatureIndex & featureIndex, const TrainingDataSet & dataSet, unsigned int featuresToScan, bool writeGraphviz, unsigned int treeID )
     {
         // Create a tree containing a single node.
         m_nodes.clear();
@@ -86,14 +86,17 @@ public:
 
         // Split all leaf nodes in the tree until the there is no more room to improve, or until the depth limit is
         // reached.
-        for ( unsigned int depth = 1; depth < m_maxDepth; ++depth )
+        for ( unsigned int depth = 0; depth < m_maxDepth; ++depth )
         {
             std::cout << "Depth = " << depth << std::endl;
 
-            // Tell all nodes that a round of optimal split searching is starting.
-            unsigned int featureCount       = featureIndex.getFeatureCount();
-            unsigned int featuresToConsider = std::ceil( std::sqrt( featureCount ) );
+            // Determine the number of features to consider during each randomized split. If the supplied value was 0, default to the ceil(sqrt(featurecount)).
+            unsigned int numberOfFeatures   = featureIndex.getFeatureCount();
+            unsigned int featuresToConsider = featuresToScan ? featuresToScan : std::ceil( std::sqrt( numberOfFeatures ) );
+            if ( featuresToConsider > numberOfFeatures ) throw ClientError( "The supplied number of features to scan exceeds the number of features in the dataset." );
             assert( featuresToConsider > 0 );
+
+            // Tell all nodes that a round of optimal split searching is starting.
             initializeOptimalSplitSearch( featuresToConsider );
 
             // Register all points with their respective parent nodes.
@@ -105,11 +108,11 @@ public:
 
             // Traverse all data points once for each feature, in order, so the tree nodes can find the best possible
             // split for them.
-            for ( unsigned int featureID = 0; featureID < featureCount;
+            for ( unsigned int featureID = 0; featureID < numberOfFeatures;
                   ++featureID ) // TODO: random trees should not use all features.
             {
                 // Tell the tree that traversal is starting for this feature.
-                startFeatureTraversal( featureID, featureCount - featureID );
+                startFeatureTraversal( featureID, numberOfFeatures - featureID );
 
                 // Traverse all datapoints in order of this feature.
                 for ( auto it( featureIndex.featureBegin( featureID ) ), end( featureIndex.featureEnd( featureID ) );
@@ -140,23 +143,18 @@ public:
 
         // Update the annotations for all leaf nodes.
         initializeOptimalSplitSearch( 0 );
-
-        // Register all points with their respective parent nodes.
         for ( DataPointID pointID( 0 ), end( pointParents.size() ); pointID < end; ++pointID )
         {
             pointParents[pointID] = registerPoint( pointParents[pointID], dataSet, pointID );
             assert( pointParents[pointID] < m_nodes.size() );
         }
 
-        // Decide the label value for all leaf nodes.
+        // Decide the label value for all nodes.
         for ( NodeID nodeID( 0 ), end( m_nodes.size() ); nodeID != end; ++nodeID )
         {
             DecisionTreeNode & node = m_nodes[nodeID];
-            if ( isLeafNode<double, bool>( node ) )
-            {
-                const NodeAnnotations & nodeStats = m_annotations[nodeID];
-                node.label                        = nodeStats.totalCount < 2 * nodeStats.trueCount;
-            }
+            const NodeAnnotations & nodeStats = m_annotations[nodeID];
+            node.label = nodeStats.totalCount < 2 * nodeStats.trueCount;
         }
 
         // Write a Graphviz file for the tree, if necessary.
@@ -245,8 +243,8 @@ public:
             nodeStats.currentFeature     = featureID;
 
             // Determine whether or not this node will consider this feature during this pass.
-            nodeStats.ignoringThisFeature = m_coin.flip( nodeStats.featuresToConsider, featuresLeft );
-            if ( nodeStats.ignoringThisFeature )
+            nodeStats.scanningThisFeature = m_coin.flip( nodeStats.featuresToConsider, featuresLeft );
+            if ( nodeStats.scanningThisFeature )
             {
                 assert( nodeStats.featuresToConsider > 0 );
                 --nodeStats.featuresToConsider; // Use up one 'credit'.
@@ -261,7 +259,7 @@ public:
     {
         // Do nothing if this node is not considering this feature.
         NodeAnnotations & nodeStats = m_annotations[nodeID];
-        if ( nodeStats.ignoringThisFeature ) return;
+        if ( !nodeStats.scanningThisFeature ) return;
 
         // If this is the start of a block of previously unseen feature values, calculate what the gain of a split would
         // be.
@@ -375,7 +373,7 @@ public:
             {
                 auto splitFeature = node.splitFeatureID;
                 auto splitValue   = node.splitValue;
-                out << "    node" << nodeID << " -> " << "node" << node.leftChildID  << " [label=\"F" << static_cast<int>( splitFeature ) << " <= " << splitValue << "\"];" << std::endl;
+                out << "    node" << nodeID << " -> " << "node" << node.leftChildID  << " [label=\"F" << static_cast<int>( splitFeature ) << " < " << splitValue << "\"];" << std::endl;
                 out << "    node" << nodeID << " -> " << "node" << node.rightChildID << ';' << std::endl;
             }
         }
@@ -423,8 +421,8 @@ public:
 
 template <>
 DecisionTree<>::SharedPointer SingleTreeTrainerMark2<>::train( const FeatureIndex & featureIndex,
-    const TrainingDataSet & dataSet, bool writeGraphviz, unsigned int treeID )
+    const TrainingDataSet & dataSet, unsigned int featuresToScan, bool writeGraphviz, unsigned int treeID )
 {
     Mark2TreeTrainer trainer( m_maxDepth );
-    return trainer.train( featureIndex, dataSet, writeGraphviz, treeID );
+    return trainer.train( featureIndex, dataSet, featuresToScan, writeGraphviz, treeID );
 }
