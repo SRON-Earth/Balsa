@@ -32,9 +32,12 @@ class RandomForestTrainer
     {
     public:
 
-        TrainingJob( const Table<FeatureType> & dataSet, const IndexedDecisionTree<FeatureType> & sapling, unsigned int maxDepth, bool stop ):
+        typedef IndexedDecisionTree<FeatureType>::SeedType SeedType;
+
+        TrainingJob( const Table<FeatureType> & dataSet, const IndexedDecisionTree<FeatureType> & sapling, SeedType seed, unsigned int maxDepth, bool stop ):
         m_dataSet( dataSet ),
         m_sapling( sapling ),
+        m_seed( seed ),
         m_maxDepth( maxDepth ),
         m_stop( stop )
         {
@@ -42,6 +45,7 @@ class RandomForestTrainer
 
         const Table<FeatureType> &               m_dataSet;
         const IndexedDecisionTree<FeatureType> & m_sapling;
+        SeedType                                 m_seed;
         unsigned int                             m_maxDepth;
         bool                                     m_stop;
     };
@@ -98,10 +102,11 @@ public:
         }
 
         // Create jobs for all trees.
-        for ( unsigned int i = 0; i < m_treeCount; ++i ) jobOutbox.send( TrainingJob( dataset, sapling, m_maxDepth, false ) );
+        auto & seedSequence = getMasterSeedSequence();
+        for ( unsigned int i = 0; i < m_treeCount; ++i ) jobOutbox.send( TrainingJob( dataset, sapling, seedSequence.next(), m_maxDepth, false ) );
 
         // Create 'stop' messages for all threads, to be picked up after all the work is done.
-        for ( unsigned int i = 0; i < workers.size(); ++i ) jobOutbox.send( TrainingJob( dataset, sapling, 0, true ) );
+        for ( unsigned int i = 0; i < workers.size(); ++i ) jobOutbox.send( TrainingJob( dataset, sapling, 0, 0, true ) );
 
         // Create a forest model file and write the forest header marker ("frst").
         std::ofstream out( m_outputFile, std::ios::binary | std::ios::out );
@@ -144,8 +149,11 @@ private:
             ++jobsPickedUp;
             std::cout << "Worker #" << workerID << ": job " << jobsPickedUp << " picked up." << std::endl;
 
-            // Clone the sapling and grow it.
+            // Clone the sapling and grow it. Take care to re-seed the random
+            // generator used for feature selection, otherwise identical trees
+            // will be grown.
             typename IndexedDecisionTree<FeatureType>::SharedPointer tree( new IndexedDecisionTree<FeatureType>( job.m_sapling ) );
+            tree->seed( job.m_seed );
             tree->grow();
             treeOutbox->send( tree );
             std::cout << "Worker #" << workerID << ": job " << jobsPickedUp << " finished." << std::endl;

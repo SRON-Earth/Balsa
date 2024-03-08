@@ -26,6 +26,9 @@ public:
 
     typedef std::shared_ptr<IndexedDecisionTree> SharedPointer;
 
+    typedef WeightedCoin<> WeightedCoinType;
+    typedef WeightedCoinType::ValueType SeedType;
+
     /**
      * Creates an indexed decision tree with one root node from scratch.
      * N.B. this is an expensive operation, because construction builds sorted
@@ -78,6 +81,15 @@ public:
 
         // If the root node is still growable, add it to the list of growable nodes.
         if ( isGrowableNode( 0 ) ) m_growableLeaves.push_back( 0 );
+    }
+
+    /**
+     * Reinitialize the state of the random engine used to select features to
+     * consider when deciding where to split.
+     */
+    void seed( SeedType value )
+    {
+        m_coin.seed( value );
     }
 
     /**
@@ -621,11 +633,10 @@ private:
 
     const Table<FeatureType> &      m_dataPoints;
     const Table<Label> &            m_labels;
-    WeightedCoin                    m_randomCoin;
     std::deque<NodeID>              m_growableLeaves;
     std::vector<Node>               m_nodes;
     std::vector<SingleFeatureIndex> m_featureIndex;
-    WeightedCoin                    m_coin;
+    WeightedCoinType                m_coin;
     std::size_t                     m_featuresToConsider;
     unsigned int                    m_maximumDistanceToRoot;
     ImpurityType                    m_impurityThreshold;
