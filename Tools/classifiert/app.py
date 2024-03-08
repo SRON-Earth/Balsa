@@ -21,7 +21,7 @@ def generate_default_config_file(filename):
     store_config(filename, config)
 
 def profile(train_data_filename, test_data_filename, classifiers, config_file, data_sizes, test_percentage, num_estimators,
-            random_seed, max_tree_depth, num_threads, timeout, use_cache):
+            random_seed, max_tree_depth, num_features, num_threads, timeout, use_cache):
 
     # Load configuration. If the configuration file does not exist, generate a
     # default configuration file.
@@ -93,6 +93,7 @@ def profile(train_data_filename, test_data_filename, classifiers, config_file, d
                                                  num_estimators=num_estimators,
                                                  random_seed=random_seed,
                                                  max_tree_depth=max_tree_depth,
+                                                 num_features=num_features,
                                                  num_threads=num_threads))
             except Exception as exception:
                 print("\033[31m" + "Run failed: '" + str(exception) + "'." + "\033[0m")
@@ -148,6 +149,7 @@ def parse_command_line_arguments():
     profile.add_argument("-p", "--test-percentage", type=percentage)
     profile.add_argument("-T", "--test-data-file", type=pathlib.Path, metavar="TEST_DATA_FILE", dest="test_data_filename")
     profile.add_argument("-d", "--max-tree-depth", type=positive_integer, default="50")
+    profile.add_argument("-f", "--num-features", type=positive_integer)
     profile.add_argument("-e", "--num-estimators", type=positive_integer, default="150")
     profile.add_argument("-t", "--num-threads", type=positive_integer, default="1")
     profile.add_argument("-x", "--timeout", type=positive_integer, default=None)

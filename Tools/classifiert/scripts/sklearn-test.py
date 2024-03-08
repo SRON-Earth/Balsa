@@ -50,9 +50,9 @@ def main(model_filename, data_filename, label_filename):
     end_time = time.time()
     label_store_time = end_time - start_time
 
-    print("Model Load Time: ", model_load_time)
-    print("Data Load Time: ", data_load_time)
-    print("Classification Time: ", classification_time)
+    print("Model Load Time:", model_load_time)
+    print("Data Load Time:", data_load_time)
+    print("Classification Time:", classification_time)
     print("Label Store Time:", label_store_time)
 
 def parse_command_line_arguments():

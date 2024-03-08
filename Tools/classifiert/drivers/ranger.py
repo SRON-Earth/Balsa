@@ -21,7 +21,7 @@ class Driver:
         return "csv"
 
     def run(self, run_path, train_data_filename, train_label_filename, test_data_filename, test_label_filename, *,
-            num_estimators, random_seed, max_tree_depth, num_threads):
+            num_estimators, random_seed, max_tree_depth, num_features, num_threads):
 
         assert train_label_filename is None
         assert test_label_filename is None
@@ -42,6 +42,8 @@ class Driver:
             args += ["--seed", str(random_seed)]
         if max_tree_depth is not None:
             args += ["--maxdepth", str(max_tree_depth)]
+        if num_features is not None:
+            args += ["--mtry", str(num_features)]
         result = run_program(self.path / "ranger", *args, log=True, log_prefix="ranger-train", time_file="train.time", cwd=run_path)
         get_statistics_from_time_file(run_path / "train.time", target_dict=run_statistics, key_prefix="train-")
 

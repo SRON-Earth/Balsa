@@ -22,7 +22,7 @@ class Driver:
         return "bin"
 
     def run(self, run_path, train_data_filename, train_label_filename, test_data_filename, test_label_filename, *,
-            num_estimators, random_seed, max_tree_depth, num_threads):
+            num_estimators, random_seed, max_tree_depth, num_features, num_threads):
 
         train_script = PACKAGE_DATA_PATH / "sklearn-train.py"
         test_script = PACKAGE_DATA_PATH / "sklearn-test.py"
@@ -34,6 +34,8 @@ class Driver:
             args += ["-s", str(random_seed)]
         if max_tree_depth is not None:
             args += ["-d", str(max_tree_depth)]
+        if num_features is not None:
+            args += ["-f", str(num_features)]
         args += [str(train_data_filename), str(train_label_filename), "sklearn.model"]
 
         result = run_program(self.python, *args, log=True, log_prefix="sklearn-train", time_file="train.time", cwd=run_path)

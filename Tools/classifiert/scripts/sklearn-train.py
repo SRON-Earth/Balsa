@@ -18,7 +18,7 @@ def load_dataset_bin(filename):
         dataset.shape = (-1, num_columns)
     return dataset
 
-def main(data_filename, label_filename, model_filename, num_estimators, random_seed, max_tree_depth, num_threads):
+def main(data_filename, label_filename, model_filename, num_estimators, random_seed, max_tree_depth, num_features, num_threads):
 
     start_time = time.time()
     data_points = load_dataset_bin(data_filename)
@@ -27,11 +27,12 @@ def main(data_filename, label_filename, model_filename, num_estimators, random_s
     data_load_time = end_time - start_time
 
     start_time = time.time()
+    max_features = "sqrt" if num_features is None else num_features
     random_forest = RandomForestClassifier(n_estimators=num_estimators,
                                            n_jobs=num_threads,
                                            random_state=random_seed,
                                            max_depth=max_tree_depth,
-                                           max_features="sqrt",
+                                           max_features=max_features,
                                            min_samples_leaf=1,
                                            min_samples_split=2,
                                            bootstrap=False)
@@ -47,8 +48,8 @@ def main(data_filename, label_filename, model_filename, num_estimators, random_s
     end_time = time.time()
     model_store_time = end_time - start_time
 
-    print("Data Load Time: ", data_load_time)
-    print("Training Time: ", training_time)
+    print("Data Load Time:", data_load_time)
+    print("Training Time:", training_time)
     print("Model Store Time:", model_store_time)
     print("Maximum Depth:", max([estimator.get_depth() for estimator in random_forest.estimators_]))
     print("Maximum Node Count:", max([estimator.tree_.node_count for estimator in random_forest.estimators_]))
@@ -66,6 +67,7 @@ def parse_command_line_arguments():
     parser.add_argument("label_filename", type=pathlib.Path, metavar="LABEL_INPUT_FILE")
     parser.add_argument("model_filename", type=pathlib.Path, metavar="MODEL_OUTPUT_FILE")
     parser.add_argument("-d", "--max-tree-depth", type=positive_integer)
+    parser.add_argument("-f", "--num-features", type=positive_integer)
     parser.add_argument("-e", "--num-estimators", type=positive_integer, default="150")
     parser.add_argument("-t", "--num-threads", type=positive_integer, default="1")
     parser.add_argument("-s", "--random-seed", type=positive_integer)
