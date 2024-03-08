@@ -7,6 +7,7 @@ import struct
 jsonpickle.ext.numpy.register_handlers()
 
 CACHE_DIR = pathlib.Path("cache")
+DATA_FORMATS = ("csv", "bin", "balsa")
 
 def set_cache_dir(path):
 
@@ -128,34 +129,43 @@ def store_labelled_dataset(data_format, data_filename, label_filename, data_poin
     else:
         raise RuntimeError("Unsupported data format: " + str(data_format) + ".")
 
-def get_train_dataset_filenames(data_size, data_format):
+def get_dataset_filenames(purpose, data_format, data_size, test_percentage):
 
-    train_data_file = pathlib.Path(CACHE_DIR / f"train-data-{data_size}.{data_format}").absolute()
-    if data_format == "csv":
-        return train_data_file, None
-    train_label_file = pathlib.Path(CACHE_DIR / f"train-label-{data_size}.{data_format}").absolute()
-    return train_data_file, train_label_file
+    suffix = "." + data_format
+    if test_percentage is not None:
+        suffix = "-oob-" + str(test_percentage) + suffix
+    if data_size is not None:
+        suffix = "-" + str(data_size) + suffix
+    data_file = pathlib.Path(CACHE_DIR / (purpose + "-data" + suffix)).absolute()
+    label_file = pathlib.Path(CACHE_DIR / (purpose + "-label" + suffix)).absolute()
+    return (data_file, None) if data_format == "csv" else (data_file, label_file)
 
-def get_test_dataset_filenames(data_format):
+def get_train_dataset_filenames(data_format, data_size, test_percentage=None):
 
-    train_data_file = pathlib.Path(CACHE_DIR / f"test-data.{data_format}").absolute()
-    if data_format == "csv":
-        return train_data_file, None
-    train_label_file = pathlib.Path(CACHE_DIR / f"test-label.{data_format}").absolute()
-    return train_data_file, train_label_file
+    return get_dataset_filenames("train", data_format, data_size, test_percentage)
 
-def is_cached(data_size):
+def get_test_dataset_filenames(data_format, data_size=None, test_percentage=None):
 
-    for data_format in ("csv", "bin", "balsa"):
-        filenames = get_train_dataset_filenames(data_size, data_format)
-        if not all(filename is None or filename.is_file() for filename in filenames):
-            return False
+    return get_dataset_filenames("test", data_format, data_size, test_percentage)
+
+def is_cached(data_size, test_percentage):
+
+    for data_format in DATA_FORMATS:
+        filenames = get_train_dataset_filenames(data_format, data_size, test_percentage)
+        if test_percentage is not None:
+            filenames += get_test_dataset_filenames(data_format, data_size, test_percentage)
+        for filename in filenames:
+            if filename is not None and not filename.is_file():
+                return False
     return True
 
-def remove_from_cache(data_size):
+def remove_from_cache(data_size, test_percentage):
 
-    for data_format in ("csv", "bin", "balsa"):
-        for filename in get_train_dataset_filenames(data_size, data_format):
+    for data_format in DATA_FORMATS:
+        filenames = get_train_dataset_filenames(data_format, data_size, test_percentage)
+        if test_percentage is not None:
+            filenames += get_test_dataset_filenames(data_format, data_size, test_percentage)
+        for filename in filenames:
             if filename is not None:
                 filename.unlink(missing_ok=True)
 
@@ -170,16 +180,16 @@ def sample_dataset(data_points, labels, data_size, *, random_generator=None, rep
     index = random_generator.choice(len(data_points), data_size, replace=replace)
     return data_points[index], labels[index]
 
-def generate_train_datasets(train_data_filename, data_sizes, *, use_cache=True, seed=None):
+def generate_datasets(train_data_filename, data_sizes, *, use_cache=True, test_percentage=None, seed=None):
 
     random_generator = np.random.default_rng(seed)
 
     data_points, labels = None, None
     for data_size in data_sizes:
 
-        in_cache = is_cached(data_size)
+        in_cache = is_cached(data_size, test_percentage)
 
-        if in_cache and use_cache:
+        if in_cache and use_cache and seed is None:
             print("\033[32m" + f"{data_size} [cached]" + "\033[0m")
             continue
 
@@ -188,18 +198,26 @@ def generate_train_datasets(train_data_filename, data_sizes, *, use_cache=True, 
         else:
             print("\033[32m" + f"{data_size}" + "\033[0m")
 
-        remove_from_cache(data_size)
+        remove_from_cache(data_size, test_percentage)
 
         if data_points is None:
             assert labels is None
             data_points, labels = load_labelled_dataset_json(train_data_filename)
             assert np.sum(labels == 0.0) + np.sum(labels == 1.0) == labels.size
 
-        new_data_points, new_labels = sample_dataset(data_points, labels, data_size, random_generator=random_generator)
+        test_size = 0 if test_percentage is None else round(test_percentage * data_size / 100.0)
+        new_data_points, new_labels = sample_dataset(data_points, labels, data_size + test_size, random_generator=random_generator)
 
-        for data_format in ("csv", "bin", "balsa"):
-            train_data_filename, train_label_filename = get_train_dataset_filenames(data_size, data_format)
-            store_labelled_dataset(data_format, train_data_filename, train_label_filename, new_data_points, new_labels)
+        for data_format in DATA_FORMATS:
+            train_data_filename, train_label_filename = get_train_dataset_filenames(data_format, data_size, test_percentage)
+            store_labelled_dataset(data_format, train_data_filename, train_label_filename, new_data_points[:data_size], new_labels[:data_size])
+
+        if test_percentage is None:
+            continue
+
+        for data_format in DATA_FORMATS:
+            test_data_filename, test_label_filename = get_test_dataset_filenames(data_format, data_size, test_percentage)
+            store_labelled_dataset(data_format, test_data_filename, test_label_filename, new_data_points[data_size:], new_labels[data_size:])
 
 def ingest_test_dataset(test_data_filename):
 

@@ -20,6 +20,7 @@ def write_statistic(report, statistics, title, y_axis_label, *, key=None, getter
 def write_report(report_filename, num_threads, statistics):
 
     from matplotlib.backends.backend_pdf import PdfPages
+
     report = PdfPages(report_filename)
 
     write_statistic(report, statistics, f"Wall Clock Time (Train) :: {num_threads} thread(s)", "Time (s)", key="train-wall-clock-time")

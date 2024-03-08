@@ -23,11 +23,13 @@ class Driver:
         return self.data_format
 
     def run(self, run_path, train_data_filename, train_label_filename, test_data_filename, test_label_filename, *,
-            num_estimators, max_tree_depth, num_threads):
+            num_estimators, random_seed, max_tree_depth, num_threads):
 
         run_statistics = {}
 
         args = ["-c", str(num_estimators), "-t", str(num_threads)]
+        if random_seed is not None:
+            args += ["-s", str(random_seed)]
         if max_tree_depth is not None:
             args += ["-d", str(max_tree_depth)]
         args += [str(train_data_filename), str(train_label_filename), "jigsaw.model"]
@@ -35,16 +37,17 @@ class Driver:
         get_statistics_from_time_file(run_path / "train.time", target_dict=run_statistics, key_prefix="train-")
         get_statistics_from_stdout(result.stdout, target_dict=run_statistics, key_prefix="train-")
 
+        label_output_filename = run_path / f"labels.{self.data_format}"
+
         args = ["-t", str(num_threads), "-p", str(num_threads)]
-        result = run_program(self.path / "balsa_classify", *args, "jigsaw.model", str(test_data_filename), "labels.bin", log=True, time_file="test.time", cwd=run_path)
+        result = run_program(self.path / "balsa_classify", *args, "jigsaw.model", str(test_data_filename), label_output_filename.name, log=True, time_file="test.time", cwd=run_path)
         get_statistics_from_time_file(run_path / "test.time", target_dict=run_statistics, key_prefix="test-")
         get_statistics_from_stdout(result.stdout, target_dict=run_statistics, key_prefix="test-")
 
-        predicted_label_filename = run_path / "labels.bin"
         if self.data_format == "bin":
-            labels, predicted_labels = load_dataset_bin(test_label_filename), load_dataset_bin(predicted_label_filename)
+            labels, predicted_labels = load_dataset_bin(test_label_filename), load_dataset_bin(label_output_filename)
         elif self.data_format == "balsa":
-            labels, predicted_labels = load_dataset_balsa(test_label_filename), load_dataset_balsa(predicted_label_filename)
+            labels, predicted_labels = load_dataset_balsa(test_label_filename), load_dataset_balsa(label_output_filename)
         else:
             raise RuntimeError("Unsupported data format: '" + str(self.data_format) + "'.")
 

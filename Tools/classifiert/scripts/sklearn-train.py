@@ -18,7 +18,7 @@ def load_dataset_bin(filename):
         dataset.shape = (-1, num_columns)
     return dataset
 
-def main(data_filename, label_filename, model_filename, num_estimators, max_tree_depth, num_threads):
+def main(data_filename, label_filename, model_filename, num_estimators, random_seed, max_tree_depth, num_threads):
 
     start_time = time.time()
     data_points = load_dataset_bin(data_filename)
@@ -29,6 +29,7 @@ def main(data_filename, label_filename, model_filename, num_estimators, max_tree
     start_time = time.time()
     random_forest = RandomForestClassifier(n_estimators=num_estimators,
                                            n_jobs=num_threads,
+                                           random_state=random_seed,
                                            max_depth=max_tree_depth,
                                            max_features="sqrt",
                                            min_samples_leaf=1,
@@ -67,6 +68,7 @@ def parse_command_line_arguments():
     parser.add_argument("-d", "--max-tree-depth", type=positive_integer)
     parser.add_argument("-e", "--num-estimators", type=positive_integer, default="150")
     parser.add_argument("-t", "--num-threads", type=positive_integer, default="1")
+    parser.add_argument("-s", "--random-seed", type=positive_integer)
     return parser.parse_args()
 
 if __name__ == "__main__":

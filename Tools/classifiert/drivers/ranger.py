@@ -21,7 +21,7 @@ class Driver:
         return "csv"
 
     def run(self, run_path, train_data_filename, train_label_filename, test_data_filename, test_label_filename, *,
-            num_estimators, max_tree_depth, num_threads):
+            num_estimators, random_seed, max_tree_depth, num_threads):
 
         assert train_label_filename is None
         assert test_label_filename is None
@@ -38,21 +38,20 @@ class Driver:
                 "--outprefix", "ranger",
                 "--write",
                 "--nthreads", str(num_threads)]
-
+        if random_seed is not None:
+            args += ["--seed", str(random_seed)]
         if max_tree_depth is not None:
             args += ["--maxdepth", str(max_tree_depth)]
-
-        result = run_program(self.path / "ranger", *args, log=True, time_file="train.time", cwd=run_path)
+        result = run_program(self.path / "ranger", *args, log=True, log_prefix="ranger-train", time_file="train.time", cwd=run_path)
         get_statistics_from_time_file(run_path / "train.time", target_dict=run_statistics, key_prefix="train-")
 
-        run_program(self.path / "ranger",
-                    "--file", str(test_data_filename),
-                    "--depvarname", "label",
-                    "--predict", "ranger.forest",
-                    "--nthreads", str(num_threads),
-                    log=True,
-                    time_file="test.time",
-                    cwd=run_path)
+        args = ["--file", str(test_data_filename),
+                "--depvarname", "label",
+                "--predict", "ranger.forest",
+                "--nthreads", str(num_threads)]
+        if random_seed is not None:
+            args += ["--seed", str(random_seed)]
+        run_program(self.path / "ranger", *args, log=True, log_prefix="ranger-test", time_file="test.time", cwd=run_path)
         get_statistics_from_time_file(run_path / "test.time", target_dict=run_statistics, key_prefix="test-")
 
         with open(run_path / "ranger_out.prediction", "r") as infile:

@@ -21,7 +21,7 @@ def load_lgb_dataset(data_filename, label_filename):
     label = load_dataset_bin(label_filename)
     return lgb.Dataset(data, label == 1.0)
 
-def main(data_filename, label_filename, model_filename, num_estimators, max_tree_depth, num_threads):
+def main(data_filename, label_filename, model_filename, num_estimators, random_seed, max_tree_depth, num_threads):
 
     start_time = time.time()
     train_set = load_lgb_dataset(data_filename, label_filename)
@@ -40,6 +40,11 @@ def main(data_filename, label_filename, model_filename, num_estimators, max_tree
         "max_depth": max_tree_depth,
         "min_data_in_leaf": 1
     }
+
+    if random_seed is not None:
+        params["seed"] = random_seed
+        params["deterministic"] = True
+        params["force_row_wise"] = True
 
     start_time = time.time()
     model = lgb.train(params, train_set)
@@ -70,6 +75,7 @@ def parse_command_line_arguments():
     parser.add_argument("-d", "--max-tree-depth", type=positive_integer)
     parser.add_argument("-e", "--num-estimators", type=positive_integer, default="150")
     parser.add_argument("-t", "--num-threads", type=positive_integer, default="1")
+    parser.add_argument("-s", "--random-seed", type=positive_integer)
     return parser.parse_args()
 
 if __name__ == "__main__":

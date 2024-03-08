@@ -7,7 +7,7 @@ import sys
 from .config  import Configuration, load_config, store_config
 from .drivers import get_drivers, get_driver
 from .data    import set_cache_dir, get_train_dataset_filenames, \
-                     get_test_dataset_filenames, generate_train_datasets, \
+                     get_test_dataset_filenames, generate_datasets, \
                      ingest_test_dataset, load_labelled_dataset_json, \
                      sample_dataset, store_labelled_dataset
 from .report  import write_report
@@ -20,9 +20,8 @@ def generate_default_config_file(filename):
         driver.add_default_config(config)
     store_config(filename, config)
 
-def profile(train_data_filename, test_data_filename, classifiers, config_file,
-            data_sizes, num_estimators, max_tree_depth, num_threads, timeout,
-            use_cache):
+def profile(train_data_filename, test_data_filename, classifiers, config_file, data_sizes, test_percentage, num_estimators,
+            random_seed, max_tree_depth, num_threads, timeout, use_cache):
 
     # Load configuration. If the configuration file does not exist, generate a
     # default configuration file.
@@ -38,15 +37,24 @@ def profile(train_data_filename, test_data_filename, classifiers, config_file,
     # Set cache directory based on configuration.
     set_cache_dir(config.cache_dir)
 
-    print("\033[35m" + f"Generating train datasets..." + "\033[0m")
-    generate_train_datasets(train_data_filename, data_sizes, use_cache=use_cache)
+    # Generate datasets.
+    print("\033[35m" + f"Generating datasets..." + "\033[0m")
+    if test_data_filename is not None and test_percentage is not None:
+        raise Exception("Either a test percentage or a test data file should be specified.")
+    if test_data_filename is None and test_percentage is None:
+        test_percentage = 33
+    generate_datasets(train_data_filename, data_sizes, use_cache=use_cache, test_percentage=test_percentage, seed=random_seed)
 
-    print("\033[35m" + f"Ingesting test dataset..." + "\033[0m")
-    ingest_test_dataset(test_data_filename)
+    # Optionally ingest the specified test dataset.
+    if test_data_filename is not None:
+        print("\033[35m" + f"Ingesting test dataset..." + "\033[0m")
+        ingest_test_dataset(test_data_filename)
 
+    # Create run path.
     run_path = config.run_dir / datetime.datetime.now().isoformat()
     run_path.mkdir()
 
+    # Run all classifiers.
     statistics = {}
     for classifier_name in classifiers:
 
@@ -58,28 +66,32 @@ def profile(train_data_filename, test_data_filename, classifiers, config_file,
             print("\033[31m" + "Unknown classifier: '" + classifier_name + "'." + "\033[0m")
             continue
 
-        classifier_run_path = run_path / classifier_name
-        classifier_run_path.mkdir()
-
         driver = get_driver(classifier["driver"])(**classifier["args"])
         data_format = driver.get_data_format()
+
+        classifier_run_path = run_path / classifier_name
+        classifier_run_path.mkdir()
 
         classifier_statistics = []
         for data_size in data_sizes:
             print("\033[32m" + str(data_size) + "\033[0m")
-            train_data_filename, train_label_filename = get_train_dataset_filenames(data_size, data_format)
-            test_data_filename, test_label_filename = get_test_dataset_filenames(data_format)
+            run_train_data_filename, run_train_label_filename = get_train_dataset_filenames(data_format, data_size, test_percentage)
+            if test_data_filename is not None:
+                run_test_data_filename, run_test_label_filename = get_test_dataset_filenames(data_format)
+            else:
+                run_test_data_filename, run_test_label_filename = get_test_dataset_filenames(data_format, data_size, test_percentage)
 
             run_statistics = {"data_size": data_size}
             test_run_path = classifier_run_path / str(data_size)
             test_run_path.mkdir()
             try:
                 run_statistics.update(driver.run(test_run_path,
-                                                 train_data_filename,
-                                                 train_label_filename,
-                                                 test_data_filename,
-                                                 test_label_filename,
+                                                 run_train_data_filename,
+                                                 run_train_label_filename,
+                                                 run_test_data_filename,
+                                                 run_test_label_filename,
                                                  num_estimators=num_estimators,
+                                                 random_seed=random_seed,
                                                  max_tree_depth=max_tree_depth,
                                                  num_threads=num_threads))
             except Exception as exception:
@@ -90,6 +102,7 @@ def profile(train_data_filename, test_data_filename, classifiers, config_file,
         write_report(run_path / f"{classifier_name}.pdf", num_threads, {classifier_name: classifier_statistics})
         statistics[classifier_name] = classifier_statistics
 
+    # Write combined report.
     write_report(run_path / f"all.pdf", num_threads, statistics)
 
 def sample(data_input_filename, data_output_filename, label_output_filename,
@@ -129,14 +142,16 @@ def parse_command_line_arguments():
 
     profile = subparsers.add_parser("profile", help="profile random forest classifiers")
     profile.add_argument("train_data_filename", type=pathlib.Path, metavar="TRAIN_DATA_FILE")
-    profile.add_argument("test_data_filename", type=pathlib.Path, metavar="TEST_DATA_FILE")
     profile.add_argument("classifiers", metavar="CLASSIFIER", nargs="+")
     profile.add_argument("-c", "--config-file", type=pathlib.Path, default="classifiert.ini")
-    profile.add_argument("-n", "--data-sizes", type=data_size_list, default="100,1000,2500,5000,10_000,25_000,50_000")
+    profile.add_argument("-n", "--data-sizes", type=data_size_list)
+    profile.add_argument("-p", "--test-percentage", type=percentage)
+    profile.add_argument("-T", "--test-data-file", type=pathlib.Path, metavar="TEST_DATA_FILE", dest="test_data_filename")
     profile.add_argument("-d", "--max-tree-depth", type=positive_integer, default="50")
     profile.add_argument("-e", "--num-estimators", type=positive_integer, default="150")
     profile.add_argument("-t", "--num-threads", type=positive_integer, default="1")
     profile.add_argument("-x", "--timeout", type=positive_integer, default=None)
+    profile.add_argument("-s", "--random-seed", type=positive_integer)
     profile.add_argument("-C", "--no-cache", dest="use_cache", action="store_false")
 
     sample = subparsers.add_parser("sample", help="draw a sample from an existing (json-pickle) dataset")
