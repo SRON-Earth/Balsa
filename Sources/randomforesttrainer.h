@@ -82,9 +82,9 @@ public:
      */
     void train( const Table<FeatureType> & dataset, const Table<Label> & labels )
     {
-        // Determine the number of features to consider during each randomized split. If the supplied value was 0, default to the ceil(sqrt(featurecount)).
+        // Determine the number of features to consider during each randomized split. If the supplied value was 0, default to floor(sqrt(featurecount)).
         unsigned int numberOfFeatures = dataset.getColumnCount();
-        unsigned int featuresToConsider = m_featuresToScan ? m_featuresToScan : std::ceil( std::sqrt( numberOfFeatures ) );
+        unsigned int featuresToConsider = m_featuresToScan ? m_featuresToScan : std::floor( std::sqrt( numberOfFeatures ) );
         if ( featuresToConsider > numberOfFeatures ) throw ClientError( "The supplied number of features to scan exceeds the number of features in the dataset." );
 
         // Create an indexed tree with only one node. This is expensive to build, so it is shared for copying between threads.
