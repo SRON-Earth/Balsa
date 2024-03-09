@@ -90,9 +90,9 @@ public:
         {
             std::cout << "Depth = " << depth << std::endl;
 
-            // Determine the number of features to consider during each randomized split. If the supplied value was 0, default to the ceil(sqrt(featurecount)).
+            // Determine the number of features to consider during each randomized split. If the supplied value was 0, default to floor(sqrt(featurecount)).
             unsigned int numberOfFeatures   = featureIndex.getFeatureCount();
-            unsigned int featuresToConsider = featuresToScan ? featuresToScan : std::ceil( std::sqrt( numberOfFeatures ) );
+            unsigned int featuresToConsider = featuresToScan ? featuresToScan : std::floor( std::sqrt( numberOfFeatures ) );
             if ( featuresToConsider > numberOfFeatures ) throw ClientError( "The supplied number of features to scan exceeds the number of features in the dataset." );
             assert( featuresToConsider > 0 );
 
