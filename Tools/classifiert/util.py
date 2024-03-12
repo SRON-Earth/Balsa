@@ -90,7 +90,7 @@ def accuracy(num_true_positives, num_false_positives, num_true_negatives, num_fa
 
     denominator = num_true_positives + num_false_positives + num_true_negatives + num_false_negatives
     if denominator == 0:
-        return 0
+        return np.nan
     return (num_true_positives + num_true_negatives) / denominator
 
 def P4_metric(num_true_positives, num_false_positives, num_true_negatives, num_false_negatives):
@@ -98,35 +98,42 @@ def P4_metric(num_true_positives, num_false_positives, num_true_negatives, num_f
     denominator = 4.0 * num_true_positives * num_true_negatives + \
         (num_true_positives + num_true_negatives) * (num_false_positives + num_false_negatives)
     if denominator == 0:
-        return 0
+        return np.nan
     return (4.0 * num_true_positives * num_true_negatives) / denominator
+
+def diagnostic_odds_ratio(num_true_positives, num_false_positives, num_true_negatives, num_false_negatives):
+
+    denominator = num_false_positives * num_false_negatives
+    if denominator == 0:
+        return np.nan
+    return (num_true_positives * num_true_negatives) / denominator
 
 def positive_predictive_value(num_true_positives, num_false_positives, num_true_negatives, num_false_negatives):
 
     denominator = num_true_positives + num_false_positives
     if denominator == 0:
-        return 0
+        return np.nan
     return num_true_positives / denominator
 
 def true_positive_rate(num_true_positives, num_false_positives, num_true_negatives, num_false_negatives):
 
     denominator = num_true_positives + num_false_negatives
     if denominator == 0:
-        return 0
+        return np.nan
     return num_true_positives / denominator
 
 def true_negative_rate(num_true_positives, num_false_positives, num_true_negatives, num_false_negatives):
 
     denominator = num_true_negatives + num_false_positives
     if denominator == 0:
-        return 0
+        return np.nan
     return num_true_negatives / denominator
 
 def negative_predictive_value(num_true_positives, num_false_positives, num_true_negatives, num_false_negatives):
 
     denominator = num_true_negatives + num_false_negatives
     if denominator == 0:
-        return 0
+        return np.nan
     return num_true_negatives / denominator
 
 def get_classification_scores(predicted_labels, labels, *, target_dict=None, key_prefix=""):
@@ -148,6 +155,8 @@ def get_classification_scores(predicted_labels, labels, *, target_dict=None, key
         accuracy(num_true_positives, num_false_positives, num_true_negatives, num_false_negatives)
     target_dict[key_prefix + "P4-metric"] = \
         P4_metric(num_true_positives, num_false_positives, num_true_negatives, num_false_negatives)
+    target_dict[key_prefix + "dor"] = \
+        diagnostic_odds_ratio(num_true_positives, num_false_positives, num_true_negatives, num_false_negatives)
     target_dict[key_prefix + "ppv"] = \
         positive_predictive_value(num_true_positives, num_false_positives, num_true_negatives, num_false_negatives)
     target_dict[key_prefix + "tpr"] = \
