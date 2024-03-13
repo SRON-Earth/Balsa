@@ -22,14 +22,14 @@
  * `maxPreload` to zero. This will cause all classifiers to be loaded into
  * memory once.
  */
-template <typename FeatureIterator, typename OutputIterator, typename FeatureType = typename std::iterator_traits<FeatureIterator>::value_type, typename LabelType = typename std::iterator_traits<OutputIterator>::value_type>
+template <typename FeatureIterator, typename OutputIterator>
 class DecisionTreeClassifierStream: public ClassifierStream<FeatureIterator, OutputIterator>
 {
 public:
 
     using typename ClassifierStream<FeatureIterator, OutputIterator>::ClassifierType;
 
-    typedef DecisionTreeClassifier<FeatureIterator, OutputIterator, FeatureType, LabelType> DecisionTreeClassifierType;
+    typedef DecisionTreeClassifier<FeatureIterator, OutputIterator> DecisionTreeClassifierType;
 
     DecisionTreeClassifierStream( const std::string & filename, unsigned int maxPreload = 0 ):
     m_filename( filename ),

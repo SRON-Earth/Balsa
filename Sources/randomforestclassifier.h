@@ -4,7 +4,7 @@
 #include "decisiontreeclassifierstream.h"
 #include "ensembleclassifier.h"
 
-template <typename FeatureIterator = double *, typename OutputIterator = Label *, typename FeatureType = typename std::iterator_traits<FeatureIterator>::value_type, typename LabelType = typename std::iterator_traits<OutputIterator>::value_type>
+template <typename FeatureIterator = double *, typename OutputIterator = Label *>
 class RandomForestClassifier: public Classifier<FeatureIterator, OutputIterator>
 {
 public:
@@ -29,6 +29,13 @@ public:
     /**
      * Bulk-classifies a set of points, adding a vote (+1) to the vote table for
      * each point of which the label is 'true'.
+     * \param pointsStart An iterator that points to the first feature value of
+     *  the first point.
+     * \param pointsEnd An itetartor that points to the end of the block of
+     *  point data.
+     * \param table A table for counting votes.
+     * \pre The column count of the vote table must match the number of
+     *  features, the row count must match the number of points.
      */
     unsigned int classifyAndVote( FeatureIterator pointsStart, FeatureIterator pointsEnd, VoteTable & table ) const
     {
@@ -37,8 +44,8 @@ public:
 
 private:
 
-    DecisionTreeClassifierStream<FeatureIterator, OutputIterator, FeatureType, LabelType> m_treeStream;
-    EnsembleClassifier<FeatureIterator, OutputIterator>                                   m_classifier;
+    DecisionTreeClassifierStream<FeatureIterator, OutputIterator> m_treeStream;
+    EnsembleClassifier<FeatureIterator, OutputIterator>           m_classifier;
 };
 
 #endif // RANDOMFORESTCLASSIFIER_H

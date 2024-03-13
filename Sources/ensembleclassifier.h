@@ -12,7 +12,6 @@
 template <typename FeatureIterator, typename OutputIterator>
 class EnsembleClassifier: public Classifier<FeatureIterator, OutputIterator>
 {
-
 public:
 
     using typename Classifier<FeatureIterator, OutputIterator>::VoteTable;
@@ -29,6 +28,9 @@ public:
     {
     }
 
+    /**
+     * Bulk-classifies a sequence of data points.
+     */
     void classify( FeatureIterator pointsStart, FeatureIterator pointsEnd, OutputIterator labels ) const
     {
         // Check the dimensions of the input data.
@@ -48,6 +50,17 @@ public:
         for ( unsigned int point = 0; point < pointCount; ++point ) *labels++ = static_cast<Label>( voteCounts.getColumnOfRowMaximum( point ) );
     }
 
+    /**
+     * Bulk-classifies a set of points, adding a vote (+1) to the vote table for
+     * each point of which the label is 'true'.
+     * \param pointsStart An iterator that points to the first feature value of
+     *  the first point.
+     * \param pointsEnd An itetartor that points to the end of the block of
+     *  point data.
+     * \param table A table for counting votes.
+     * \pre The column count of the vote table must match the number of
+     *  features, the row count must match the number of points.
+     */
     unsigned int classifyAndVote( FeatureIterator pointsStart, FeatureIterator pointsEnd, VoteTable & table ) const
     {
         // Dispatch to single- or multithreaded implementation.

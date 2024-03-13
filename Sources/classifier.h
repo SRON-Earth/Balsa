@@ -47,11 +47,15 @@ public:
     virtual void classify( FeatureIterator pointsStart, FeatureIterator pointsEnd, OutputIterator labels ) const = 0;
 
     /**
-     * Bulk-classifies a set of points, adding a vote (+1) to the vote table for each point of which the label is 'true'.
-     * \param pointsStart An iterator that points to the first feature value of the first point.
-     * \param pointsEnd An itetartor that points to the end of the block of point data.
+     * Bulk-classifies a set of points, adding a vote (+1) to the vote table for
+     * each point of which the label is 'true'.
+     * \param pointsStart An iterator that points to the first feature value of
+     *  the first point.
+     * \param pointsEnd An itetartor that points to the end of the block of
+     *  point data.
      * \param table A table for counting votes.
-     * \pre The column count of the vote table must match the number of features, the row count must match the number of points.
+     * \pre The column count of the vote table must match the number of
+     *  features, the row count must match the number of points.
      */
     virtual unsigned int classifyAndVote( FeatureIterator pointsStart, FeatureIterator pointsEnd, VoteTable & table ) const = 0;
 
