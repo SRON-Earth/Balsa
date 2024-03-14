@@ -5,7 +5,6 @@
 
 #include "classifierstream.h"
 #include "decisiontreeclassifier.h"
-#include "decisiontrees.h"
 #include "exceptions.h"
 
 /**
@@ -23,22 +22,19 @@
  * `maxPreload` to zero. This will cause all classifiers to be loaded into
  * memory once.
  */
-template <typename FeatureIterator,
-    typename OutputIterator,
-    typename FeatureType = typename std::iterator_traits<FeatureIterator>::value_type,
-    typename LabelType   = typename std::iterator_traits<OutputIterator>::value_type>
+template <typename FeatureIterator, typename OutputIterator>
 class DecisionTreeClassifierStream: public ClassifierStream<FeatureIterator, OutputIterator>
 {
 public:
 
     using typename ClassifierStream<FeatureIterator, OutputIterator>::ClassifierType;
 
-    typedef DecisionTreeClassifier<FeatureIterator, OutputIterator, FeatureType, LabelType> DecisionTreeClassifierType;
+    typedef DecisionTreeClassifier<FeatureIterator, OutputIterator> DecisionTreeClassifierType;
 
-    DecisionTreeClassifierStream( const std::string & filename, unsigned int maxPreload = 0 )
-    : m_filename( filename )
-    , m_maxPreload( maxPreload )
-    , m_cacheIndex( 0 )
+    DecisionTreeClassifierStream( const std::string & filename, unsigned int maxPreload = 0 ):
+    m_filename( filename ),
+    m_maxPreload( maxPreload ),
+    m_cacheIndex( 0 )
     {
     }
 
@@ -111,9 +107,9 @@ private:
 
             // Parse the model header. This will advance the file stream to the
             // first tree.
-            char marker = 0;
-            m_modelFile >> marker;
-            if ( marker != 'f' )
+            auto marker = getFixedSizeToken( m_modelFile, 4 );
+            if ( m_modelFile.fail() ) throw ParseError( "Read failed." );
+            if ( marker != "frst" )
             {
                 throw ParseError( "Unexpected header block." );
             }
@@ -145,10 +141,10 @@ private:
         }
     }
 
-    std::string m_filename;
-    std::size_t m_maxPreload;
-    std::ifstream m_modelFile;
-    std::size_t m_cacheIndex;
+    std::string                                         m_filename;
+    std::size_t                                         m_maxPreload;
+    std::ifstream                                       m_modelFile;
+    std::size_t                                         m_cacheIndex;
     std::vector<typename ClassifierType::SharedPointer> m_cache;
 };
 

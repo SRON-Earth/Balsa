@@ -2,12 +2,15 @@
 #include <random>
 #include <sstream>
 #include <string>
+#include <cassert>
 
 #include "exceptions.h"
-#include "ingestion.h"
+#include "table.h"
 #include "randomforesttrainer.h"
+#include "serdes.h"
 #include "timing.h"
 #include "weightedcoin.h"
+
 
 namespace
 {
@@ -15,13 +18,13 @@ class Options
 {
 public:
 
-    Options()
-    : maxDepth( std::numeric_limits<unsigned int>::max() )
-    , treeCount( 150 )
-    , threadCount( 1 )
-    , seed( std::random_device{}() )
-    , featuresToScan( 0 ) // Will be chosen internally by trainer if 0.
-    , writeDotty( false )
+    Options():
+    maxDepth( std::numeric_limits<unsigned int>::max() ),
+    treeCount( 150 ),
+    threadCount( 1 ),
+    featuresToScan( 0 ), // Will be chosen internally by trainer if 0.
+    seed( std::random_device{}() ),
+    writeDotty( false )
     {
     }
 
@@ -61,7 +64,7 @@ public:
             assert( token.size() );
             if ( token[0] != '-' ) break;
 
-            // Parse the '-t <threadcount>' option.
+
             if ( token == "-t" )
             {
                 if ( !( args >> options.threadCount ) ) throw ParseError( "Missing parameter to -t option." );
@@ -102,33 +105,34 @@ public:
         return options;
     }
 
-    std::string dataFile;
-    std::string labelFile;
-    std::string outputFile;
-    unsigned int maxDepth;
-    unsigned int treeCount;
-    unsigned int threadCount;
+    std::string                     dataFile;
+    std::string                     labelFile;
+    std::string                     outputFile;
+    unsigned int                    maxDepth;
+    unsigned int                    treeCount;
+    unsigned int                    threadCount;
+    unsigned int                    featuresToScan;
     std::random_device::result_type seed;
-    unsigned int featuresToScan;
-    bool writeDotty;
+    bool                            writeDotty;
 };
 } // namespace
 
 int main( int argc, char ** argv )
 {
-    try
-    {
+   try
+   {
         // Parse the command-line arguments.
         Options options = Options::parseOptions( argc, argv );
 
         // Debug.
-        std::cout << "Data File      : " << options.dataFile << std::endl;
-        std::cout << "Label File     : " << options.labelFile << std::endl;
-        std::cout << "Output File    : " << options.outputFile << std::endl;
-        std::cout << "Max. Depth     : " << options.maxDepth << std::endl;
-        std::cout << "Tree Count     : " << options.treeCount << std::endl;
-        std::cout << "Threads        : " << options.threadCount << std::endl;
-        std::cout << "Random Seed    : " << options.seed << std::endl;
+        std::cout << "Data File  : " << options.dataFile << std::endl;
+        std::cout << "Label File : " << options.labelFile << std::endl;
+        std::cout << "Output File: " << options.outputFile << std::endl;
+        std::cout << "Max. Depth : " << options.maxDepth << std::endl;
+        std::cout << "Tree Count : " << options.treeCount << std::endl;
+        std::cout << "Threads    : " << options.threadCount << std::endl;
+        std::cout << "Feat. scan : " << options.featuresToScan << std::endl;
+        std::cout << "Random Seed: " << options.seed << std::endl;
 
         // Seed master seed sequence.
         getMasterSeedSequence().seed( options.seed );
@@ -137,26 +141,24 @@ int main( int argc, char ** argv )
         StopWatch watch;
         std::cout << "Ingesting data..." << std::endl;
         watch.start();
-        auto dataSet = loadTrainingDataSet( options.dataFile, options.labelFile );
-        std::cout << "Dataset loaded: " << dataSet->size() << " points. (" << watch.stop() << " seconds)." << std::endl;
+        auto dataSet = Table<double>::readFileAs( options.dataFile );
+        auto labels  = Table<Label>::readFileAs( options.labelFile );
+        if ( labels.getRowCount() != dataSet.getRowCount() ) throw ParseError( "Point file and label file have different row counts." );
+        if ( labels.getColumnCount() != 1 ) throw ParseError( "Invalid label file: table has too many columns." );
+        std::cout << "Dataset loaded: " << dataSet.getRowCount() << " points. (" << watch.stop() << " seconds)." << std::endl;
         const auto dataLoadTime = watch.getElapsedTime();
 
         // Train a random forest on the data.
-        std::cout << "Building indices..." << std::endl;
-        watch.start();
-        BinaryRandomForestTrainer trainer( options.outputFile, options.maxDepth, options.treeCount, options.threadCount, options.featuresToScan, options.writeDotty );
-        std::cout << "Done (" << watch.stop() << " seconds)." << std::endl;
-        const auto indexTime = watch.getElapsedTime();
-
         std::cout << "Training..." << std::endl;
+        RandomForestTrainer trainer( options.outputFile, options.maxDepth, options.treeCount, options.threadCount, options.featuresToScan, options.writeDotty );
         watch.start();
-        trainer.train( dataSet );
+        trainer.train( dataSet, labels );
         std::cout << "Done (" << watch.stop() << " seconds)." << std::endl;
         const auto trainingTime = watch.getElapsedTime();
 
         std::cout << "Timings:" << std::endl
                   << "Data Load Time: " << dataLoadTime << std::endl
-                  << "Training Time: " << indexTime + trainingTime << std::endl;
+                  << "Training Time: " << trainingTime << std::endl;
     }
     catch ( Exception & e )
     {

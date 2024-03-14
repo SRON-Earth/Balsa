@@ -4,15 +4,15 @@
 
 ## About
 
-Balsa is a memory- and CPU-efficient C++ implementation of the RandomForest classification algorithm. The Balsa package contains the following items:
+Balsa is a memory- and CPU-efficient C++ implementation of the RandomForest classification algorithm. The Balsa package contains the following command-line applications:
 
-*  The command-line tools "balsa\_train" and "balsa\_classify" for training and classification.
-*  The "balsa" C++ library for training and classification directly from within a third-party C++ application. 
-*  The "classifiert" tool, a utility for manipulating test data sets, and for evaluating the performance of Balsa and other classifiers. 
+* "balsa\_train" trains a classification model on sets of known data points.
+* "balsa\_classify" uses a trained model to classify a set of unknown points.
+* "balsa\_print" prints the contents of Balsa point files, label files and models in human-readable form.
+* "balsa\_generate" generates random data sets for testing and experimentation.
+*  The "classifiert" tool, a Python utility for manipulating test data sets, and for evaluating the performance of Balsa and other classifiers.
 
-## Current Limitations
-
-This version of Balsa is limited to binary classification problems. Multi-label classification is planned for a future update.
+In addition, the package contains the Balsa C++ library, which allows a client to use the trainer and classifier directly from within a C++ application.
 
 ## Theory
 
@@ -31,13 +31,13 @@ As an example, consider the output of a machine that scans pieces of fruit on a 
 | 163    | 250 | 152   | 99   |
 | 99     | 248 | 199   | 89   |
 
-Each piece of fruit has to be labeled as either and apple or an orange, based on the measurement data. Since there are only two possible labels ('apple' or 'orange') this is an example of a *binary classification problem*. 
+Each piece of fruit has to be labeled as either and apple or an orange, based on the measurement data. Since there are only two possible labels ('apple' or 'orange') this is an example of a *binary classification problem*.
 
 ### Training
 
 The classification problem can be solved by *training* a machine learning tool on a set of data points for which the labels are already known. The training process creates a *predictive model* (or simply *model*) that can predict the labels for points that were not part of the training data.
 
-A *training set* is a data set as the one shown earlier, plus a corresponding set of known labels ('apple' or 'orange') for each point. 
+A *training set* is a data set as the one shown earlier, plus a corresponding set of known labels ('apple' or 'orange') for each point.
 The training set has to be obtained from a source that is known to be correct, or as close to correct as possible. In this case, it could have been a human observer that wrote down the correct labels for 1000 pieces of fruit. If, as in this example, the training set is likely to be completely correct, it is often called the *ground truth*.
 
 Labels are usually represented as integers in machine learning, because their semantic interpretation is not important to most machine learning algorithms. Using 0 to identify oranges and 1 to identify apples, the ground truth for the example data points might be as follows:
@@ -73,7 +73,7 @@ Any computer software uses scarce system resources during its use: storage space
 The following metrics are useful to evaluate the resource usage of a particular run of a particular program:
 
 * Wall-clock Time: the total amount of time it takes to complete the run.
-* Total CPU Time: the total amount of time the program was active on a CPU, summed over all available CPUs. 
+* Total CPU Time: the total amount of time the program was active on a CPU, summed over all available CPUs.
 * Peak Memory Usage: the largest amount of RAM the program used during its run.
 
 N.B. the relation between walll-clock time and total CPU-time is of particular interest, because it gives some information about how effectively the program uses its available CPUs. If a program runs for 10 minutes (wall-clock time) on 8 cores, it can measure at most 80 minutes of total CPU time. If the total is less than that, not all cores could be kept busy for the full 10 minutes.
@@ -87,7 +87,7 @@ Some care has to be taken when interpreting these metrics, however. As an exampl
 | Gamma   | 11              | 22       | 32          |
 | Delta   | 10              | 10       | 128         |
 
-Alpha and Delta are the clear winners in terms of wall-clock turnaround time. Alpha needs all 10 available cores to achieve this. Delta only uses one core, but it uses an excessive amount of memory. While Gamma is only slightly slower than the top contenders, it only uses two cores and a moderate amount of memory. 
+Alpha and Delta are the clear winners in terms of wall-clock turnaround time. Alpha needs all 10 available cores to achieve this. Delta only uses one core, but it uses an excessive amount of memory. While Gamma is only slightly slower than the top contenders, it only uses two cores and a moderate amount of memory.
 
 Beta is slowest, but it has a very light memory footprint. It is likely that it is a single-threaded (single-core) solution, because it uses less CPU time than wall-clock time. This means that it might be possible to speed up Beta by making it multi-threaded. The fact that its CPU time is *less* than the wall-clock time means that Beta is likely spending some of its time waiting for disk I/O operations. This could be the reason why it its memory usage is so low. Which of these solutions is best depends on the particular demands of the application.
 
@@ -100,7 +100,7 @@ The core Balsa command-line tools and C++ library have the following system prer
 * A C++ compiler.
 * The CMake build system.
 
-N.B. version requirements for both the C++ standard and the CMake build system are checked by the CMake build files. 
+N.B. version requirements for both the C++ standard and the CMake build system are checked by the CMake build files.
 
 The following optional prerequisites apply:
 
@@ -166,7 +166,7 @@ Usage:
 ```
 The thread count influences performance of the trainer. More threads will speed up the training process, at the expense of more cores and more peak memory usage. The maximum depth and tree count can be used to trade model size (and consequently classifier performance) for model quality.
 
-#### Classification 
+#### Classification
 
 A model can be used to classify a data set as follows:
 
@@ -175,19 +175,19 @@ balsa_classify yourmodelfile yourdatafile youroutputfile
 ```
 The output is written in the same format as the training label file.
 
-The resource usage of the command-line classifier can be tuned to achieve to achieve shorter wall-clock times at the expense of additional memory usage and CPU load. We note, however, that the command-line classifier already peforms very well in single-core mode. 
+The resource usage of the command-line classifier can be tuned to achieve to achieve shorter wall-clock times at the expense of additional memory usage and CPU load. We note, however, that the command-line classifier already peforms very well in single-core mode.
 
 The [performance optimization](## Performance Tuning) section explains the various trade-offs for performance optimization that apply both to the command-line classifier and the C++ API of Balsa. Running balsa_classify without parameters prints the options.
 
 ### Using The Balsa Library
 
-It is possible to use the Balsa classifier directly from an existing C++ application. This section demonstrates various useful ways to interact with the library. 
+It is possible to use the Balsa classifier directly from an existing C++ application. This section demonstrates various useful ways to interact with the library.
 
-Implementation note: The examples in this section assume that you have an example model file available. The model file must be trained on a data set of your choosing using the command-line tools. It is possible to train a model from within C++, but we do not document the training API at this point in the development process. 
+Implementation note: The examples in this section assume that you have an example model file available. The model file must be trained on a data set of your choosing using the command-line tools. It is possible to train a model from within C++, but we do not document the training API at this point in the development process.
 
 #### Basic Classification
 
-The following program demonstrates the simplest and most basic way to use the Balsa library. It uses an array of double-precision floating point numbers to store a set of points in memory, and an array of bools to store the output labels. 
+The following program demonstrates the simplest and most basic way to use the Balsa library. It uses an array of double-precision floating point numbers to store a set of points in memory, and an array of bools to store the output labels.
 
 ```
 #include <iostream>
@@ -200,14 +200,14 @@ int main( int, char ** )
 						0.0, 1.0, 2.0 , // Point 1
 						0.0, 1.0, 2.0 , // Point 2
 						0.0, 1.0, 2.0 } // Point 3
-							
+
 	// Allocate space for the labels.
 	bool labels[4];
-	
+
 	// Create a classifier for 3 features, and classify the points.
 	RandomForestClassifier classifier( "yourmodelfile.dat", 3 );
 	classify( points, points + 12, labels );
-	
+
 	return 0;
 }
 ```
@@ -221,7 +221,7 @@ c++ -std=c++17 example1.cpp -L balsa -o example1
 
 #### Using Different Containers
 
-In the first example, the point data was stored in an array of doubles, and the output labels were written to an array of bools. While this is the most syntactically simple way to use Balsa, it has several drawbacks. First, a real-world application will often have its data stored in different types of containers, and copying it to a flat array before classification is inefficient. Second, it is error-prone to deal with explicit, hard-coded array sizes. 
+In the first example, the point data was stored in an array of doubles, and the output labels were written to an array of bools. While this is the most syntactically simple way to use Balsa, it has several drawbacks. First, a real-world application will often have its data stored in different types of containers, and copying it to a flat array before classification is inefficient. Second, it is error-prone to deal with explicit, hard-coded array sizes.
 
 Balsa provides some flexibility to choose input- and output containers. The RandomForestClassifier is templated on the iterators that point to the input data and the output data. For reasons of computational efficiency, there are some restrictions to the types of iterators that will work:
 
@@ -247,14 +247,14 @@ int main( int, char ** )
 	Points points( 100 );
 	Labels labels( 100 );
 	// ... Fill point data ...
-	
+
 	// Create a classifier for these container types.
 	RandomForestClassifier<Points::const_iterator,Labels::iterator >
 							classifier( "yourmodelfile.dat", 10 ); // 10 features.
 
 	// Classify the points.
 	classifier.classify( points.begin(), points.end(), labels.begin() );
-	
+
 	return 0;
 }
 ```
@@ -272,12 +272,12 @@ int main( int, char ** )
 	typedef std::vector<float> Points;
 
 	...
-	
-	// The iterator of the points container will propagate single-precision 
+
+	// The iterator of the points container will propagate single-precision
 	// throughout the classifier.
 	RandomForestClassifier<Points::const_iterator,Labels::iterator >
 							classifier( "yourmodelfile.dat", 10 ); // 10 features.
-							
+
 	...
 }
 ```
@@ -290,11 +290,11 @@ By default, the RandomForestClassifier does all of its work inside the main thre
 int main( int, char ** )
 {
 	...
-	
-	// A classifier for 2 features, using 3 worker threads, 
+
+	// A classifier for 2 features, using 3 worker threads,
 	// and max. 10 preloaded trees.
 	RandomForestClassifier classifier( "model.dat", 2, 3, 10 );
-	
+
 	...
 }
 ```
@@ -309,7 +309,7 @@ Balsa is designed to be a very fast, resource-efficient implementation of the Ra
 
 The Random Forest algorithm is one example of the more general family of *ensemble classifiers*. In an enseble classifier, multiple simple/crude classifiers are used to classify the data points. The votes of each of these sub-classifiers are then added/weighted to arrive at a final vote for the label of each data point. In the Random Forest algorithm, the sub-models are randomized decision trees.
 
-While Balsa only offers Random Forests at the moment, the underlying classifier architecture is quite generic. In order to understand and tune the performance, it is instructive to look at the inner workflow of the Ensemble Classifier implementation in Balsa. The following infographic shows its structure: 
+While Balsa only offers Random Forests at the moment, the underlying classifier architecture is quite generic. In order to understand and tune the performance, it is instructive to look at the inner workflow of the Ensemble Classifier implementation in Balsa. The following infographic shows its structure:
 
 ![](Images/EnsembleClassificationWorkflow.png)
 
@@ -319,7 +319,7 @@ The image shows how the sub-models (usually decision trees) are loaded from disk
 
 With the inner workflow of the Ensemble Classifier in mind, there are several general observations to make with respect to performance optimization:
 
-* **It is best to classify as many points as possible in one single "classify()"  call.** 
+* **It is best to classify as many points as possible in one single "classify()"  call.**
 
 The classification algorithm is fundamentally faster in bulk-mode than it is on individual points, making this by far the most important optimization consideration of all. In any situation, it is best to classify as many points in a single call as you can.
 
@@ -337,7 +337,7 @@ Note that this case applies to the command-line balsa_classify as well. The comm
 
 * **If the model cannot be re-used, multithreading is of limited use.**
 
-The classifier can be used in single- or multi-threaded mode. In applications where the loaded model cannot be re-used on multiple incoming batches of points, multithreading is of limited use, because model-loading will take up much more time than classification. Adding more worker-threads will help, but to a limited extent, because model-loading cannot benefit from it. 
+The classifier can be used in single- or multi-threaded mode. In applications where the loaded model cannot be re-used on multiple incoming batches of points, multithreading is of limited use, because model-loading will take up much more time than classification. Adding more worker-threads will help, but to a limited extent, because model-loading cannot benefit from it.
 
 It is straightforward to predict the effect of worker threads in a load-once-classify-once scenario:
 

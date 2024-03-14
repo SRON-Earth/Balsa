@@ -1,6 +1,7 @@
 #ifndef WEIGHTEDCOIN_H
 #define WEIGHTEDCOIN_H
 
+#include <cassert>
 #include <mutex>
 #include <random>
 
@@ -61,23 +62,44 @@ MasterSeedSequence & getMasterSeedSequence();
 /**
  * Coin that can be flipped with a specific probability of being true.
  */
+template <typename T_RNG = std::mt19937>
 class WeightedCoin
 {
 public:
 
+    typedef typename T_RNG::result_type ValueType;
+
     /**
      * Constructor.
      */
-    WeightedCoin();
+    WeightedCoin()
+    : m_rng( std::random_device{}() )
+    {
+    }
 
     /**
-     * Returns a random boolean, with probability of being true equal to an integer fraction.
+     * Seed the random number generator used for flipping the coin.
      */
-    bool flip( unsigned int numerator, unsigned int denominator );
+    void seed( ValueType value )
+    {
+        m_rng.seed( value );
+    }
+
+    /**
+     * Returns a random boolean, with the probability of it being true equal to
+     * an integer fraction.
+     */
+    bool flip( unsigned int numerator, unsigned int denominator )
+    {
+        assert( numerator <= denominator );
+        if ( numerator == denominator ) return true;
+        std::uniform_int_distribution<unsigned int> dist( 1, denominator );
+        return dist( m_rng ) <= numerator;
+    }
 
 private:
 
-    std::mt19937 m_rng;
+    T_RNG m_rng;
 };
 
 #endif // WEIGHTEDCOIN_H
