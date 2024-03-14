@@ -125,7 +125,7 @@ public:
             if ( m_writeGraphviz )
             {
                 std::stringstream ss;
-                ss << "tree#" << i << ".dot";
+                ss << "tree" << i << ".dot";
                 tree->writeGraphviz( ss.str() );
             }
         }
