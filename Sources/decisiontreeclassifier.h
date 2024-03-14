@@ -1,9 +1,9 @@
 #ifndef DECISIONTREECLASSIFIER_H
 #define DECISIONTREECLASSIFIER_H
 
+#include <algorithm>
 #include <iterator>
 #include <numeric>
-#include <algorithm>
 
 #include "classifier.h"
 
@@ -42,7 +42,7 @@ public:
     typedef std::shared_ptr<const DecisionTreeClassifier> ConstSharedPointer;
 
     typedef typename iterator_value_type<FeatureIterator>::type FeatureType;
-    typedef typename iterator_value_type<OutputIterator>::type LabelType;
+    typedef typename iterator_value_type<OutputIterator>::type  LabelType;
 
     static_assert( std::is_arithmetic<FeatureType>::value, "Feature type should be an integral or floating point type." );
     static_assert( std::is_integral<LabelType>::value, "Label type should be integral." );
@@ -130,18 +130,18 @@ private:
 
     explicit DecisionTreeClassifier( unsigned int featureCount ):
     Classifier<FeatureIterator, OutputIterator>( featureCount ),
-    m_leftChildID(featureCount),
-    m_rightChildID(featureCount),
-    m_splitFeatureID(featureCount),
-    m_splitValue(featureCount),
-    m_label(featureCount)
+    m_leftChildID( featureCount ),
+    m_rightChildID( featureCount ),
+    m_splitFeatureID( featureCount ),
+    m_splitValue( featureCount ),
+    m_label( featureCount )
     {
     }
 
     void recursiveClassifyVote( std::vector<DataPointID>::iterator pointIDsStart, std::vector<DataPointID>::iterator pointIDsEnd, FeatureIterator pointsStart, VoteTable & voteTable, NodeID currentNodeID ) const
     {
         // If the current node is an interior node, split the points along the split value, and classify both halves.
-        if ( m_leftChildID(currentNodeID, 0) > 0 )
+        if ( m_leftChildID( currentNodeID, 0 ) > 0 )
         {
             // Extract the split limit and split dimension of this node.
             auto splitValue = m_splitValue( currentNodeID, 0 );
@@ -158,8 +158,8 @@ private:
             auto secondHalf = std::partition( pointIDsStart, pointIDsEnd, pointIsBelowLimit );
 
             // Recursively classify-vote both halves.
-            recursiveClassifyVote( pointIDsStart, secondHalf, pointsStart, voteTable, m_leftChildID(currentNodeID, 0) );
-            recursiveClassifyVote( secondHalf, pointIDsEnd, pointsStart, voteTable, m_rightChildID(currentNodeID, 0) );
+            recursiveClassifyVote( pointIDsStart, secondHalf, pointsStart, voteTable, m_leftChildID( currentNodeID, 0 ) );
+            recursiveClassifyVote( secondHalf, pointIDsEnd, pointsStart, voteTable, m_rightChildID( currentNodeID, 0 ) );
         }
 
         // If the current node is a leaf node, cast a vote for the node-label for each point.

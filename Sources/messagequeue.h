@@ -50,8 +50,8 @@ public:
 
 private:
 
-    std::queue<Message> m_queue;
-    mutable std::mutex m_mutex;
+    std::queue<Message>     m_queue;
+    mutable std::mutex      m_mutex;
     std::condition_variable m_condition;
 };
 

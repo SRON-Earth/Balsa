@@ -13,11 +13,11 @@
 #include <thread>
 #include <vector>
 
-#include "indexeddecisiontree.h"
 #include "datatypes.h"
-#include "table.h"
+#include "indexeddecisiontree.h"
 #include "messagequeue.h"
 #include "serdes.h"
+#include "table.h"
 
 /**
  * Trains a random forest classifier on a set of datapoints and known labels.
@@ -50,8 +50,8 @@ class RandomForestTrainer
         bool                                     m_stop;
     };
 
-  typedef MessageQueue<TrainingJob>                                              JobQueue;
-  typedef MessageQueue<typename IndexedDecisionTree<FeatureType>::SharedPointer> JobResultQueue;
+    typedef MessageQueue<TrainingJob>                                              JobQueue;
+    typedef MessageQueue<typename IndexedDecisionTree<FeatureType>::SharedPointer> JobResultQueue;
 
 public:
 
@@ -83,7 +83,7 @@ public:
     void train( const Table<FeatureType> & dataset, const Table<Label> & labels )
     {
         // Determine the number of features to consider during each randomized split. If the supplied value was 0, default to floor(sqrt(featurecount)).
-        unsigned int numberOfFeatures = dataset.getColumnCount();
+        unsigned int numberOfFeatures   = dataset.getColumnCount();
         unsigned int featuresToConsider = m_featuresToScan ? m_featuresToScan : std::floor( std::sqrt( numberOfFeatures ) );
         if ( featuresToConsider > numberOfFeatures ) throw ClientError( "The supplied number of features to scan exceeds the number of features in the dataset." );
 
@@ -137,7 +137,7 @@ public:
 
 private:
 
-    static void workerThread( unsigned int workerID, JobQueue *jobInbox, JobResultQueue *treeOutbox )
+    static void workerThread( unsigned int workerID, JobQueue * jobInbox, JobResultQueue * treeOutbox )
     {
         // Train trees until it is time to stop.
         unsigned int jobsPickedUp = 0;

@@ -18,8 +18,8 @@ public:
     /**
      * Constructor.
      */
-    ThreadSafeRandomNumberGenerator()
-    : m_rng( std::random_device{}() )
+    ThreadSafeRandomNumberGenerator():
+    m_rng( std::random_device{}() )
     {
     }
 
@@ -43,7 +43,7 @@ public:
 
 private:
 
-    T_RNG m_rng;
+    T_RNG      m_rng;
     std::mutex m_mutex;
 };
 
@@ -72,8 +72,8 @@ public:
     /**
      * Constructor.
      */
-    WeightedCoin()
-    : m_rng( std::random_device{}() )
+    WeightedCoin():
+    m_rng( std::random_device{}() )
     {
     }
 

@@ -57,7 +57,7 @@ inline bool deserialize( std::istream & is )
 inline std::string getFixedSizeToken( std::istream & is, std::size_t size )
 {
     std::string token;
-    auto it = std::istreambuf_iterator<char>( is );
+    auto        it = std::istreambuf_iterator<char>( is );
     std::copy_n( it, size, std::back_inserter( token ) );
     ++it;
     if ( is.fail() ) throw ParseError( "Read failed." );
@@ -69,8 +69,8 @@ inline std::string getFixedSizeToken( std::istream & is, std::size_t size )
  */
 inline std::string peekFixedSizeToken( std::istream & is, std::size_t size )
 {
-    auto position = is.tellg();
-    std::string token = getFixedSizeToken( is, size );
+    auto        position = is.tellg();
+    std::string token    = getFixedSizeToken( is, size );
     is.seekg( position );
     return token;
 }
@@ -87,63 +87,63 @@ inline void expect( std::istream & is, const std::string & sequence, const std::
 /**
  * Read until a separator is encountered. Separators are not consumed.
  */
-std::string getNextToken( std::istream &is, const std::string &separators )
+std::string getNextToken( std::istream & is, const std::string & separators )
 {
     std::stringstream token;
     while ( !separators.contains( is.peek() ) ) token << ( is.get() );
     return token.str();
 }
 
-template<typename Type>
+template <typename Type>
 std::string getTypeName()
 {
     static_assert( sizeof( Type ) != sizeof( Type ), "Unsupported type." );
     return "";
 }
 
-template<>
+template <>
 std::string getTypeName<bool>()
 {
     return "bool";
 }
 
-template<>
+template <>
 std::string getTypeName<float>()
 {
     return "fl32";
 }
 
-template<>
+template <>
 std::string getTypeName<double>()
 {
     return "fl64";
 }
 
-template<>
+template <>
 std::string getTypeName<uint32_t>()
 {
     return "ui32";
 }
 
-template<>
+template <>
 std::string getTypeName<int32_t>()
 {
     return "in32";
 }
 
-template<>
+template <>
 std::string getTypeName<int16_t>()
 {
     return "in16";
 }
 
-template<>
+template <>
 std::string getTypeName<uint16_t>()
 {
     return "ui16";
 }
 
-template<>
+template <>
 std::string getTypeName<uint8_t>()
 {
     return "ui08";

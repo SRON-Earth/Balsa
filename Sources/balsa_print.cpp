@@ -1,15 +1,14 @@
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <sstream>
 #include <cassert>
+#include <fstream>
+#include <iostream>
 #include <random>
+#include <sstream>
+#include <string>
 
-#include "serdes.h"
 #include "datatypes.h"
-#include "table.h"
 #include "exceptions.h"
-
+#include "serdes.h"
+#include "table.h"
 
 namespace
 {
@@ -59,7 +58,7 @@ public:
         return options;
     }
 
-    std::string  fileName;
+    std::string fileName;
 };
 
 } // namespace
@@ -98,10 +97,10 @@ int main( int argc, char ** argv )
                 std::cout << "TREE " << featureCount << " features." << std::endl;
 
                 // Parse the tables that describe the tree.
-                Table<NodeID> left( 1 ), right( 1 );
+                Table<NodeID>    left( 1 ), right( 1 );
                 Table<FeatureID> featureID( 1 );
-                Table<double> featureValue( 1 );
-                Table<Label> label( 1 );
+                Table<double>    featureValue( 1 );
+                Table<Label>     label( 1 );
                 in >> left;
                 in >> right;
                 in >> featureID;
@@ -113,9 +112,10 @@ int main( int argc, char ** argv )
                 for ( unsigned int row = 0; row < left.getRowCount(); ++row )
                 {
                     std::cout << std::left << std::setw( 4 ) << row << " "
-                              << std::left << std::setw( 4 ) << left( row, 0 ) << " " << std::setw(4) << right( row, 0 ) << " "
+                              << std::left << std::setw( 4 ) << left( row, 0 ) << " " << std::setw( 4 ) << right( row, 0 ) << " "
                               << std::left << std::setw( 4 ) << static_cast<int>( featureID( row, 0 ) ) << " " << std::setw( 4 ) << std::setw( 16 ) << featureValue( row, 0 )
-                              << std::left << std::setw( 4 ) << int( label( row, 0 ) ) << std::endl;;
+                              << std::left << std::setw( 4 ) << int( label( row, 0 ) ) << std::endl;
+                    ;
                 }
             }
             else if ( header == "tabl" )
@@ -123,8 +123,8 @@ int main( int argc, char ** argv )
                 // Peek at the table specification.
                 std::size_t rowCount( 0 ), columnCount( 0 );
                 std::string typeName;
-                auto position = in.tellg();
-                Table<uint32_t>::parseTableSpecification( in,rowCount, columnCount, typeName );
+                auto        position = in.tellg();
+                Table<uint32_t>::parseTableSpecification( in, rowCount, columnCount, typeName );
                 in.seekg( position );
 
                 // Parse and print the table.

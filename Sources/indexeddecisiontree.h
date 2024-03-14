@@ -26,7 +26,7 @@ public:
 
     typedef std::shared_ptr<IndexedDecisionTree> SharedPointer;
 
-    typedef WeightedCoin<> WeightedCoinType;
+    typedef WeightedCoin<>              WeightedCoinType;
     typedef WeightedCoinType::ValueType SeedType;
 
     /**
@@ -139,7 +139,7 @@ public:
         for ( NodeID nodeID = 0; nodeID < m_nodes.size(); ++nodeID )
         {
             // Write the node label.
-            auto &node = m_nodes[nodeID];
+            auto &            node = m_nodes[nodeID];
             std::stringstream info;
             info << 'N' << nodeID << " = " << static_cast<int>( node.getLabel() ) << " counts: " << node.getLabelCounts().asText();
             out << "    node" << nodeID << "[shape=box label=\"" << info.str() << "\"]" << std::endl;
@@ -149,8 +149,10 @@ public:
             {
                 auto splitFeature = node.getSplit().getFeatureID();
                 auto splitValue   = node.getSplit().getFeatureValue();
-                out << "    node" << nodeID << " -> " << "node" << node.getLeftChild()  << " [label=\"F" << static_cast<int>( splitFeature ) << " < " << splitValue << "\"];" << std::endl;
-                out << "    node" << nodeID << " -> " << "node" << node.getRightChild() << ';' << std::endl;
+                out << "    node" << nodeID << " -> "
+                    << "node" << node.getLeftChild() << " [label=\"F" << static_cast<int>( splitFeature ) << " < " << splitValue << "\"];" << std::endl;
+                out << "    node" << nodeID << " -> "
+                    << "node" << node.getRightChild() << ';' << std::endl;
             }
         }
         out << "}" << std::endl;
@@ -162,26 +164,26 @@ public:
     /**
      * Serialize this indexed decision tree as a plain, un-indexed decision tree classifier.
      */
-    void writeDecisionTreeClassifier( std::ostream &binOut )
+    void writeDecisionTreeClassifier( std::ostream & binOut )
     {
         // Create data structures that directly mirror the internal table-representation used by the classifier.
-        NodeID nodeCount = m_nodes.size();
-        Table<NodeID>        leftChildID    ( nodeCount, 1, 0 );
-        Table<NodeID>        rightChildID   ( nodeCount, 1, 0 );
-        Table<FeatureID>     splitFeatureID ( nodeCount, 1, 0 );
-        Table<FeatureType>   splitValue     ( nodeCount, 1, 0 );
-        Table<unsigned char> label          ( nodeCount, 1, 0 );
+        NodeID               nodeCount = m_nodes.size();
+        Table<NodeID>        leftChildID( nodeCount, 1, 0 );
+        Table<NodeID>        rightChildID( nodeCount, 1, 0 );
+        Table<FeatureID>     splitFeatureID( nodeCount, 1, 0 );
+        Table<FeatureType>   splitValue( nodeCount, 1, 0 );
+        Table<unsigned char> label( nodeCount, 1, 0 );
 
         // Copy the tree data to the tables.
         for ( NodeID nodeID = 0; nodeID < nodeCount; ++nodeID )
         {
-            auto &node = m_nodes[nodeID];
-            auto &split = node.getSplit();
-            leftChildID   ( nodeID, 0 ) = node.getLeftChild();
-            rightChildID  ( nodeID, 0 ) = node.getRightChild();
+            auto & node                 = m_nodes[nodeID];
+            auto & split                = node.getSplit();
+            leftChildID( nodeID, 0 )    = node.getLeftChild();
+            rightChildID( nodeID, 0 )   = node.getRightChild();
             splitFeatureID( nodeID, 0 ) = split.getFeatureID();
-            splitValue    ( nodeID, 0 ) = split.getFeatureValue();
-            label         ( nodeID, 0 ) = node.getLabel();
+            splitValue( nodeID, 0 )     = split.getFeatureValue();
+            label( nodeID, 0 )          = node.getLabel();
         }
 
         // Write the header and the data tables of the classifier.
@@ -396,7 +398,7 @@ private:
         const std::string getInfo() const
         {
             std::stringstream ss;
-            ss << "Children: " << m_leftChild << ' ' << m_rightChild << " Level: " << m_distanceToRoot << " Label counts: " ;
+            ss << "Children: " << m_leftChild << ' ' << m_rightChild << " Level: " << m_distanceToRoot << " Label counts: ";
             ss << m_labelCounts.asText();
             return ss.str();
         }
@@ -444,7 +446,7 @@ private:
     void splitNode( NodeID nodeID, const SplitCandidate & splitCandidate )
     {
         // Check the precondition.
-        Node &node = m_nodes[nodeID];
+        Node & node = m_nodes[nodeID];
         assert( node.isLeafNode() );
 
         // Split the feature index.
@@ -480,12 +482,12 @@ private:
         NodeID leftChildID  = m_nodes.size();
         NodeID rightChildID = leftChildID + 1;
         assert( leftPointCount );
-        Node leftChild = Node( splitCandidate.getLeftCounts(), node.getIndexOffset(), node.getDistanceToRoot() + 1 );
+        Node leftChild  = Node( splitCandidate.getLeftCounts(), node.getIndexOffset(), node.getDistanceToRoot() + 1 );
         Node rightChild = Node( splitCandidate.getRightCounts(), node.getIndexOffset() + splitCandidate.getLeftCounts().getTotal(), node.getDistanceToRoot() + 1 );
         node.setSplit( splitCandidate.getSplit(), leftChildID, rightChildID );
 
         // Put the created child nodes in the list.
-        m_nodes.push_back( leftChild  );
+        m_nodes.push_back( leftChild );
         m_nodes.push_back( rightChild );
 
         // Add the children to the list of growable nodes, if applicable.
@@ -506,7 +508,7 @@ private:
         // Randomly scan the required number of features.
         SplitCandidate bestSplit;
         assert( bestSplit.getImpurity() > m_nodes[node].getLabelCounts().template giniImpurity<ImpurityType>() );
-        auto           featuresToScan = m_featuresToConsider;
+        auto                   featuresToScan = m_featuresToConsider;
         std::vector<FeatureID> skippedFeatures;
         for ( FeatureID featureID = 0; featureID < featureCount; ++featureID )
         {
@@ -532,7 +534,7 @@ private:
         if ( bestSplit.isValid() ) return bestSplit;
 
         // Since no valid split was found, scan all features that were initially skipped.
-        for ( auto featureID: skippedFeatures )
+        for ( auto featureID : skippedFeatures )
         {
             // Return the first candidate split.
             bestSplit = findBestSplitForFeature( m_nodes[node], featureID, bestSplit );
@@ -541,7 +543,7 @@ private:
 
         // All points in this node must have exactly the same feature values. Issue a warning.
         // TODO: proper warning object.
-        DataPointID anyPointInNode = m_featureIndex[0][ m_nodes[node].getIndexOffset() ].m_pointID;
+        DataPointID anyPointInNode = m_featureIndex[0][m_nodes[node].getIndexOffset()].m_pointID;
         std::cout << "WARNING: training data contains a cluster of identical points with different labels." << std::endl;
         std::cout << "Feature values:";
         for ( unsigned int f = 0; f < featureCount; ++f )
@@ -568,7 +570,7 @@ private:
         assert( begin != end );
 
         // Search for a better split than the supplied minimal best split.
-        auto                bestSplit        = minimalBestSplit;
+        auto                bestSplit         = minimalBestSplit;
         FeatureType         currentBlockValue = begin->m_featureValue;
         LabelFrequencyTable leftSideLabelCounts( node.getLabelCounts().size() );
         LabelFrequencyTable rightSideLabelCounts( node.getLabelCounts() );

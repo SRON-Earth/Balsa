@@ -4,9 +4,9 @@
 #include <cassert>
 #include <thread>
 
-#include "datatypes.h"
 #include "classifier.h"
 #include "classifierstream.h"
+#include "datatypes.h"
 #include "messagequeue.h"
 
 template <typename FeatureIterator, typename OutputIterator>
@@ -111,7 +111,7 @@ private:
 
             // Create a table for the label votes.
             unsigned int pointCount = rawFeatureCount / featureCount;
-            m_votes = VoteTable( pointCount, featureCount );
+            m_votes                 = VoteTable( pointCount, featureCount );
         }
 
         void start()

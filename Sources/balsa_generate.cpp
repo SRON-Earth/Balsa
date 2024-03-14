@@ -1,13 +1,13 @@
-#include <iostream>
-#include <string>
-#include <sstream>
 #include <cassert>
+#include <iostream>
 #include <random>
+#include <sstream>
+#include <string>
 
 #include "datagenerator.h"
 #include "datatypes.h"
-#include "table.h"
 #include "exceptions.h"
+#include "table.h"
 
 namespace
 {
@@ -30,7 +30,7 @@ public:
            << std::endl
            << " Options:" << std::endl
            << std::endl
-           << "   -p <points> : Sets the number of points (default is 1000)."             << std::endl
+           << "   -p <points> : Sets the number of points (default is 1000)." << std::endl
            << "   -s <seed>   : Sets the random seed for data generation (default is 0)." << std::endl;
 
         return ss.str();
@@ -58,7 +58,6 @@ public:
             if ( token == "-s" )
             {
                 if ( !( args >> options.seed ) ) throw ParseError( "Missing parameter to -s option." );
-
             }
             if ( token == "-p" )
             {
@@ -73,8 +72,8 @@ public:
         // Parse the filenames.
         if ( token.size() == 0 ) throw ParseError( getUsage() );
         options.datagenFile = token;
-        if ( !( args >> options.pointFile) ) throw ParseError( getUsage() );
-        if ( !( args >> options.labelFile) ) throw ParseError( getUsage() );
+        if ( !( args >> options.pointFile ) ) throw ParseError( getUsage() );
+        if ( !( args >> options.labelFile ) ) throw ParseError( getUsage() );
 
         // Return results.
         return options;
@@ -87,7 +86,6 @@ public:
     unsigned int featureCount;
     unsigned int pointCount;
 };
-
 
 } // namespace
 

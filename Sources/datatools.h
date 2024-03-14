@@ -136,17 +136,17 @@ public:
         return m_data.sum() == m_total;
     }
 
-   /**
-    * Return a textual representation for debugging purposes.
-    */
-  const std::string asText() const
-  {
-      std::stringstream ss;
-      if ( m_data.size() == 0 ) return "(No entries)";
-      ss << m_data[0];
-      for ( Label l = 1; l < m_data.size(); ++l ) ss << " " << static_cast<unsigned int>( m_data[l] );
-      return ss.str();
-  }
+    /**
+     * Return a textual representation for debugging purposes.
+     */
+    const std::string asText() const
+    {
+        std::stringstream ss;
+        if ( m_data.size() == 0 ) return "(No entries)";
+        ss << m_data[0];
+        for ( Label l = 1; l < m_data.size(); ++l ) ss << " " << static_cast<unsigned int>( m_data[l] );
+        return ss.str();
+    }
 
 private:
 

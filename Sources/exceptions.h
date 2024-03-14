@@ -13,8 +13,8 @@ public:
     /**
      * Constructor.
      */
-    Exception( const std::string & message )
-    : m_message( message )
+    Exception( const std::string & message ):
+    m_message( message )
     {
     }
 
@@ -45,8 +45,8 @@ class ClientError: public Exception
 {
 public:
 
-    ClientError( const std::string & message )
-    : Exception( message )
+    ClientError( const std::string & message ):
+    Exception( message )
     {
     }
 };
@@ -59,8 +59,8 @@ class SupplierError: public Exception
 {
 public:
 
-    SupplierError( const std::string & message )
-    : Exception( message )
+    SupplierError( const std::string & message ):
+    Exception( message )
     {
     }
 };
@@ -72,8 +72,8 @@ class ParseError: public ClientError
 {
 public:
 
-    ParseError( const std::string & message )
-    : ClientError( message )
+    ParseError( const std::string & message ):
+    ClientError( message )
     {
     }
 };

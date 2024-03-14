@@ -1,16 +1,15 @@
+#include <cassert>
 #include <iostream>
 #include <random>
 #include <sstream>
 #include <string>
-#include <cassert>
 
 #include "exceptions.h"
-#include "table.h"
 #include "randomforesttrainer.h"
 #include "serdes.h"
+#include "table.h"
 #include "timing.h"
 #include "weightedcoin.h"
-
 
 namespace
 {
@@ -63,7 +62,6 @@ public:
             // Stop if the token is not a flag.
             assert( token.size() );
             if ( token[0] != '-' ) break;
-
 
             if ( token == "-t" )
             {
@@ -119,8 +117,8 @@ public:
 
 int main( int argc, char ** argv )
 {
-   try
-   {
+    try
+    {
         // Parse the command-line arguments.
         Options options = Options::parseOptions( argc, argv );
 

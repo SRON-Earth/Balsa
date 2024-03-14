@@ -6,10 +6,10 @@
 #include <vector>
 
 #include "datatypes.h"
-#include "table.h"
 #include "exceptions.h"
 #include "randomforestclassifier.h"
 #include "serdes.h"
+#include "table.h"
 #include "timing.h"
 
 namespace
@@ -81,9 +81,9 @@ public:
         return options;
     }
 
-    std::string modelFile;
-    std::string dataFile;
-    std::string outputFile;
+    std::string  modelFile;
+    std::string  dataFile;
+    std::string  outputFile;
     unsigned int threadCount;
     unsigned int maxPreload;
 };
@@ -118,7 +118,7 @@ int main( int argc, char ** argv )
         watch.start();
         Table<Label> labels( dataSet.getRowCount(), 1 );
         std::cout << labels.getRowCount() << " before " << std::endl;
-        RandomForestClassifier<decltype(dataSet)::ConstIterator,decltype(labels)::Iterator>  classifier( options.modelFile, dataSet.getColumnCount(), options.threadCount - 1, options.maxPreload );
+        RandomForestClassifier<decltype( dataSet )::ConstIterator, decltype( labels )::Iterator> classifier( options.modelFile, dataSet.getColumnCount(), options.threadCount - 1, options.maxPreload );
         classifier.classify( dataSet.begin(), dataSet.end(), labels.begin() );
         std::cout << labels.getRowCount() << " after " << std::endl;
         watch.stop();

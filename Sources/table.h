@@ -6,8 +6,8 @@
 #include <iomanip>
 #include <vector>
 
-#include "serdes.h"
 #include "exceptions.h"
+#include "serdes.h"
 
 /**
  * A row-major MxN data matrix that can be loaded and stored efficiently.
@@ -20,8 +20,8 @@ class Table
 
 public:
 
-  typedef std::vector<CellType>::iterator Iterator;
-  typedef std::vector<CellType>::const_iterator ConstIterator;
+    typedef std::vector<CellType>::iterator       Iterator;
+    typedef std::vector<CellType>::const_iterator ConstIterator;
 
     /**
      * Constructs an empty table with the specified number of columns.
@@ -36,7 +36,7 @@ public:
      * Constructs a table with the specified number of rows and columns, with each cell initialized to the specified value.
      * \param columnCount The number of columns in the table.
      */
-    Table( std::size_t rowCount, std::size_t columnCount, CellType initialValue = CellType(0) ):
+    Table( std::size_t rowCount, std::size_t columnCount, CellType initialValue = CellType( 0 ) ):
     m_columnCount( columnCount )
     {
         m_data.resize( rowCount * columnCount, initialValue );
@@ -47,18 +47,18 @@ public:
      * In case of a tie, the lowest tied column number is returned.
      * \param rowNumber
      */
-     std::size_t getColumnOfRowMaximum( std::size_t rowNumber ) const
-     {
-         auto rowData = m_data.begin() + rowNumber * m_columnCount;
-         auto rowDataEnd = rowData + m_columnCount;
-         auto largest = std::max_element( rowData, rowDataEnd );
-         return std::distance( rowData, largest );
-     }
+    std::size_t getColumnOfRowMaximum( std::size_t rowNumber ) const
+    {
+        auto rowData    = m_data.begin() + rowNumber * m_columnCount;
+        auto rowDataEnd = rowData + m_columnCount;
+        auto largest    = std::max_element( rowData, rowDataEnd );
+        return std::distance( rowData, largest );
+    }
 
     /**
      * Read-only access a element by row and column.
      */
-    const CellType &operator()( std::size_t row, std::size_t column ) const
+    const CellType & operator()( std::size_t row, std::size_t column ) const
     {
         return m_data[row * m_columnCount + column];
     }
@@ -66,38 +66,38 @@ public:
     /**
      * Read-write access an element by row and column.
      */
-    CellType &operator()( std::size_t row, std::size_t column )
+    CellType & operator()( std::size_t row, std::size_t column )
     {
         return m_data[row * m_columnCount + column];
     }
 
-   /**
-    * Returns an iterator that traverses all cells in row-major order.
-    */
+    /**
+     * Returns an iterator that traverses all cells in row-major order.
+     */
     ConstIterator begin() const
     {
         return m_data.begin();
     }
 
-   /**
-    * Returns an iterator that points ot the end of the data.
-    */
+    /**
+     * Returns an iterator that points ot the end of the data.
+     */
     ConstIterator end() const
     {
         return m_data.end();
     }
 
-  /**
-    * Returns an iterator that traverses all cells in row-major order.
-    */
+    /**
+     * Returns an iterator that traverses all cells in row-major order.
+     */
     Iterator begin()
     {
         return m_data.begin();
     }
 
-   /**
-    * Returns an iterator that points ot the end of the data.
-    */
+    /**
+     * Returns an iterator that points ot the end of the data.
+     */
     Iterator end()
     {
         return m_data.end();
@@ -144,7 +144,7 @@ public:
      * Add the cells of another table to this table element-wise.
      * \pre Dimensions must match.
      */
-    Table<CellType> &operator+=( const Table<CellType> &other )
+    Table<CellType> & operator+=( const Table<CellType> & other )
     {
         // Check preconditions.
         assert( other.m_columnCount == m_columnCount );
@@ -152,7 +152,7 @@ public:
 
         // Add the data element-wise.
         auto it1( m_data.begin() ), end1( m_data.end() ); // Non-const.
-        auto it2( other.m_data.begin() ); // Const.
+        auto it2( other.m_data.begin() );                 // Const.
         for ( ; it1 != end1; ++it1, ++it2 )
         {
             *it1 += *it2;
@@ -164,18 +164,18 @@ public:
     /**
      * Read cell data into the table from a binary stream.
      */
-     void readCellData( std::istream &binIn )
-     {
-         // Read the raw binary data from the stream.
-         if ( !binIn.good() ) throw ParseError( "The stream is not readable." );
-         binIn.read( reinterpret_cast<char *>( m_data.data() ), m_data.size() * sizeof( CellType ) );
-     }
+    void readCellData( std::istream & binIn )
+    {
+        // Read the raw binary data from the stream.
+        if ( !binIn.good() ) throw ParseError( "The stream is not readable." );
+        binIn.read( reinterpret_cast<char *>( m_data.data() ), m_data.size() * sizeof( CellType ) );
+    }
 
     /**
      * Read the cell data from a stream and convert it on the fly.
      */
-    template<typename SourceType>
-    void readCellDataAs( std::istream &binIn )
+    template <typename SourceType>
+    void readCellDataAs( std::istream & binIn )
     {
         for ( auto it( m_data.begin() ), end( m_data.end() ); it != end; ++it )
         {
@@ -187,7 +187,7 @@ public:
     /**
      * Read a Table<CellType> from a file with a potentially different cell type, and convert cells on the fly.
      */
-    static Table<CellType> readFileAs( const std::string &filename )
+    static Table<CellType> readFileAs( const std::string & filename )
     {
         // Read the type and geometry of the table in the file.
         std::ifstream binIn;
@@ -228,13 +228,12 @@ public:
         }
 
         return result;
-
     }
 
     /**
      * Serialize the table to a binary output stream.
      */
-    void serialize( std::ostream &binOut ) const
+    void serialize( std::ostream & binOut ) const
     {
         // Write the table header.
         binOut.write( "tabl", 4 );
@@ -256,7 +255,7 @@ public:
      * Parses the cell type name, row count, and column count from a binary stream.
      * The stream is consumed until the start of the 'data' block. The 'data' label is not consumed.
      */
-    static void parseTableSpecification( std::istream &binIn, std::size_t &rowCount, std::size_t &columnCount, std::string &typeName )
+    static void parseTableSpecification( std::istream & binIn, std::size_t & rowCount, std::size_t & columnCount, std::string & typeName )
     {
         // Parse the table marker.
         expect( binIn, "tabl", "Missing or malformed table header." );
@@ -316,8 +315,8 @@ std::ostream & operator<<( std::ostream & out, const Table<CellType> & table )
     // Write the cell data and row numbers.
     for ( unsigned int row = 0; row < table.getRowCount(); ++row )
     {
-        out << std::setw(4) << std::left << row << ':';
-        for ( unsigned int col = 0; col < table.getColumnCount(); ++col ) out << ' ' << std::setw( 8 ) << std::left << table(row,col);
+        out << std::setw( 4 ) << std::left << row << ':';
+        for ( unsigned int col = 0; col < table.getColumnCount(); ++col ) out << ' ' << std::setw( 8 ) << std::left << table( row, col );
         out << std::endl;
     }
 
@@ -332,8 +331,8 @@ std::ostream & operator<<( std::ostream & out, const Table<uint8_t> & table )
     // Write the cell data and row numbers.
     for ( unsigned int row = 0; row < table.getRowCount(); ++row )
     {
-        out << std::setw(4) << std::left << row << ':';
-        for ( unsigned int col = 0; col < table.getColumnCount(); ++col ) out << ' ' << std::setw( 4 ) << std::left << static_cast<unsigned int>( table(row,col) );
+        out << std::setw( 4 ) << std::left << row << ':';
+        for ( unsigned int col = 0; col < table.getColumnCount(); ++col ) out << ' ' << std::setw( 4 ) << std::left << static_cast<unsigned int>( table( row, col ) );
         out << std::endl;
     }
 

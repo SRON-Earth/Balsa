@@ -4,17 +4,17 @@
 #include <iostream>
 #include <string>
 
-#include "serdes.h"
 #include "exceptions.h"
+#include "serdes.h"
 
 /**
  * A non application specific parser for processing text streams.
  */
 class GenericParser
 {
-  public:
+public:
 
-    GenericParser( std::istream &in ):
+    GenericParser( std::istream & in ):
     m_whitespace( " \t\r\n" ),
     m_in( in )
     {
@@ -36,28 +36,28 @@ class GenericParser
     /**
      * Consume whitespace followed by the specified literal value.
      */
-    void consume( const std::string &literal )
+    void consume( const std::string & literal )
     {
-         consumeWhitespace();
-         auto token = getFixedSizeToken( m_in, literal.size() );
-         if ( token != literal ) throw ParseError( "Expected literal '" + literal + "', got '" + token + "'." );
+        consumeWhitespace();
+        auto token = getFixedSizeToken( m_in, literal.size() );
+        if ( token != literal ) throw ParseError( "Expected literal '" + literal + "', got '" + token + "'." );
     }
 
     /**
      * Parse an identifier consisting of a letter followed by zero or more letters, numbers and underscores.
      */
-     std::string parseIdentifier()
-     {
-         // Consume whitespace and parse the first character.
-         consumeWhitespace();
-         std::stringstream ss;
-         if ( !isalpha( m_in.peek() ) ) throw ParseError( "Expected an identifier." );
-         ss << static_cast<char>( m_in.get() );
+    std::string parseIdentifier()
+    {
+        // Consume whitespace and parse the first character.
+        consumeWhitespace();
+        std::stringstream ss;
+        if ( !isalpha( m_in.peek() ) ) throw ParseError( "Expected an identifier." );
+        ss << static_cast<char>( m_in.get() );
 
-         // Parse the remaining characters.
-         while ( isalpha( m_in.peek() ) || isdigit( m_in.peek() ) ) ss << static_cast<char>( m_in.get() );
-         return ss.str();
-     }
+        // Parse the remaining characters.
+        while ( isalpha( m_in.peek() ) || isdigit( m_in.peek() ) ) ss << static_cast<char>( m_in.get() );
+        return ss.str();
+    }
 
     /**
      * Consumes leading whitespace.
@@ -71,7 +71,7 @@ class GenericParser
         }
     }
 
-    template<typename T>
+    template <typename T>
     T parseValue()
     {
         T result;
@@ -85,10 +85,10 @@ class GenericParser
         return m_in.peek();
     }
 
-  private:
+private:
 
-    std::string m_whitespace;
-    std::istream &m_in;
+    std::string    m_whitespace;
+    std::istream & m_in;
 };
 
 #endif // GENERICPARSER_H
