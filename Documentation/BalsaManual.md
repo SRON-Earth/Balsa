@@ -765,10 +765,12 @@ The P4 metric is the harmonic mean of the True Positive Rate, True Negative Rate
 
 The P4 metric combines the four basic metrics into one single score. If either value is close to zero, the P4 metric will drop to zero as well. A perfect classifier will have a P4 score of 1.
 
+<a name="contactandcredits"></a>
 ## Contact and Credits [(top)](#tableofcontents)
 
 Balsa was developed for the [Netherlands Institute of Space Research](https://www.sron.nl) by Denis de Leeuw Duarte and Joris van Zwieten of [Jigsaw B.V.](https://www.jigsaw.nl) in The Netherlands, using funding from the [European Space Agency](https://www.esa.int).
 
+<a name="license"></a>
 ## License [(top)](#tableofcontents)
 
 TBD
