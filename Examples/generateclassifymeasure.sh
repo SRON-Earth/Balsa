@@ -15,46 +15,50 @@ multisource(4)
 {
     source(40)
     {
-                feature = gaussian(122, 11  );
-                feature = gaussian(40 , 9   );
-                feature = gaussian(13 , 12  );
-                feature = uniform( 100, 150 );
+                feature = gaussian(245, 40  );
+                feature = gaussian(188 ,40  );
+                feature = gaussian(66 , 40  );
+                feature = uniform( 90 , 115 );
     }
     source(40)
     {
-                feature = gaussian(12, 11  );
-                feature = gaussian(40 , 9   );
-                feature = gaussian(122 , 12  );
-                feature = uniform( 100, 150 );
+                feature = gaussian(158, 30 );
+                feature = gaussian(245, 30  );
+                feature = gaussian(66 , 30  );
+                feature = uniform( 95 , 150 );
     }
    source(20)
     {
-                feature = gaussian(122, 11  );
-                feature = gaussian(40 , 9   );
-                feature = gaussian(3 , 12  );
-                feature = uniform( 1400, 150 );
+                feature = gaussian(245, 50  );
+                feature = gaussian(123, 40  );
+                feature = gaussian(66 , 40  );
+                feature = uniform( 90 , 140 );
     }
     source(20)
     {
-                feature = gaussian(120, 10  );
-                feature = gaussian(120, 10  );
-                feature = gaussian( 30, 10  );
-                feature = uniform( 140, 155 );
+                feature = gaussian( 71,  40  );
+                feature = gaussian( 39,  40  );
+                feature = gaussian( 112, 40  );
+                feature = uniform(  90 , 155 );
     }
 }
 EOF
 
+POINTCOUNT=10000
+THREADCOUNT=10
+TREECOUNT=200
+
 # Generate a training set.
 echo "Generating training data..."
-balsa_generate -s 0 testgenscript.txt testgen-training-data.balsa testgen-training-labels.balsa
+balsa_generate -p ${POINTCOUNT} -s 0 testgenscript.txt testgen-training-data.balsa testgen-training-labels.balsa
 
 # Train the model on the training set.
 echo "Training a model on the test data..."
-balsa_train testgen-training-data.balsa testgen-training-labels.balsa testgen-model.balsa
+balsa_train -t ${THREADCOUNT} -c ${TREECOUNT} testgen-training-data.balsa testgen-training-labels.balsa testgen-model.balsa
 
 # Generate a test test.
 echo "Generating out-of-bag test data..."
-balsa_generate -s 1 testgenscript.txt testgen-test-data.balsa testgen-test-labels.balsa
+balsa_generate -p ${POINTCOUNT} -s 1 testgenscript.txt testgen-test-data.balsa testgen-test-labels.balsa
 
 # Classify the in-bag test data set.
 echo "Classifying the in-bag data..."

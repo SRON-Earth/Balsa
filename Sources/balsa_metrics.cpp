@@ -1,9 +1,9 @@
 #include <cassert>
 #include <fstream>
 #include <iostream>
-#include <random>
 #include <sstream>
 #include <string>
+#include <iomanip>
 
 #include "datatypes.h"
 #include "exceptions.h"
@@ -67,6 +67,14 @@ public:
 };
 
 } // namespace
+
+template<typename T>
+void printClassMetric( const std::string &name, const Table<T> &metric, unsigned int precision = 8 )
+{
+    std::cout << name << ":";
+    for ( auto v: metric ) std::cout << ' ' << std::setw( precision + 2 ) << std::setprecision( precision ) << v;
+    std::cout << std::endl;
+}
 
 int main( int argc, char ** argv )
 {
@@ -139,35 +147,37 @@ int main( int argc, char ** argv )
         // Calculate the basic metrics.
         Table<double> TPR( numberOfClasses, 1 );
         Table<double> TNR( numberOfClasses, 1 );
+        Table<double> FPR( numberOfClasses, 1 );
+        Table<double> FNR( numberOfClasses, 1 );
+        Table<double> PPV( numberOfClasses, 1 );
+        Table<double> NPV( numberOfClasses, 1 );
         for ( Label l = 0; l < numberOfClasses; ++l )
         {
             TPR(l,0) = static_cast<double>( TP(l,0) ) / P( l, 0 );
             TNR(l,0) = static_cast<double>( TN(l,0) ) / N( l, 0 );
+            FPR(l,0) = static_cast<double>( FP(l,0) ) / N( l, 0 );
+            FNR(l,0) = static_cast<double>( FN(l,0) ) / P( l, 0 );
+            PPV(1,0) = static_cast<double>( TP(l,0) ) / PP( l, 0 );
+            NPV(1,0) = static_cast<double>( TN(l,0) ) / PN( l, 0 );
         }
 
         // Print the metrics.
         std::cout << "Confusion Matrix:" << std::endl;
         std::cout << CM << std::endl;
-        std::cout << "P[class]:" << std::endl;
-        std::cout << P << std::endl;
-        std::cout << "N[class]:" << std::endl;
-        std::cout << N << std::endl;
-        std::cout << "PP[class]):" << std::endl;
-        std::cout << PP << std::endl;
-        std::cout << "PN[class]):" << std::endl;
-        std::cout << PN << std::endl;
-        std::cout << "TP[class]):" << std::endl;
-        std::cout << TP << std::endl;
-        std::cout << "TN[class]):" << std::endl;
-        std::cout << TN << std::endl;
-        std::cout << "FP[class]):" << std::endl;
-        std::cout << FP << std::endl;
-        std::cout << "FN[class]):" << std::endl;
-        std::cout << FN << std::endl;
-        std::cout << "TPR[class]):" << std::endl;
-        std::cout << TPR << std::endl;
-        std::cout << "TNR[class]):" << std::endl;
-        std::cout << TNR << std::endl;
+
+        std::cout << "Metrics per class:" << std::endl;
+        printClassMetric( "P  ", P   );
+        printClassMetric( "N  ", N   );
+        printClassMetric( "PP ", PP  );
+        printClassMetric( "PN ", PN  );
+        printClassMetric( "TP ", TP  );
+        printClassMetric( "TN ", TN  );
+        printClassMetric( "FP ", FP  );
+        printClassMetric( "FN ", FN  );
+        printClassMetric( "TPR", TPR );
+        printClassMetric( "TNR", TNR );
+        printClassMetric( "PPV", PPV );
+        printClassMetric( "NPV", NPV );
     }
     catch ( Exception & e )
     {
