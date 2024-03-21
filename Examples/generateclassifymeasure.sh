@@ -44,18 +44,34 @@ multisource(4)
 }
 EOF
 
-# Generate a test test.
-echo "Generating test data..."
-balsa_generate testgenscript.txt testgen-training-data.balsa testgen-training-labels.balsa
+# Generate a training set.
+echo "Generating training data..."
+balsa_generate -s 0 testgenscript.txt testgen-training-data.balsa testgen-training-labels.balsa
 
-# Train the model on the test data.
+# Train the model on the training set.
 echo "Training a model on the test data..."
 balsa_train testgen-training-data.balsa testgen-training-labels.balsa testgen-model.balsa
 
-# Classify the test data set.
-echo "Classifying the test (in-bag) test data..."
+# Generate a test test.
+echo "Generating out-of-bag test data..."
+balsa_generate -s 1 testgenscript.txt testgen-test-data.balsa testgen-test-labels.balsa
+
+# Classify the in-bag test data set.
+echo "Classifying the in-bag data..."
 balsa_classify testgen-model.balsa testgen-training-data.balsa testgen-inbag-predictions.balsa
 
-# Evaluate the performance.
+# Classify the out-of-bag test data.
+echo "Classifying the out-of-bag test data..."
+balsa_classify testgen-model.balsa testgen-test-data.balsa testgen-outofbag-predictions.balsa
+
+# Evaluate the performance on the in-bag data.
 echo "Evaluating classifier performance on in-bag data..."
 balsa_metrics testgen-training-labels.balsa testgen-inbag-predictions.balsa
+
+# Evaluate the performance on the in-bag data.
+echo "Evaluating classifier performance on out-of-bag data..."
+balsa_metrics testgen-test-labels.balsa testgen-outofbag-predictions.balsa
+
+
+
+
