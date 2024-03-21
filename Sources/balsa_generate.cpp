@@ -59,7 +59,7 @@ public:
             {
                 if ( !( args >> options.seed ) ) throw ParseError( "Missing parameter to -s option." );
             }
-            if ( token == "-p" )
+            else if ( token == "-p" )
             {
                 if ( !( args >> options.pointCount ) ) throw ParseError( "Missing parameter to -p option." );
             }
