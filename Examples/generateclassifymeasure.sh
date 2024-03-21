@@ -42,10 +42,6 @@ multisource(4)
                 feature = uniform( 140, 155 );
     }
 }
-
-
-The current working directory is: $PWD
-You are logged in as: $(whoami)
 EOF
 
 # Generate a test test.
