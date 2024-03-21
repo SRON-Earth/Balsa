@@ -71,8 +71,6 @@ The Balsa package provides the following command-line tools:
 
 These tools are built and installed as part of a standard [Balsa installation process](#installation).
 
-The Balsa package also provides **classifiert**, a Python utility for evaulating the performance (runtime, memory-usage, predictive power, etc.) of Balsa, and of other implementations of the RandomForest algorithm, for the purpose of comparison. It is located in the Tools directory of the package.
-
 <a name="theoryandterminology"></a>
 ## Theory and Terminology [(top)](#tableofcontents)
 
