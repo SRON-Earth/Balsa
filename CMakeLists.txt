@@ -4,8 +4,8 @@ cmake_minimum_required( VERSION 3.5.0 )
 # Set the path for additional CMake modules.
 set( CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" )
 
-# Set project language details.
-project( balsa CXX )
+# Set project and language details.
+project( balsa VERSION 0.9.0 LANGUAGES CXX )
 set( CMAKE_CXX_STANDARD 23 )
 
 # Set build type.
