@@ -109,7 +109,7 @@ int main( int argc, char ** argv )
 
         // Calculate the basic metrics per class.
         auto nc = numberOfClasses;
-        Table<unsigned int> P( nc, 1 ), N( nc, 1), PP( nc, 1 ), PN( nc, 1 ), TP( nc, 1 ), TN( nc, 1 ), FP( nc, 1 ), FN( nc, 1 );
+        Table<unsigned int> P( nc, 1 ), N( nc, 1), TP( nc, 1 ), TN( nc, 1 ), FP( nc, 1 ), FN( nc, 1 ), PP( nc, 1 ), PN( nc, 1 );
         for ( Label c = 0; c < nc; ++c )
         {
             // Other metrics.
@@ -118,16 +118,10 @@ int main( int argc, char ** argv )
                 for( Label col = 0; col < numberOfClasses; ++col )
                 {
                     // Positives.
-                    if ( col == c ) P(c,0) += CM(row,col);
-
-                    // Predicted Positives.
-                    if ( row == c ) PP(col,0) += CM(row,col);
+                    if ( col == c ) P (col,0) += CM(row,col);
 
                     // Negatives.
                     if ( col != c ) N(c, 0) += CM(row,col);
-
-                    // Predicted negatives.
-                    if ( row != c ) PN(c, 0) += CM(row,col);
 
                     // True Postives.
                     if ( row == c && col == c ) TP(c,0) = CM(c,c);
@@ -142,6 +136,9 @@ int main( int argc, char ** argv )
                     if ( row == c && col != c ) FP(c,0) += CM(row,col);
                 }
             }
+
+            PP( c, 0 ) = TP( c, 0 ) + FP( c, 0 );
+            PN( c, 0 ) = TN( c, 0 ) + FN( c, 0 );
         }
 
         // Calculate the basic metrics.
