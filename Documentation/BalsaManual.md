@@ -44,6 +44,7 @@ Balsa is a fast and memory-efficient C++ implementation of the RandomForest clas
 1. [Optimizing Model Performance](#optimizingmodelperformance)
 	1. [General Approach](#generalapproach)
 	1. [Fundamental Properties](#fundamentalproperties)
+	1. [The Confusion Matrix](#confusionmatrix)
 	1. [Performance Metrics](#performancemetrics)
 		1. [True Positive Rate and True Negative Rate](#tprtnr)
 		1. [False Positive Rate and False Negative Rate](#fprfnr)
@@ -100,7 +101,7 @@ This is an example of a *binary classification problem*, because there are only 
 
 The classification problem can be solved by fitting a mathematical model (a *predictive model*) to a set of data points for which the labels are already known. The model can then be used to predict the labels of data points for which the labels are not known. This model fitting process is called *training*. 
 
-To train a good model, the labels in the known dataset need to be as accurate as possible. For the fruit sorting example, it would be possible to obtain a highly accurate training set by letting a human observer classify the fruit by hand. In a very reliably labeled data set like this, the labels are called the *ground truth* of the data set. This term is often used more loosely to refer to the labels of the known data set in applications where the observations may not be 100% reliable. 
+To train a good model, the labels in the known dataset need to be as accurate as possible. For the fruit sorting example, it would be possible to obtain a highly accurate training set by letting a human observer classify the fruit by hand. In a very reliably labeled data set like this, the labels are called the *ground truth* of the data set. This term is often used more loosely to refer to the labels of the known data set in applications where the observations may not be 100% reliable. A data set with ground truth is sometimes called a *gold standard*.
 
 Labels are usually represented as integers in machine learning, because the actual semantic interpretation is not important or meaningful to the software. Using 0 to identify oranges and 1 to identify apples, the ground truth for the example data points might look like this:
 
@@ -607,22 +608,47 @@ Given the results of a classifier-run on a known test set, we can directly deter
 * *True Positives* (TP) and *True Negatives* (TN) are the counts of points that are correctly classified as positive or negative.
 * *False Positives* (FP) is the count of negative points in the ground truth that are incorrectly classified as positive. *False Negatives* (FN) is the count of positive points in the ground truth that are incorrectly classified as negative.
 
-The TP, TP, FP and FN are often given together in the form of a *confusion matrix*:
+Note that following relations hold:
 
-	TP FP
-	FN TN
-	
-Note that the matrix diagonal contains the correct classifications, whereas the entries off the diagonal contain classification errors. Each off-diagonal entry indicates a number of misclassifications. A perfect classifier has zeros off the diagonal. Note that (the sum of) each column represents the ground truth for each class, and the sum of each row represents the classifier output:
-
-	P = TP + FN
-	N = FP + TN
+	P  = TP + FN
+	N  = FP + TN
 	PP = TP + FP
 	PN = FN + TN
+
+All metrics that we use to gauge the quality of a predictive model derive from these basic properties.
 	
-All metrics that we use to gauge the quality of a predictive model derive from these basic properties. 
+<a name="confusionmatrix"></a>
+### The Confusion Matrix [(top)](#tableofcontents)
 
-N.B. The confusion matrix, its constituent observables, and many other metrics can often be extended for multi-valued classification. We will leave that as an exercise to the reader.
+For a given test data set, the relation between the ground truth and the output of the classifier can be summarized conveniently in the form of a *confusion matrix*. Each entry CM[r,c] in the matrix contains the number of points of class 'c' in the ground truth that were labeled 'r' by the classifier. For a set of 1000 points and 4 classes, such a  matrix might look like this:
 
+	183 0    0   1
+	2   171  3   13
+	55  0    392 22
+	18  4    23  113
+
+In this example, the entry on row 2 in colum 2 (starting from 0) indicates that there were 392 points in the ground truth that were correctly classified as being of class 2. The entry on row 3, column 1 indicates that 4 points of class 1 were incorrectly classified as being of class 3, and so on.
+
+The TP, TN, FP and FN for a particular class label l (denoted as TP[l], FP[l], etc.) can be calculated directly from the matrix:
+
+* TP[l] is the value on the diagonal: CM[l,l].
+* FP[l] is the sum of the entries on row l, except for CM[l,l].
+* FN[l] is the sum of the entries in column, except for CM[l,l].
+* TN[l] is the sum of all entries that are neither in row l or column l.
+
+For example, if one is interested in the TP, FP, etc. of the class with label 1 in a data set with 5 classes, the corresponding entries are laid out as follows:
+
+	TN FN TN TN TN
+	FP TP FP FP FP
+	TN FN TN TN TN
+	TN FN TN TN TN
+	TN FN TN TN TN
+
+To calculate TN[1], *all* 'TN' entries need to be summed, for FP[1] all FP entries need to be summed, etc. In the special case of binary classification problems, this interpretation of the confusion matrix is simplified due to the fact that each type of entry will occur only once:
+	
+	TP FP
+	FN TN 
+	
 <a name="performancemetrics"></a>
 ### Performance Metrics [(top)](#tableofcontents)
 
