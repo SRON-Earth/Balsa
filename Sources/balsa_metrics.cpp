@@ -72,7 +72,7 @@ template<typename T>
 void printClassMetric( const std::string &name, const Table<T> &metric, unsigned int precision = 8 )
 {
     std::cout << name << ":";
-    for ( auto v: metric ) std::cout << ' ' << std::setw( precision + 2 ) << std::setprecision( precision ) << v;
+    for ( auto v: metric ) std::cout << ' ' << std::setw( precision + 4 ) << std::setprecision( precision ) << v;
     std::cout << std::endl;
 }
 
@@ -139,7 +139,7 @@ int main( int argc, char ** argv )
                     if ( row != c && col == c ) FN(c,0) += CM(row,col);
 
                     // False positives.
-                    if ( row == c && col != c ) FN(c,0) += CM(row,col);
+                    if ( row == c && col != c ) FP(c,0) += CM(row,col);
                 }
             }
         }
@@ -157,8 +157,8 @@ int main( int argc, char ** argv )
             TNR(l,0) = static_cast<double>( TN(l,0) ) / N( l, 0 );
             FPR(l,0) = static_cast<double>( FP(l,0) ) / N( l, 0 );
             FNR(l,0) = static_cast<double>( FN(l,0) ) / P( l, 0 );
-            PPV(1,0) = static_cast<double>( TP(l,0) ) / PP( l, 0 );
-            NPV(1,0) = static_cast<double>( TN(l,0) ) / PN( l, 0 );
+            PPV(l,0) = static_cast<double>( TP(l,0) ) / PP( l, 0 );
+            NPV(l,0) = static_cast<double>( TN(l,0) ) / PN( l, 0 );
         }
 
         // Print the metrics.
@@ -166,18 +166,20 @@ int main( int argc, char ** argv )
         std::cout << CM << std::endl;
 
         std::cout << "Metrics per class:" << std::endl;
-        printClassMetric( "P  ", P   );
-        printClassMetric( "N  ", N   );
-        printClassMetric( "PP ", PP  );
-        printClassMetric( "PN ", PN  );
-        printClassMetric( "TP ", TP  );
-        printClassMetric( "TN ", TN  );
-        printClassMetric( "FP ", FP  );
-        printClassMetric( "FN ", FN  );
-        printClassMetric( "TPR", TPR );
-        printClassMetric( "TNR", TNR );
-        printClassMetric( "PPV", PPV );
-        printClassMetric( "NPV", NPV );
+        printClassMetric( "P  ", P    );
+        printClassMetric( "N  ", N    );
+        printClassMetric( "PP ", PP   );
+        printClassMetric( "PN ", PN   );
+        printClassMetric( "TP ", TP   );
+        printClassMetric( "TN ", TN   );
+        printClassMetric( "FP ", FP   );
+        printClassMetric( "FN ", FN   );
+        printClassMetric( "TPR", TPR  );
+        printClassMetric( "TNR", TNR  );
+        printClassMetric( "FPR", FPR  );
+        printClassMetric( "FNR", FNR  );
+        printClassMetric( "PPV", PPV  );
+        printClassMetric( "NPV", NPV  );
     }
     catch ( Exception & e )
     {

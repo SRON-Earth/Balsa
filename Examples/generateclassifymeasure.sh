@@ -46,7 +46,7 @@ EOF
 
 POINTCOUNT=10000
 THREADCOUNT=10
-TREECOUNT=200
+TREECOUNT=400
 
 # Generate a training set.
 echo "Generating training data..."
