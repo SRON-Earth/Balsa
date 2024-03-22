@@ -28,6 +28,7 @@ Balsa is a fast and memory-efficient C++ implementation of the RandomForest clas
 	1. [Creating Test Data](#balsagenerate)
 	1. [Training on the Command Line](#balsatrain)
 	1. [Classification on the Command Line](#balsaclassify)
+	1. [Measuring Classifier Performance](#balsameasure)
 	1. [Printing Balsa Files](#balsaprint)
 1. [Using Balsa From C++](#usingbalsacpp)
 	1. [Including Balsa in a C++ Project](#cppincludingbalsa)
@@ -68,6 +69,7 @@ The Balsa package provides the following command-line tools:
 * **balsa\_classify** classifies unknown datasets using a Balsa-trained model.
 * **balsa\_print** prints the contents of Balsa point files, label files, and models in human-readable form.
 * **balsa\_generate** generates random data sets for testing and experimentation.
+* **balsa\_measure** calculates metrics to assess the performance of a model. 
 
 These tools are built and installed as part of a standard [Balsa installation process](#installation).
 
@@ -283,6 +285,15 @@ A model can be used to classify a (known or unknown) data set. For experimentati
 The first two parameters are the trained model file and the unknown new data file. The last parameter is the name that will be used to store the classifier output. This file can be compared to actual labels (e.g. from balsa_generate) for evaluation of the model.
 
 The resource usage of the command-line classifier can be tuned to achieve to achieve shorter wall-clock times at the expense of additional memory usage and CPU load. We note, however, that the command-line classifier is already extremely fast and memory-efficient in single-threaded mode. The chapters on [Optimizing Resource Usage](#optimizingresourceusage) and [Optimizing Model Performance] (#optimizingmodelperformance) cover the tuning process in detail.
+
+<a name="balsameasure"></a>
+### Measuring Classifier Performance [(top)](#tableofcontents)
+
+The balsa\_measure utility measures how well a trained model performs. To do so, it compares the output of the classifier against the known ground truth of a set of test data points:
+
+	balsa_measure ground-truth.balsa classifier-output.balsa
+	
+The utilily takes two sets of label files as input. The first file is the ground truth of a test set (which was not available to the classifier), the second file is the set of labels that the classifier assigned to the test set. The measurement utility calculates a number of common [performance metrics](#performancemetrics) for the trained model.
 
 <a name="balsaprint"></a>
 ### Printing Balsa Files [(top)](#tableofcontents)

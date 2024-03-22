@@ -70,12 +70,8 @@ balsa_classify testgen-model.balsa testgen-test-data.balsa testgen-outofbag-pred
 
 # Evaluate the performance on the in-bag data.
 echo "Evaluating classifier performance on in-bag data..."
-balsa_metrics testgen-training-labels.balsa testgen-inbag-predictions.balsa
+balsa_measure testgen-training-labels.balsa testgen-inbag-predictions.balsa
 
 # Evaluate the performance on the in-bag data.
 echo "Evaluating classifier performance on out-of-bag data..."
-balsa_metrics testgen-test-labels.balsa testgen-outofbag-predictions.balsa
-
-
-
-
+balsa_measure testgen-test-labels.balsa testgen-outofbag-predictions.balsa

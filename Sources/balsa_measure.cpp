@@ -25,7 +25,7 @@ public:
         std::stringstream ss;
         ss << "Usage:" << std::endl
            << std::endl
-           << "   balsa_metrics <ground_truth_labels> <classifier_labels>" << std::endl
+           << "   balsa_measure <ground_truth_labels> <classifier_labels>" << std::endl
            << std::endl;
         return ss.str();
     }
