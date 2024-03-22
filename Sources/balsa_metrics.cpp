@@ -107,7 +107,7 @@ int main( int argc, char ** argv )
             ++CM( classifier, groundTruth );
         }
 
-        // Calculate the basic metrics per class.
+        // Calculate the basic counts.
         auto nc = numberOfClasses;
         Table<unsigned int> P( nc, 1 ), N( nc, 1), TP( nc, 1 ), TN( nc, 1 ), FP( nc, 1 ), FN( nc, 1 ), PP( nc, 1 ), PN( nc, 1 );
         for ( Label c = 0; c < nc; ++c )
@@ -141,13 +141,16 @@ int main( int argc, char ** argv )
             PN( c, 0 ) = TN( c, 0 ) + FN( c, 0 );
         }
 
-        // Calculate the basic metrics.
+        // Calculate per-class metrics.
         Table<double> TPR( numberOfClasses, 1 );
         Table<double> TNR( numberOfClasses, 1 );
         Table<double> FPR( numberOfClasses, 1 );
         Table<double> FNR( numberOfClasses, 1 );
         Table<double> PPV( numberOfClasses, 1 );
         Table<double> NPV( numberOfClasses, 1 );
+        Table<double> F1 ( numberOfClasses, 1 );
+        Table<double> DOR( numberOfClasses, 1 );
+        Table<double> P4 ( numberOfClasses, 1 );
         for ( Label l = 0; l < numberOfClasses; ++l )
         {
             TPR(l,0) = static_cast<double>( TP(l,0) ) / P( l, 0 );
@@ -156,13 +159,17 @@ int main( int argc, char ** argv )
             FNR(l,0) = static_cast<double>( FN(l,0) ) / P( l, 0 );
             PPV(l,0) = static_cast<double>( TP(l,0) ) / PP( l, 0 );
             NPV(l,0) = static_cast<double>( TN(l,0) ) / PN( l, 0 );
+
+            F1 (l,0) = 2.0 *  PPV(l,0) * TPR(l,0) / ( PPV( l, 0 ) + TPR(l,0) );
+            DOR(l,0) = static_cast<double>( TP(l,0) * TN(l, 0) ) / ( FP(l,0) * FN(l,0) );
+            P4 (l,0) = 4.0 / ( (1.0/TPR(l,0)) + (1.0/TNR(l,0)) + (1.0/PPV(l,0)) + (1.0/NPV(l,0)) );
         }
 
         // Print the metrics.
         std::cout << "Confusion Matrix:" << std::endl;
         std::cout << CM << std::endl;
 
-        std::cout << "Metrics per class:" << std::endl;
+        std::cout << "Counts per class:" << std::endl;
         printClassMetric( "P  ", P    );
         printClassMetric( "N  ", N    );
         printClassMetric( "PP ", PP   );
@@ -171,12 +178,19 @@ int main( int argc, char ** argv )
         printClassMetric( "TN ", TN   );
         printClassMetric( "FP ", FP   );
         printClassMetric( "FN ", FN   );
+        std::cout << std::endl;
+
+        std::cout << "Metrics per class:" << std::endl;
         printClassMetric( "TPR", TPR  );
         printClassMetric( "TNR", TNR  );
         printClassMetric( "FPR", FPR  );
         printClassMetric( "FNR", FNR  );
         printClassMetric( "PPV", PPV  );
         printClassMetric( "NPV", NPV  );
+        printClassMetric( "F1 ", F1   );
+        printClassMetric( "DOR", DOR  );
+        printClassMetric( "P4 ", P4   );
+        std::cout << std::endl;
     }
     catch ( Exception & e )
     {

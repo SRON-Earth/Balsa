@@ -50,9 +50,9 @@ Balsa is a fast and memory-efficient C++ implementation of the RandomForest clas
 		1. [False Positive Rate and False Negative Rate](#fprfnr)
 		1. [True Positive Odds and False Positive Odds](#tpofpo)
 		1. [Positive Predictive Value and Negative Predictive Value](#ppvnpv)
-		1. [Accuracy](#accuracy)
-		1. [F-beta Score](#fbetascore)
-		1. [Diagnostic Odds Ratio](#diagnosticoddsratio)
+		1. [Accuracy](#acc)
+		1. [F-beta Score](#fbeta)
+		1. [Diagnostic Odds Ratio](#dor)
 		1. [P4 Metric](#p4metric)
 1. [Contact and Credits](#contactandcredits)
 1. [License](#license)
@@ -652,6 +652,7 @@ To calculate TN[1], *all* 'TN' entries need to be summed, for FP[1] all FP entri
 
 We will now define and discuss a number of common performance evaluation metrics, and provide insight into their strengths and weaknesses. 
 
+<a name="tprtnr"></a>
 #### True Positive Rate and True Negative Rate [(top)](#tableofcontents)
 
 ##### Definition
@@ -672,6 +673,7 @@ The TNR is also known as *specificity*.
 
 The TPR and TNR indicate how frequently a positive or negative point is found by the classifier. The TPR and TNR are numbers between 0 and 1. If either number is close to 0, the classifier is nearly incapable of identifying the corresponding class ('positive' or 'negative'). This situation is indicative of a classifier that is overly biased toward a particular class. Both TPR and TNR are sensitive to population imbalance/prevalence, in the sense that they become increasingly less useful when the probability of a class moves away from the average (e.g. 0.5 in the binary case) toward 1 or 0. Calculating the TPR in a large data set that has only 2 positive points is fairly meaningless, as it can only be 0, 0.5, or 1.
 
+<a name="fprfnr"></a>
 #### False Positive Rate and False Negative Rate [(top)](#tableofcontents)
 
 ##### Definition
@@ -692,6 +694,7 @@ The False Negative Rate is also known as the *Type II Error*.
 
 The FPR and FNR indicate how frequently the classifier is wrong, for each respecive ground truth. They are useful when the cost of dealing with a certain type of error (a false positive or a false negative) is very high, as in the [creditcard example](#bestpractices).
 
+<a name="tpofpo"></a>
 #### True Positive Odds and False Positive Odds [(top)](#tableofcontents)
 
 ##### Definition
@@ -712,6 +715,7 @@ The FNO are also known as the *Negative Likelihood Ratio* (LR-).
 
 These metrics are simply the TNR and FNR written in odds-form. They are primarily useful as a basis for deriving other metrics.
 
+<a name="ppvnpv"></a>
 #### Positive Predictive Value and Negative Predictive Value [(top)](#tableofcontents)
 
 ##### Definition
@@ -732,6 +736,7 @@ Intuitively, these metrics indicate in how much information about the ground tru
 
 The PPV is most useful when the cost of dealing with a false positive is high. The NPV is most useful when the cost of dealing with a false negative is high. Both metrics are sensitive to prevalence, in the sense that the resolution of possible PPV and NPV values becomes low when the population is very imbalanced.
 
+<a name="acc"></a>
 #### Accuracy [(top)](#tableofcontents)
 
 ##### Definition
@@ -744,6 +749,7 @@ The *Accuracy* (ACC) is the fraction of all points that are classified correctly
 
 The accuracy is one of the most commonly used metrics to gauge a classifier, but also one that is often misleading. It is easy to interpret, because it effectively tells us the percentage of cases in which the classifier is correct. It is appealing because it is a single higher-is-better number. However, on highly impalanced populations, it is easy to achieve high accuracy using a (ultimately useless) classifier that simply always returns the most prevalent class label (The 'accuracy paradox'.) So, while low accuracy is almost never good, high accuracy does not indicate that the classifier is good.
 
+<a name="fbeta"></a>
 #### F-beta Score [(top)](#tableofcontents)
 
 ##### Definition
@@ -764,6 +770,7 @@ The factor beta is used to favor one over the other: a beta value lower than 1 f
 
 The F-1 Score is an all-round useful single-number metric that gives more realistic values on unbalanced datasets than the Accuracy. An undefined value (NaN) is an indicator of a degenerate dataset.
 
+<a name="dor"></a>
 #### Diagnostic Odds Ratio [(top)](#tableofcontents)
 
 ##### Definition
@@ -777,6 +784,7 @@ The Diagnostic Odds Ratio is the ratio between the TPO (a.k.a. LR+) and the FNO 
 
 The DOR is a single-number metric that ranges from 0 to positive infinity. It does not depend on prevalence. A DOR greater than 1 means that the classifier is providing meaningful information about the data (i.e. knowing the classifier output, we have a better chance at correctly guessing the ground truth). If the DOR is exactly 1, a positive label of the classifier provides no information about the ground truth at all. If the DOR is less than 1, the classifier labels can simply be flipped to arrive at a positive classification. While the DOR provides no absolute information, it is useful for comparing the relative performance of two classifiers: a classifier with a higher DOR is a better classifier, regardless of the actual DOR values.
 
+<a name="p4metric"></a>
 #### P4 Metric [(top)](#tableofcontents)
 
 ##### Definition
