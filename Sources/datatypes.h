@@ -1,6 +1,8 @@
 #ifndef DATATYPES_H
 #define DATATYPES_H
 
+#include <cstdint>
+
 /**
  * The integer type used to identify a feature dimension in a data point or data set.
  */
