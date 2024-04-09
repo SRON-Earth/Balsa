@@ -69,7 +69,7 @@ The Balsa package provides the following command-line tools:
 * **balsa\_classify** classifies unknown datasets using a Balsa-trained model.
 * **balsa\_print** prints the contents of Balsa point files, label files, and models in human-readable form.
 * **balsa\_generate** generates random data sets for testing and experimentation.
-* **balsa\_measure** calculates metrics to assess the performance of a model. 
+* **balsa\_measure** calculates metrics to assess the performance of a model.
 
 These tools are built and installed as part of a standard [Balsa installation process](#installation).
 
@@ -81,7 +81,7 @@ This section provides the minimal theoretical background that is required to use
 <a name="theoryclassification"></a>
 ### Classification [(top)](#tableofcontents)
 
-*Classification* is the process of assigning one of a fixed number of *labels* (or *classes*) to a set of *data points*. Each data point consists of a fixed number of numeric values, known as *features*. 
+*Classification* is the process of assigning one of a fixed number of *labels* (or *classes*) to a set of *data points*. Each data point consists of a fixed number of numeric values, known as *features*.
 
 Consider the following example: a conveyor belt transports apples and oranges through a sorting machine. To separate the apples from the oranges, the machine photographs each piece of fruit, and counts the average red-, green-, and blue- values of each pixel in the image. It also records the weight of each item. This leads to the following set of data points:
 
@@ -92,14 +92,14 @@ Consider the following example: a conveyor belt transports apples and oranges th
 | 163    | 250 | 152   | 99   |
 | 99     | 248 | 199   | 89   |
 
-Each row in the table is a *data point*, each column is a *feature*. The problem of applying the correct *label* ('apple' or 'orange') to each data point is called a *classification problem*. Equivalently, we could say that the machine tries to determine to which *class* each piece of fruit belongs. 
+Each row in the table is a *data point*, each column is a *feature*. The problem of applying the correct *label* ('apple' or 'orange') to each data point is called a *classification problem*. Equivalently, we could say that the machine tries to determine to which *class* each piece of fruit belongs.
 
 This is an example of a *binary classification problem*, because there are only two classes to distinguish. Classification problems with more than two classes are called *multi-valued classification problems*. Certain standard concepts take their name from the binary version of the classification problem, even if generalizations for the multi-valued case exist. Additionally, some performance metrics and machine learning algorithms are only applicable to the binary case.
 
 <a name="theorytraining"></a>
 ### Training [(top)](#tableofcontents)
 
-The classification problem can be solved by fitting a mathematical model (a *predictive model*) to a set of data points for which the labels are already known. The model can then be used to predict the labels of data points for which the labels are not known. This model fitting process is called *training*. 
+The classification problem can be solved by fitting a mathematical model (a *predictive model*) to a set of data points for which the labels are already known. The model can then be used to predict the labels of data points for which the labels are not known. This model fitting process is called *training*.
 
 To train a good model, the labels in the known dataset need to be as accurate as possible. For the fruit sorting example, it would be possible to obtain a highly accurate training set by letting a human observer classify the fruit by hand. In a very reliably labeled data set like this, the labels are called the *ground truth* of the data set. This term is often used more loosely to refer to the labels of the known data set in applications where the observations may not be 100% reliable. A data set with ground truth is sometimes called a *gold standard*.
 
@@ -132,11 +132,11 @@ In the example of the fruit machine, let's assume that the endless stream of fru
 
 In Anglo-centric parts of the world, probabilities are often expressed as *odds*, in particular when dealing with binary problems. The use of odds is much less common in other parts of the world, to the extent that some languages may not even have a common word for them. Since odds are used in the definition of certain quality metrics, it is important to understand the difference between odds and probabilities, and to be able to convert back and forth between them.
 
-A probability tells us how likely it is that a random event has a certain outcome A. Odds tell us how much *more* likely it is that the event has outcome A, versus it not having outcome A. Odds are the ratio between two probabilities: the probability of the event happening, versus it not happening. 
+A probability tells us how likely it is that a random event has a certain outcome A. Odds tell us how much *more* likely it is that the event has outcome A, versus it not having outcome A. Odds are the ratio between two probabilities: the probability of the event happening, versus it not happening.
 
 A probability is a value between 0 and 1 (including the boundaries). Odds are often given as a ratio of to integers ("the odds are 3 to 10"), but they can take any non-negative real value, including Pi and the square root of 2.
 
-As an example, consider a football match between Team A and Team B. A bookmaker may say that the odds of Team A winning are 10 to 1 (also written '10:1'). This means that the probability that Team A wins is 10 times the probability that Team B wins. We can then calculate that the probability of Team A winning must be 10/11, versus 1/11 for Team B. 
+As an example, consider a football match between Team A and Team B. A bookmaker may say that the odds of Team A winning are 10 to 1 (also written '10:1'). This means that the probability that Team A wins is 10 times the probability that Team B wins. We can then calculate that the probability of Team A winning must be 10/11, versus 1/11 for Team B.
 
 By analogy, we will define *class odds* as the odds that a data point belongs to a certain class, versus the point not belonging to that class. If the class probability of a point is given as p and the class odds are q, probabilities are converted to odds as follows:
 
@@ -145,7 +145,7 @@ By analogy, we will define *class odds* as the odds that a data point belongs to
 
 If the odds q are given instead, conversion to probabilities is as follows:
 
-* If the odds are given as a real number q, the probability p is given by p =  1 / ((1/q) + 1). 
+* If the odds are given as a real number q, the probability p is given by p =  1 / ((1/q) + 1).
 * In the special case where odds are given as an integer ratio a:b, then q = a/b gives p = a / (a + b).
 
 <a name="decisiontrees"></a>
@@ -160,7 +160,7 @@ The leaf nodes of the tree contain class labels. A data point p is classified by
 <a name="trainingtrees"></a>
 ### Training Decision Trees [(top)](#tableofcontents)
 
-The training process of a decision tree consists of building a tree that will, to some desired extent, correctly classify a given training data set. If all data points in the data set are unique, it is straightforward to find a decision tree that classifies all data in that set 100% correctly. To do so, we can pick any feature f and any split value L that splits the data points in two nonempty parts. We continue to split each sub-group of points further until there are only points in each sub-group that all have the same label. 
+The training process of a decision tree consists of building a tree that will, to some desired extent, correctly classify a given training data set. If all data points in the data set are unique, it is straightforward to find a decision tree that classifies all data in that set 100% correctly. To do so, we can pick any feature f and any split value L that splits the data points in two nonempty parts. We continue to split each sub-group of points further until there are only points in each sub-group that all have the same label.
 
 Depending on the exact choices we make, we can construct many different but equivalent decision trees that will perfectly fit the training data. Note, however, that two equivalent trees may give different results for out-of-bag data.
 
@@ -250,7 +250,7 @@ A data set description for balsa_generate for our earlier apples-and-oranges exa
 		}
 	}
 
-The first line of the file specifies that the data set is to be drawn from a 'multisource' population (this is currently the only supported type). There will be 4 features per data point, indicated by the number 4 between braces. 
+The first line of the file specifies that the data set is to be drawn from a 'multisource' population (this is currently the only supported type). There will be 4 features per data point, indicated by the number 4 between braces.
 
 The body of the multisource population describes two data generation sources. Each source corresponds to a ground-truth label in the data set. By defining two sources, the generated data set will be for a binary classification problem.
 
@@ -271,14 +271,14 @@ The balsa_train tool trains a Random Forest model on a set of labeled training d
 
 	balsa_train fruit-points.balsa fruit-labels.balsa fruit-model.balsa
 
-This command creates "fruit-model.balsa" from "fruit-points.balsa" and "fruit-labels.balsa". Various parameters of the training process can be controlled to make trade-offs between the disk usage of the generated model files, the processor/multi-core utilization, wall-clock time, predictive performance, etc. 
+This command creates "fruit-model.balsa" from "fruit-points.balsa" and "fruit-labels.balsa". Various parameters of the training process can be controlled to make trade-offs between the disk usage of the generated model files, the processor/multi-core utilization, wall-clock time, predictive performance, etc.
 
 Running `balsa_train` without any arguments displays the full range of options. By default, balsa\_train creates a forest of 150 trees of unlimited depth, using one thread/core for training. This is fine for initial experimentation on small test sets, but it is almost never the best option for your application. In order to get the best results, both in terms of runtime/speed and in terms of classification power, you will need to tune the parameters of balsa_train. The chapters [Optimizing Resource Usage](#optimizingresourceusage) and [Optimizing Model Performance] (#optimizingmodelperformance) cover the tuning process in detail.
 
 <a name="balsaclassify"></a>
 ### Classification on the Command Line [(top)](#tableofcontents)
 
-A model can be used to classify a (known or unknown) data set. For experimentation purposes, you can generate a second test set called "fresh-fruit-data" using balsa_generate with a different seed. To classify the data set using a model, run: 
+A model can be used to classify a (known or unknown) data set. For experimentation purposes, you can generate a second test set called "fresh-fruit-data" using balsa_generate with a different seed. To classify the data set using a model, run:
 
 	balsa_classify fruit-model.balsa fresh-fruit-data.balsa fresh-fruit-labels-classified.balsa
 
@@ -292,7 +292,7 @@ The resource usage of the command-line classifier can be tuned to achieve to ach
 The balsa\_measure utility measures how well a trained model performs. To do so, it compares the output of the classifier against the known ground truth of a set of test data points:
 
 	balsa_measure ground-truth.balsa classifier-output.balsa
-	
+
 The utilily takes two sets of label files as input. The first file is the ground truth of a test set (which was not available to the classifier), the second file is the set of labels that the classifier assigned to the test set. The measurement utility calculates a number of common [performance metrics](#performancemetrics) for the trained model.
 
 <a name="balsaprint"></a>
@@ -304,49 +304,49 @@ Balsa stores point data, labels, and random forest models in its own binary file
 
 Point files consist of tables of floating point data (single or double precision). Point data files are printed as rows with row numbers. Each row represents one point, each column the value of one feature:
 
-	0   : 123.254  49.3648  2.60469  102.836 
-	1   : 123.303  43.3323  -5.20379 123.883 
-	2   : 117.016  48.7571  30.2484  147.858 
-	3   : 95.3145  35.7631  -2.33779 143.504 
-	4   : 137.605  48.5247  41.5867  137.931 
-	5   : 123.062  50.5145  26.0258  123.68  
-	6   : 129.762  32.5552  6.70585  119.324 
-	7   : 112.713  36.4109  8.01106  122.497 
-	8   : 124.271  30.4602  30.1559  116.252 
-	9   : 122.74   35.8881  20.3795  131.714 
+	0   : 123.254  49.3648  2.60469  102.836
+	1   : 123.303  43.3323  -5.20379 123.883
+	2   : 117.016  48.7571  30.2484  147.858
+	3   : 95.3145  35.7631  -2.33779 143.504
+	4   : 137.605  48.5247  41.5867  137.931
+	5   : 123.062  50.5145  26.0258  123.68
+	6   : 129.762  32.5552  6.70585  119.324
+	7   : 112.713  36.4109  8.01106  122.497
+	8   : 124.271  30.4602  30.1559  116.252
+	9   : 122.74   35.8881  20.3795  131.714
 	10  : 137.61   17.3431  26.7889  133.738
-	
+
 Label files are printed in a similar manner:
 
 	balsa fruit-labels.balsa
 
 Label files are printed with a row number. Each row is one point. There is only one column, which contains the label. Labels are integers between 0 and 255:
 
-	0   : 1   
-	1   : 0   
-	2   : 1   
-	3   : 1   
-	4   : 0   
-	5   : 0   
-	6   : 1   
-	7   : 1   
-	8   : 0   
-	9   : 0   
-	10  : 0  
+	0   : 1
+	1   : 0
+	2   : 1
+	3   : 1
+	4   : 0
+	5   : 0
+	6   : 1
+	7   : 1
+	8   : 0
+	9   : 0
+	10  : 0
 
 Random forest model files consist of multiple individual trees. Each tree is separately marked. A fragment of an example output file might look like this:
 
 	FOREST
 	TREE 7 features.
 	N:   L:   R:   F:   V:              L:
-	0    1    2    5    0.73222         1   
-	1    3    4    0    0.077147        1   
-	2    5    6    1    60.0028         0   
-	3    7    8    5    0.647682        1   
-	4    9    10   0    0.110652        1   
-	5    11   12   0    0.379905        0   
+	0    1    2    5    0.73222         1
+	1    3    4    0    0.077147        1
+	2    5    6    1    60.0028         0
+	3    7    8    5    0.647682        1
+	4    9    10   0    0.110652        1
+	5    11   12   0    0.379905        0
 
-The FOREST marker is printed once. The TREE marker and header is printed before each tree. It includes the feature count of the tree. Trees are printed in tabular form. The columns are **N**ode identifier, **L**eft node, **R**ight node, the **F**eature on which the node is split, the feature **V**alue on which the node is split, and the **L**abel of the most prevalent class in the node. N.B. the left- and right- node IDs are nonzero  for internal tree nodes, and zero for leaf nodes. The node with ID 0 is always the root node of the tree. 
+The FOREST marker is printed once. The TREE marker and header is printed before each tree. It includes the feature count of the tree. Trees are printed in tabular form. The columns are **N**ode identifier, **L**eft node, **R**ight node, the **F**eature on which the node is split, the feature **V**alue on which the node is split, and the **L**abel of the most prevalent class in the node. N.B. the left- and right- node IDs are nonzero  for internal tree nodes, and zero for leaf nodes. The node with ID 0 is always the root node of the tree.
 
 <a name="usingbalsacpp"></a>
 ## Using Balsa from C++ [(top)](#tableofcontents)
@@ -371,14 +371,14 @@ The following complete example shows how a Balsa data model can be loaded and tr
 
 	#include <iostream>
 	#include <balsa.h>
-	
+
 	int main( int, char ** )
 	{
 		// Load data and labels.
 		auto dataSet = Table<double>::readFileAs( "fruit-data.balsa" );
 		auto labels  = Table<Label>::readFileAs( "fruit-labels.balsa" );
 		auto featureCount = dataSet.getColumnCount();
-		
+
 		// Train a random forest on the data, write the model to a file.
 		RandomForestTrainer trainer( "fruit-model.balsa" );
 		trainer.train( dataSet.begin(), dataSet.end(), labels.begin(), columnCount );
@@ -386,7 +386,7 @@ The following complete example shows how a Balsa data model can be loaded and tr
 		return 0;
 	}
 
-Remarks:	
+Remarks:
 
 * This example is included for documentation completeness. For most applications, the recommended approach is to train using the stand-alone balsa_train tool. The results will be identical either way.
 * In this example, training points and labels are loaded into Balsa tables (instances of the Table<T> template). These tables are strongly typed. The 'readFileAs()' function reads the data from a Balsa file as-is if the type of the Table matches the type of the data in the file. Conversion is performed if there is a mismatch. This conversion comes at a minor performance penalty that may be significant for large datasets. Conversion from a higher precision file to a lower precision Table results in information loss.
@@ -399,28 +399,28 @@ The following complete example shows how a data set can be classified from withi
 
 	#include <iostream>
 	#include <balsa.h>
-	
+
 	int main( int, char ** )
 	{
 		// Read (and possibly convert) the data.
 		auto dataSet = Table<double>::readFileAs( "fruit-data.balsa" );
-		
-		// Classify the data.  		
+
+		// Classify the data.
 		Table<Label> labels( dataSet.getRowCount(), 1 );
 		RandomForestClassifier classifier( "fruit-model.balsa", dataSet.getColumnCount() );
 		classifier.classify( dataSet.begin(), dataSet.end(), labels.begin() );
-	
+
 		// Write the result to a binary Balsa output file.
 		std::ofstream outFile( "fruit-classifier-labels.balsa", std::ios::binary );
        labels.serialize( outFile );
-			
+
 		// Print the results as text (or write to a text file).
 		std::cout << labels << std::endl;
-		
+
 		return 0;
 	}
 
-Remarks: 
+Remarks:
 
 * This example uses Balsa Tables for storing the data and labels. It is possible (and recommended) to do classification in-place on points in your own data containers. This is covered in the next example.
 * The RandomForestClassifier has additional parameters that are not shown in this example, due to defaults. These parameters are documented in the API documentation.
@@ -454,12 +454,12 @@ The following program demonstrates how the classifier can be instantiated for di
 	// Classify the points.
 	classifier.classify( points.begin(), points.end(), labels.begin() );
 
-The default template parameters for RandomForestClassifier are `double *` for data point iterators and `Label *` for label iterators.
+The default template parameters for RandomForestClassifier are `Table<double>::ConstIterator` for data point iterators and `Table<Label>::Iterator` for label iterators.
 
 <a name="cppsingleprecision"></a>
 ### Using Single-Precision Features [(top)](#tableofcontents)
 
-By default, Balsa uses double-precision floating point numbers for feature values during training and classification. For many applications this precision is overkill. It can be beneficial to use single-precision floats, which would effectively halve the memory usage of the trainer and classifier. 
+By default, Balsa uses double-precision floating point numbers for feature values during training and classification. For many applications this precision is overkill. It can be beneficial to use single-precision floats, which would effectively halve the memory usage of the trainer and classifier.
 
 Changing the precision of the trainer is done using a template parameter of the trainer:
 
@@ -473,8 +473,8 @@ The feature type of the classifier is implicitly derived from the pointed-to typ
 
 	// Create a single-precision trainer.
 	RandomForestClassifier< Table<float>::ConstIterator > trainer3( ... );
-	
-Remarks: 
+
+Remarks:
 
 * Changing from double to single precision has significant impact on the memory usage of the trainer. The memory usage of the classifier is extremely low even at double precision, so the impact will be far less noticeable there.
 * To prevent unnecessary time loss during model loading, train and classify with the same precision as the data that will be used during classification.
@@ -482,7 +482,7 @@ Remarks:
 <a name="optimizingsystemperformance"></a>
 ## Optimizing System Performance [(top)](#tableofcontents)
 
-Balsa is designed to be a very fast, resource-efficient implementation of the Random Forest algorithm. In order to get the best possible performance out of it in terms of peak memory usage, wall-clock time, and CPU utilization, it is necessary to have some insight into the inner workings of the library. This section provides insights, tools, and guidelines for optimizing system performance. 
+Balsa is designed to be a very fast, resource-efficient implementation of the Random Forest algorithm. In order to get the best possible performance out of it in terms of peak memory usage, wall-clock time, and CPU utilization, it is necessary to have some insight into the inner workings of the library. This section provides insights, tools, and guidelines for optimizing system performance.
 
 Balsa's efficiency is most apparent when dealing with larger training data sets. For smaller data sets (up to 1 million points, 10 features) other Random Forest implementations may be slightly faster, and/or have a smaller memory footprint. As training sets get larger, Balsa performance will generally scale very well.
 
@@ -531,7 +531,7 @@ Using these guidelines, it should be straigithforward to make direct trade-offs 
 
 There are other optimization considerations that *might* impact classifier performance:
 
-* By default, Balsa trains 150 trees. This is an arbitrary number. If you see no classification quality improvements after 20 trees, there is no point in training any more. Reducing the number of trees reduces the wall clock time of training. 
+* By default, Balsa trains 150 trees. This is an arbitrary number. If you see no classification quality improvements after 20 trees, there is no point in training any more. Reducing the number of trees reduces the wall clock time of training.
 * By default, trees are not limited in depth. Training deeper leads to bigger files, larger models to keep in memory, and more total CPU time. By limiting depth, or by cutting off the training process at less than 100% node purity, trees can be kept smaller.
 * The number of features and the number of classes/labels both directly affect memory usage and training time. It can be beneficial to avoid unnecessary features and/or classes.
 
@@ -582,7 +582,7 @@ If you are classifying one batch of points on a single core (zero worker threads
 ## Optimizing Model Performance [(top)](#tableofcontents)
 
 In an ideal world, a classifier would always make predictions that are 100% correct. In reality we need to assess how well a classifier performs on a particular population, and sometimes we need to tune it to perform better.
- 
+
 To assess the model performance or *predictive quality* the available ground truth data is split into two parts: a (usually larger) *training set* that is used for training the model, and a *test set* that is used to evaluate the performance of the trained model. The predictions that the model makes on the test set are called *out-of-bag* predictions (OOB). By comparing the OOB predictions to the ground truth, we can calculate various metrics to judge te quality of the predictions.
 
 <a name="bestpractices"></a>
@@ -590,9 +590,9 @@ To assess the model performance or *predictive quality* the available ground tru
 
 Just as there are no perfect classifiers in the real world, there are no perfect metrics to judge classifier performance. Each metric sheds light on different strenghts and weaknesses of a classifier, and each metric has blind spots for other types of strenghts and weaknesses. Futhermore, depending on your specific application, a large deficiency in one area may be more acceptable than a small deficiency elsewhere. It is therefore important to properly understand the metrics, and to interpret them for your application.
 
-As an example, consider a credit card company that processes one million transactions per hour. On average, approximately 10 of these transactions are fraudulent. A fraudulent transaction can easily be verified by calling the owner of the creditcard, but it is undesirable to call every customer over every transaction, and the company does not have the workforce to do this. 
+As an example, consider a credit card company that processes one million transactions per hour. On average, approximately 10 of these transactions are fraudulent. A fraudulent transaction can easily be verified by calling the owner of the creditcard, but it is undesirable to call every customer over every transaction, and the company does not have the workforce to do this.
 
-Imagine that the company is evaluating two classifiers A and B to search for fraudulent transactions automatically. Classifier A simply assumes that there are no fraudulent transactions. It always returns 'false'. Classifier B flags approximately 50 of one million cases as fraudulent, 10 of which are the actual fraud cases. Classifier A is almost never wrong. Classifier B is wrong four times as often as classifier A. Cleary though, classifier B will solve the company's problems, whereas classifier A provides no useful information at all. 
+Imagine that the company is evaluating two classifiers A and B to search for fraudulent transactions automatically. Classifier A simply assumes that there are no fraudulent transactions. It always returns 'false'. Classifier B flags approximately 50 of one million cases as fraudulent, 10 of which are the actual fraud cases. Classifier A is almost never wrong. Classifier B is wrong four times as often as classifier A. Cleary though, classifier B will solve the company's problems, whereas classifier A provides no useful information at all.
 
 In light of this, we recommend to evaluate classifiers as follows:
 
@@ -626,7 +626,7 @@ Note that following relations hold:
 	PN = FN + TN
 
 All metrics that we use to gauge the quality of a predictive model derive from these basic properties.
-	
+
 <a name="confusionmatrix"></a>
 ### The Confusion Matrix [(top)](#tableofcontents)
 
@@ -655,14 +655,14 @@ For example, if one is interested in the TP, FP, etc. of the class with label 1 
 	TN FN TN TN TN
 
 To calculate TN[1], *all* 'TN' entries need to be summed, for FP[1] all FP entries need to be summed, etc. In the special case of binary classification problems, this interpretation of the confusion matrix is simplified due to the fact that each type of entry will occur only once:
-	
+
 	TP FP
-	FN TN 
-	
+	FN TN
+
 <a name="performancemetrics"></a>
 ### Performance Metrics [(top)](#tableofcontents)
 
-We will now define and discuss a number of common performance evaluation metrics, and provide insight into their strengths and weaknesses. 
+We will now define and discuss a number of common performance evaluation metrics, and provide insight into their strengths and weaknesses.
 
 <a name="tprtnr"></a>
 #### True Positive Rate and True Negative Rate [(top)](#tableofcontents)
@@ -693,15 +693,15 @@ The TPR and TNR indicate how frequently a positive or negative point is found by
 The *False Positive Rate* (FPR) is the fraction of all negative points in the ground truth that are incorrectly labeled positive by the classifier. Equivalently, it is the probability that a randomly selected negative point from the ground truth is incorrectly labeled positive:
 
 	FPR = FP / N = FP / (FP + TN)
-	
+
 The false positive rate is also known as the *Type I Error*.
 
 The *False Negative Rate* (FNR) is the fraction of all positive points in the ground truth that are incorrectly labeled negative by the classifier:
 
 	FNR = FN / P = FN / (FN + TP)
-	
+
 The False Negative Rate is also known as the *Type II Error*.
-	
+
 ##### Discussion
 
 The FPR and FNR indicate how frequently the classifier is wrong, for each respecive ground truth. They are useful when the cost of dealing with a certain type of error (a false positive or a false negative) is very high, as in the [creditcard example](#bestpractices).
@@ -716,11 +716,11 @@ The *True Positive Odds* indicate how many times more likely it is that a positi
 	TPO = TPR / FPR = (TP/P) / (FN/P) = TP/FN
 
 The TPO are also known as the *Positive Likelihood Ratio* (LR+).
-	
+
 The *False Negative Odds* indicate how many times more likely it is that a negatively classified point is incorrectly labeled, versus it being correctly labeled:
 
 	FNO = FNR / TNR =  (FP/N) / (TN/N) = FP/TN
-	
+
 The FNO are also known as the *Negative Likelihood Ratio* (LR-).
 
 ##### Discussion
@@ -772,11 +772,11 @@ The *F-beta Score* is a weighted harmonic mean between the True Postive Rate (re
 
 The highest possible F beta score is 1.0. Note that the score is undefined (NaN) when the PPV and TPR are both zero.
 
-The *F-1 Score* (beta = 1) is the most common variation of the F-beta Score. 
+The *F-1 Score* (beta = 1) is the most common variation of the F-beta Score.
 
 ##### Discussion
 
-The F-beta Score is a weighted average (harmonic mean) of the probability that an actual positive point is identified as positive by the classifier (TPR, recall), and the probability of a positively classified point actually being positive (PPV, precision). 
+The F-beta Score is a weighted average (harmonic mean) of the probability that an actual positive point is identified as positive by the classifier (TPR, recall), and the probability of a positively classified point actually being positive (PPV, precision).
 
 The factor beta is used to favor one over the other: a beta value lower than 1 favors PPV/precision, a beta higher than 1 favors TPR/recall. A beta of 1 gives equal weight to both factors.
 
