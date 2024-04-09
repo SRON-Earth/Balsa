@@ -5,9 +5,10 @@
 #include <iterator>
 #include <numeric>
 
-#include "iteratortools.h"
 #include "classifier.h"
+#include "datatypes.h"
 #include "exceptions.h"
+#include "iteratortools.h"
 #include "serdes.h"
 
 /**
@@ -24,11 +25,11 @@ public:
     typedef std::shared_ptr<DecisionTreeClassifier>       SharedPointer;
     typedef std::shared_ptr<const DecisionTreeClassifier> ConstSharedPointer;
 
-    typedef typename iterator_value_type<FeatureIterator>::type FeatureType;
-    typedef typename iterator_value_type<OutputIterator>::type  LabelType;
+    typedef std::remove_cv_t<typename iterator_value_type<FeatureIterator>::type> FeatureType;
+    typedef std::remove_cv_t<typename iterator_value_type<OutputIterator >::type> LabelType;
 
     static_assert( std::is_arithmetic<FeatureType>::value, "Feature type should be an integral or floating point type." );
-    static_assert( std::is_integral<LabelType>::value, "Label type should be integral." );
+    static_assert( std::is_same<LabelType, Label>::value, "Label type should an unsigned, 8 bits wide, integral type." );
 
     /**
      * Bulk-classifies a sequence of data points.
@@ -156,11 +157,11 @@ private:
         }
     }
 
-    Table<NodeID>        m_leftChildID;
-    Table<NodeID>        m_rightChildID;
-    Table<FeatureID>     m_splitFeatureID;
-    Table<FeatureType>   m_splitValue;
-    Table<unsigned char> m_label;
+    Table<NodeID>      m_leftChildID;
+    Table<NodeID>      m_rightChildID;
+    Table<FeatureID>   m_splitFeatureID;
+    Table<FeatureType> m_splitValue;
+    Table<Label>       m_label;
 };
 
 #endif // DECISIONTREECLASSIFIER_H

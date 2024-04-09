@@ -8,9 +8,9 @@
 
 #include "datatools.h"
 #include "datatypes.h"
+#include "iteratortools.h"
 #include "table.h"
 #include "weightedcoin.h"
-#include "iteratortools.h"
 
 /**
  * A decision tree with an internal search index for fast training.
@@ -29,7 +29,11 @@ public:
     typedef WeightedCoin<>              WeightedCoinType;
     typedef WeightedCoinType::ValueType SeedType;
 
-    typedef iterator_value_type<FeatureIterator>::type FeatureType;
+    typedef std::remove_cv_t<typename iterator_value_type<FeatureIterator>::type> FeatureType;
+    typedef std::remove_cv_t<typename iterator_value_type<LabelIterator  >::type> LabelType;
+
+    static_assert( std::is_arithmetic<FeatureType>::value, "Feature type should be an integral or floating point type." );
+    static_assert( std::is_same<LabelType, Label>::value, "Label type should an unsigned, 8 bits wide, integral type." );
 
     /**
      * Creates an indexed decision tree with one root node from scratch.
@@ -41,7 +45,6 @@ public:
     m_dataPoints( dataPoints ),
     m_pointCount( pointCount ),
     m_featureCount( featureCount ),
-    m_labels( labels ),
     m_featuresToConsider( featuresToConsider ),
     m_maximumDistanceToRoot( maximumDistanceToRoot ),
     m_impurityThreshold( 0 ) // Between 0 and 0.5. A value of 0 means any split that is an improvement will be made, 0.5 means no splits are made.
@@ -70,7 +73,7 @@ public:
         }
 
         // Create a frequency table for all labels in the data set.
-        LabelFrequencyTable labelCounts( m_labels, m_labels + pointCount );
+        LabelFrequencyTable labelCounts( labels, labels + pointCount );
         assert( pointCount == labelCounts.getTotal() );
         assert( labelCounts.invariant() );
 
@@ -165,12 +168,12 @@ public:
     void writeDecisionTreeClassifier( std::ostream & binOut )
     {
         // Create data structures that directly mirror the internal table-representation used by the classifier.
-        NodeID               nodeCount = m_nodes.size();
-        Table<NodeID>        leftChildID( nodeCount, 1, 0 );
-        Table<NodeID>        rightChildID( nodeCount, 1, 0 );
-        Table<FeatureID>     splitFeatureID( nodeCount, 1, 0 );
-        Table<FeatureType>   splitValue( nodeCount, 1, 0 );
-        Table<unsigned char> label( nodeCount, 1, 0 );
+        NodeID             nodeCount = m_nodes.size();
+        Table<NodeID>      leftChildID( nodeCount, 1, 0 );
+        Table<NodeID>      rightChildID( nodeCount, 1, 0 );
+        Table<FeatureID>   splitFeatureID( nodeCount, 1, 0 );
+        Table<FeatureType> splitValue( nodeCount, 1, 0 );
+        Table<Label>       label( nodeCount, 1, 0 );
 
         // Copy the tree data to the tables.
         for ( NodeID nodeID = 0; nodeID < nodeCount; ++nodeID )
@@ -634,7 +637,6 @@ private:
     FeatureIterator                 m_dataPoints;
     unsigned int                    m_pointCount;
     unsigned int                    m_featureCount;
-    LabelIterator                   m_labels;
     std::deque<NodeID>              m_growableLeaves;
     std::vector<Node>               m_nodes;
     std::vector<SingleFeatureIndex> m_featureIndex;
