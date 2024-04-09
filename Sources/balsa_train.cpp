@@ -150,7 +150,7 @@ int main( int argc, char ** argv )
         std::cout << "Training..." << std::endl;
         RandomForestTrainer trainer( options.outputFile, options.maxDepth, options.treeCount, options.threadCount, options.featuresToScan, options.writeDotty );
         watch.start();
-        trainer.train( dataSet, labels );
+        trainer.train( dataSet.begin(), dataSet.end(), labels.begin(), dataSet.getColumnCount() );
         std::cout << "Done (" << watch.stop() << " seconds)." << std::endl;
         const auto trainingTime = watch.getElapsedTime();
 

@@ -22,7 +22,7 @@
 /**
  * Trains a random forest classifier on a set of datapoints and known labels.
  */
-template <typename FeatureType = double>
+template <typename FeatureIterator = Table<double>::ConstIterator, typename LabelIterator = Table<Label>::ConstIterator>
 class RandomForestTrainer
 {
     /**
@@ -32,9 +32,9 @@ class RandomForestTrainer
     {
     public:
 
-        typedef IndexedDecisionTree<FeatureType>::SeedType SeedType;
+        typedef IndexedDecisionTree<FeatureIterator, LabelIterator>::SeedType SeedType;
 
-        TrainingJob( const Table<FeatureType> & dataSet, const IndexedDecisionTree<FeatureType> & sapling, SeedType seed, unsigned int maxDepth, bool stop ):
+        TrainingJob( FeatureIterator dataSet, const IndexedDecisionTree<FeatureIterator, LabelIterator> & sapling, SeedType seed, unsigned int maxDepth, bool stop ):
         m_dataSet( dataSet ),
         m_sapling( sapling ),
         m_seed( seed ),
@@ -43,15 +43,15 @@ class RandomForestTrainer
         {
         }
 
-        const Table<FeatureType> &               m_dataSet;
-        const IndexedDecisionTree<FeatureType> & m_sapling;
-        SeedType                                 m_seed;
-        unsigned int                             m_maxDepth;
-        bool                                     m_stop;
+        FeatureIterator                                             m_dataSet;
+        const IndexedDecisionTree<FeatureIterator, LabelIterator> & m_sapling;
+        SeedType                                                    m_seed;
+        unsigned int                                                m_maxDepth;
+        bool                                                        m_stop;
     };
 
-    typedef MessageQueue<TrainingJob>                                              JobQueue;
-    typedef MessageQueue<typename IndexedDecisionTree<FeatureType>::SharedPointer> JobResultQueue;
+    typedef MessageQueue<TrainingJob>                                                                 JobQueue;
+    typedef MessageQueue<typename IndexedDecisionTree<FeatureIterator, LabelIterator>::SharedPointer> JobResultQueue;
 
 public:
 
@@ -80,15 +80,22 @@ public:
     /**
      * Train a forest of random trees on the data. Results will be written to the current output file (see Constructor).
      */
-    void train( const Table<FeatureType> & dataset, const Table<Label> & labels )
+    void train( FeatureIterator pointsBegin, FeatureIterator pointsEnd, LabelIterator labelsBegin, const unsigned int numberOfFeatures )
     {
+        // Check precionditions, etc.
+        if ( numberOfFeatures == 0 ) throw ClientError( "Data points must have at least one feature." );
+        auto dataset    = pointsBegin;
+        auto labels     = labelsBegin;
+        auto entryCount = std::distance( pointsBegin, pointsEnd ) / numberOfFeatures;
+        if ( entryCount % numberOfFeatures ) throw ClientError( "Malformed dataset." );
+        auto pointCount = entryCount / numberOfFeatures;
+
         // Determine the number of features to consider during each randomized split. If the supplied value was 0, default to floor(sqrt(featurecount)).
-        unsigned int numberOfFeatures   = dataset.getColumnCount();
         unsigned int featuresToConsider = m_featuresToScan ? m_featuresToScan : std::floor( std::sqrt( numberOfFeatures ) );
         if ( featuresToConsider > numberOfFeatures ) throw ClientError( "The supplied number of features to scan exceeds the number of features in the dataset." );
 
         // Create an indexed tree with only one node. This is expensive to build, so it is shared for copying between threads.
-        IndexedDecisionTree sapling( dataset, labels, featuresToConsider, m_maxDepth );
+        IndexedDecisionTree<FeatureIterator, LabelIterator> sapling( dataset, labels, numberOfFeatures, pointCount, featuresToConsider, m_maxDepth );
 
         // Create message queues for communicating with the worker threads.
         JobQueue       jobOutbox;
@@ -152,7 +159,7 @@ private:
             // Clone the sapling and grow it. Take care to re-seed the random
             // generator used for feature selection, otherwise identical trees
             // will be grown.
-            typename IndexedDecisionTree<FeatureType>::SharedPointer tree( new IndexedDecisionTree<FeatureType>( job.m_sapling ) );
+            typename IndexedDecisionTree<FeatureIterator, LabelIterator>::SharedPointer tree( new IndexedDecisionTree<FeatureIterator, LabelIterator>( job.m_sapling ) );
             tree->seed( job.m_seed );
             tree->grow();
             treeOutbox->send( tree );

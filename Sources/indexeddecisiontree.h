@@ -10,11 +10,12 @@
 #include "datatypes.h"
 #include "table.h"
 #include "weightedcoin.h"
+#include "iteratortools.h"
 
 /**
  * A decision tree with an internal search index for fast training.
  */
-template <typename FeatureType = double>
+template <typename FeatureIterator = double *, typename LabelIterator = Label *>
 class IndexedDecisionTree
 {
 
@@ -25,9 +26,10 @@ class IndexedDecisionTree
 public:
 
     typedef std::shared_ptr<IndexedDecisionTree> SharedPointer;
-
     typedef WeightedCoin<>              WeightedCoinType;
     typedef WeightedCoinType::ValueType SeedType;
+
+    typedef iterator_value_type<FeatureIterator>::type FeatureType;
 
     /**
      * Creates an indexed decision tree with one root node from scratch.
@@ -35,23 +37,17 @@ public:
      * indices. When training multiple trees on the same data, it is much more
      * efficient to create one tree and to copy the initial tree multiple times.
      */
-    IndexedDecisionTree( const Table<FeatureType> & dataPoints, const Table<Label> & labels, unsigned int featuresToConsider, unsigned int maximumDistanceToRoot = std::numeric_limits<unsigned int>::max() ):
+    IndexedDecisionTree( FeatureIterator dataPoints, LabelIterator labels, unsigned int featureCount, unsigned int pointCount, unsigned int featuresToConsider, unsigned int maximumDistanceToRoot = std::numeric_limits<unsigned int>::max() ):
     m_dataPoints( dataPoints ),
+    m_pointCount( pointCount ),
+    m_featureCount( featureCount ),
     m_labels( labels ),
     m_featuresToConsider( featuresToConsider ),
     m_maximumDistanceToRoot( maximumDistanceToRoot ),
     m_impurityThreshold( 0 ) // Between 0 and 0.5. A value of 0 means any split that is an improvement will be made, 0.5 means no splits are made.
     {
         // Determine the number of points and features in the dataset.
-        auto pointCount   = dataPoints.getRowCount();
-        auto featureCount = dataPoints.getColumnCount();
-        auto labelCount   = labels.getRowCount();
-        if ( labelCount != pointCount ) throw ClientError( "The number of points in the training set doesn't match the number of labels." );
         assert( featuresToConsider > 0 && featuresToConsider <= featureCount );
-
-        // Check preconditions.
-        assert( pointCount == labels.getRowCount() );
-        assert( labels.getColumnCount() == 1 );
 
         // Build a sorted point index for each feature.
         for ( FeatureID feature = 0; feature < featureCount; ++feature )
@@ -59,12 +55,14 @@ public:
             // Create an empty index for this feature with enough capacity for one entry per data point.
             m_featureIndex.push_back( SingleFeatureIndex() );
             auto & singleFeatureIndex = *m_featureIndex.rbegin();
-            singleFeatureIndex.reserve( dataPoints.getRowCount() );
+            singleFeatureIndex.reserve( pointCount );
 
             // Add all the data points to the single-feature index.
             for ( DataPointID point = 0; point < pointCount; ++point )
             {
-                singleFeatureIndex.push_back( FeatureIndexEntry( dataPoints( point, feature ), point, labels( point, 0 ) ) );
+                auto index = point * m_featureCount + feature;
+                assert( index < (pointCount * featureCount) );
+                singleFeatureIndex.push_back( FeatureIndexEntry( dataPoints[ point * m_featureCount + feature ], point, labels[point] ) );
             }
 
             // Sort the index by feature value.
@@ -72,8 +70,8 @@ public:
         }
 
         // Create a frequency table for all labels in the data set.
-        LabelFrequencyTable labelCounts( m_labels.begin(), m_labels.end() );
-        assert( labelCount == labelCounts.getTotal() );
+        LabelFrequencyTable labelCounts( m_labels, m_labels + pointCount );
+        assert( pointCount == labelCounts.getTotal() );
         assert( labelCounts.invariant() );
 
         // Create the root node (it contains all points).
@@ -189,7 +187,7 @@ public:
         // Write the header and the data tables of the classifier.
         binOut.write( "tree", 4 );
         binOut.write( "fcnt", 4 );
-        serialize( binOut, static_cast<uint32_t>( m_dataPoints.getColumnCount() ) );
+        serialize( binOut, static_cast<uint32_t>( m_featureCount ) );
         leftChildID.serialize( binOut );
         rightChildID.serialize( binOut );
         splitFeatureID.serialize( binOut );
@@ -464,7 +462,7 @@ private:
             auto nodeDataEnd   = nodeDataStart + node.getPointCount();
             auto predicate     = [this, splitFeature, splitValue]( const auto & entry ) -> bool
             {
-                return this->m_dataPoints( entry.m_pointID, splitFeature ) < splitValue;
+                return this->m_dataPoints[ entry.m_pointID * this->m_featureCount + splitFeature ] < splitValue;
             };
 
             auto secondNodeData = std::stable_partition( nodeDataStart, nodeDataEnd, predicate );
@@ -502,18 +500,17 @@ private:
     SplitCandidate findBestSplit( NodeID node )
     {
         // Check precondition.
-        auto featureCount = m_dataPoints.getColumnCount();
-        assert( m_featuresToConsider <= featureCount );
+        assert( m_featuresToConsider <= m_featureCount );
 
         // Randomly scan the required number of features.
         SplitCandidate bestSplit;
         assert( bestSplit.getImpurity() > m_nodes[node].getLabelCounts().template giniImpurity<ImpurityType>() );
         auto                   featuresToScan = m_featuresToConsider;
         std::vector<FeatureID> skippedFeatures;
-        for ( FeatureID featureID = 0; featureID < featureCount; ++featureID )
+        for ( FeatureID featureID = 0; featureID < m_featureCount; ++featureID )
         {
             // Decide whether or not to consider this feature.
-            auto featuresLeft        = featureCount - featureID;
+            auto featuresLeft        = m_featureCount - featureID;
             bool considerThisFeature = m_coin.flip( featuresToScan, featuresLeft );
             if ( !considerThisFeature )
             {
@@ -528,7 +525,7 @@ private:
             // Scan the feature for a split that is better than what was already found.
             bestSplit = findBestSplitForFeature( m_nodes[node], featureID, bestSplit );
         }
-        assert( skippedFeatures.size() == featureCount - m_featuresToConsider );
+        assert( skippedFeatures.size() == m_featureCount - m_featuresToConsider );
 
         // If a valid split has been found, return it.
         if ( bestSplit.isValid() ) return bestSplit;
@@ -546,9 +543,9 @@ private:
         DataPointID anyPointInNode = m_featureIndex[0][m_nodes[node].getIndexOffset()].m_pointID;
         std::cout << "WARNING: training data contains a cluster of identical points with different labels." << std::endl;
         std::cout << "Feature values:";
-        for ( unsigned int f = 0; f < featureCount; ++f )
+        for ( unsigned int f = 0; f < m_featureCount; ++f )
         {
-            std::cout << ' ' << m_dataPoints( anyPointInNode, f );
+            std::cout << ' ' << m_dataPoints[ anyPointInNode * m_featureCount + f ];
         }
         std::cout << std::endl;
         std::cout << "Label frequencies: " << m_nodes[node].getLabelCounts().asText() << std::endl;
@@ -633,8 +630,11 @@ private:
 
 private:
 
-    const Table<FeatureType> &      m_dataPoints;
-    const Table<Label> &            m_labels;
+
+    FeatureIterator                 m_dataPoints;
+    unsigned int                    m_pointCount;
+    unsigned int                    m_featureCount;
+    LabelIterator                   m_labels;
     std::deque<NodeID>              m_growableLeaves;
     std::vector<Node>               m_nodes;
     std::vector<SingleFeatureIndex> m_featureIndex;

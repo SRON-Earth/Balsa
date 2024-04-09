@@ -1,10 +1,11 @@
 #ifndef RANDOMFORESTCLASSIFIER_H
 #define RANDOMFORESTCLASSIFIER_H
 
+#include "table.h"
 #include "decisiontreeclassifierstream.h"
 #include "ensembleclassifier.h"
 
-template <typename FeatureIterator = double *, typename OutputIterator = Label *>
+template <typename FeatureIterator = Table<double>::ConstIterator, typename OutputIterator = Table<Label>::Iterator>
 class RandomForestClassifier: public Classifier<FeatureIterator, OutputIterator>
 {
 public:
