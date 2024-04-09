@@ -377,10 +377,11 @@ The following complete example shows how a Balsa data model can be loaded and tr
 		// Load data and labels.
 		auto dataSet = Table<double>::readFileAs( "fruit-data.balsa" );
 		auto labels  = Table<Label>::readFileAs( "fruit-labels.balsa" );
+		auto featureCount = dataSet.getColumnCount();
 		
 		// Train a random forest on the data, write the model to a file.
 		RandomForestTrainer trainer( "fruit-model.balsa" );
-		trainer.train( dataSet, labels );
+		trainer.train( dataSet.begin(), dataSet.end(), labels.begin(), columnCount );
 
 		return 0;
 	}
