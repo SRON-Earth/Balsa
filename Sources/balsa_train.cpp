@@ -40,7 +40,7 @@ public:
            << "   -d <max depth>   : Sets the maximum tree depth (default is +inf)." << std::endl
            << "   -c <tree count>  : Sets the number of trees (default is 150)." << std::endl
            << "   -s <random seed> : Sets the random seed (default is a random value)." << std::endl
-           << "   -f <count>       : Sets the number of features to randomly scan per split (default is ceil(sqrt(feature count))." << std::endl
+           << "   -f <count>       : Sets the number of features to randomly scan per split (default is floor(sqrt(feature count))." << std::endl
            << "   -g               : Generates Graphviz/Dotty files of all trees." << std::endl;
         return ss.str();
     }
