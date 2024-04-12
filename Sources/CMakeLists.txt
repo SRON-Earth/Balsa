@@ -1,6 +1,9 @@
 add_library( balsa SHARED weightedcoin.cpp )
 target_include_directories(balsa PUBLIC ${CMAKE_CURRENT_LIST_DIR})
 
+add_library( balsa-static STATIC EXCLUDE_FROM_ALL weightedcoin.cpp )
+target_include_directories(balsa-static PUBLIC ${CMAKE_CURRENT_LIST_DIR})
+
 add_executable( balsa_train balsa_train.cpp )
 target_link_libraries( balsa_train balsa )
 
