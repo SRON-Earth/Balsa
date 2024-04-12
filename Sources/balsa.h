@@ -4,5 +4,6 @@
 #include "decisiontreeclassifier.h"
 #include "ensembleclassifier.h"
 #include "randomforestclassifier.h"
+#include "randomforesttrainer.h"
 
 #endif // LIBBALSA_H
