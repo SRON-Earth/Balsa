@@ -1,0 +1,3 @@
+[submodule "extern/balsa"]
+	path = extern/balsa
+	url = ssh://jigsaw@repositories.jigsaw.nl:2222/~/repositories/git/sron_balsa
