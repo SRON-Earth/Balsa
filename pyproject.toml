@@ -1,0 +1,10 @@
+[build-system]
+requires = ["scikit-build-core", "numpy"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "balsa"
+version = "0.0.1"
+
+[tool.scikit-build]
+build-dir = "build/{wheel_tag}"
