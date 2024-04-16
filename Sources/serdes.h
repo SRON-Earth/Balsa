@@ -2,6 +2,7 @@
 #define SERDES_H
 
 #include <algorithm>
+#include <sstream>
 #include <cstdint>
 #include <istream>
 #include <ostream>
