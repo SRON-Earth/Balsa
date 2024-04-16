@@ -86,7 +86,7 @@ public:
         if ( numberOfFeatures == 0 ) throw ClientError( "Data points must have at least one feature." );
         auto dataset    = pointsBegin;
         auto labels     = labelsBegin;
-        auto entryCount = std::distance( pointsBegin, pointsEnd ) / numberOfFeatures;
+        auto entryCount = std::distance( pointsBegin, pointsEnd );
         if ( entryCount % numberOfFeatures ) throw ClientError( "Malformed dataset." );
         auto pointCount = entryCount / numberOfFeatures;
 
