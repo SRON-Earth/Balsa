@@ -29,7 +29,7 @@ public:
     typedef std::shared_ptr<const DecisionTreeClassifier> ConstSharedPointer;
 
     typedef std::remove_cv_t<typename iterator_value_type<FeatureIterator>::type> FeatureType;
-    typedef std::remove_cv_t<typename iterator_value_type<OutputIterator >::type> LabelType;
+    typedef std::remove_cv_t<typename iterator_value_type<OutputIterator>::type>  LabelType;
 
     static_assert( std::is_arithmetic<FeatureType>::value, "Feature type should be an integral or floating point type." );
     static_assert( std::is_same<LabelType, Label>::value, "Label type should an unsigned, 8 bits wide, integral type." );

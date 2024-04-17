@@ -29,11 +29,11 @@ class IndexedDecisionTree
 public:
 
     typedef std::shared_ptr<IndexedDecisionTree> SharedPointer;
-    typedef WeightedCoin<>              WeightedCoinType;
-    typedef WeightedCoinType::ValueType SeedType;
+    typedef WeightedCoin<>                       WeightedCoinType;
+    typedef WeightedCoinType::ValueType          SeedType;
 
     typedef std::remove_cv_t<typename iterator_value_type<FeatureIterator>::type> FeatureType;
-    typedef std::remove_cv_t<typename iterator_value_type<LabelIterator  >::type> LabelType;
+    typedef std::remove_cv_t<typename iterator_value_type<LabelIterator>::type>   LabelType;
 
     static_assert( std::is_arithmetic<FeatureType>::value, "Feature type should be an integral or floating point type." );
     static_assert( std::is_same<LabelType, Label>::value, "Label type should an unsigned, 8 bits wide, integral type." );
@@ -67,8 +67,8 @@ public:
             for ( DataPointID point = 0; point < pointCount; ++point )
             {
                 auto index = point * m_featureCount + feature;
-                assert( index < (pointCount * featureCount) );
-                singleFeatureIndex.push_back( FeatureIndexEntry( dataPoints[ point * m_featureCount + feature ], point, labels[point] ) );
+                assert( index < ( pointCount * featureCount ) );
+                singleFeatureIndex.push_back( FeatureIndexEntry( dataPoints[point * m_featureCount + feature], point, labels[point] ) );
             }
 
             // Sort the index by feature value.
@@ -468,7 +468,7 @@ private:
             auto nodeDataEnd   = nodeDataStart + node.getPointCount();
             auto predicate     = [this, splitFeature, splitValue]( const auto & entry ) -> bool
             {
-                return this->m_dataPoints[ entry.m_pointID * this->m_featureCount + splitFeature ] < splitValue;
+                return this->m_dataPoints[entry.m_pointID * this->m_featureCount + splitFeature] < splitValue;
             };
 
             auto secondNodeData = std::stable_partition( nodeDataStart, nodeDataEnd, predicate );
@@ -551,7 +551,7 @@ private:
         std::cout << "Feature values:";
         for ( unsigned int f = 0; f < m_featureCount; ++f )
         {
-            std::cout << ' ' << m_dataPoints[ anyPointInNode * m_featureCount + f ];
+            std::cout << ' ' << m_dataPoints[anyPointInNode * m_featureCount + f];
         }
         std::cout << std::endl;
         std::cout << "Label frequencies: " << m_nodes[node].getLabelCounts().asText() << std::endl;
@@ -635,7 +635,6 @@ private:
     }
 
 private:
-
 
     FeatureIterator                 m_dataPoints;
     unsigned int                    m_pointCount;

@@ -1,9 +1,9 @@
 #ifndef RANDOMFORESTCLASSIFIER_H
 #define RANDOMFORESTCLASSIFIER_H
 
-#include "table.h"
 #include "decisiontreeclassifierstream.h"
 #include "ensembleclassifier.h"
+#include "table.h"
 
 namespace balsa
 {
