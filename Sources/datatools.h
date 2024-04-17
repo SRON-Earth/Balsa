@@ -29,12 +29,12 @@ public:
      * Creates a frequency table from a list of labels.
      */
     template <typename InputIterator>
-    LabelFrequencyTable( InputIterator labelBegin, InputIterator labelEnd )
+    LabelFrequencyTable( InputIterator labelStart, InputIterator labelEnd )
     {
         // Create a temporary vector of label frequency counts (since valarray's
         // resize() function initializes the entire valarray to zero).
         std::vector<std::size_t> counts;
-        for ( auto label( labelBegin ); label != labelEnd; ++label )
+        for ( auto label( labelStart ); label != labelEnd; ++label )
         {
             // Grow the count table if a large label is found.
             if ( *label >= counts.size() ) counts.resize( *label + 1 );

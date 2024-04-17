@@ -80,13 +80,13 @@ public:
     /**
      * Train a forest of random trees on the data. Results will be written to the current output file (see Constructor).
      */
-    void train( FeatureIterator pointsBegin, FeatureIterator pointsEnd, LabelIterator labelsBegin, const unsigned int numberOfFeatures )
+    void train( FeatureIterator pointsStart, FeatureIterator pointsEnd, LabelIterator labelsStart, const unsigned int numberOfFeatures )
     {
         // Check precionditions, etc.
         if ( numberOfFeatures == 0 ) throw ClientError( "Data points must have at least one feature." );
-        auto dataset    = pointsBegin;
-        auto labels     = labelsBegin;
-        auto entryCount = std::distance( pointsBegin, pointsEnd );
+        auto dataset    = pointsStart;
+        auto labels     = labelsStart;
+        auto entryCount = std::distance( pointsStart, pointsEnd );
         if ( entryCount % numberOfFeatures ) throw ClientError( "Malformed dataset." );
         auto pointCount = entryCount / numberOfFeatures;
 
