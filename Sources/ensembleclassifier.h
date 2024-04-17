@@ -7,6 +7,7 @@
 #include "classifier.h"
 #include "classifierstream.h"
 #include "datatypes.h"
+#include "exceptions.h"
 #include "messagequeue.h"
 
 template <typename FeatureIterator, typename OutputIterator>
@@ -36,8 +37,8 @@ public:
         // Check the dimensions of the input data.
         auto rawFeatureCount = std::distance( pointsStart, pointsEnd );
         auto featureCount    = this->getFeatureCount();
-        assert( rawFeatureCount > 0 );
-        assert( ( rawFeatureCount % featureCount ) == 0 );
+        if ( rawFeatureCount == 0 ) return;
+        if ( featureCount == 0 || rawFeatureCount % featureCount ) throw ClientError( "Malformed dataset." );
 
         // Create a table for the label votes.
         unsigned int pointCount = rawFeatureCount / featureCount;
