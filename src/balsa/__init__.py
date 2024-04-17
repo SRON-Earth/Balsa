@@ -1,1 +1,1 @@
-from .balsa import RandomForestClassifier, train
+from ._balsa import __doc__, RandomForestClassifier, train

@@ -11,9 +11,113 @@
 // Python docstrings.
 ////////////////////////////////////////////////////////////////////////////////
 
-PyDoc_STRVAR( balsa_py_doc, "A Python interface for the balsa C++ library for random forest classification." );
-PyDoc_STRVAR( balsa_train_py_doc, "Train a random forest given a set of data points and a set of labels." );
-PyDoc_STRVAR( RandomForestClassifier_classify_py_doc, "Classify a set of data points." );
+PyDoc_STRVAR( balsa_py_doc, R"###(
+Balsa
+=====
+
+A Python interface for the balsa C++ library for random forest classification.
+
+The interface consists of a package-level function `train` to train random
+forests, and a class `RandomForestClassifier` that can be used to classify one
+or more data sets using a trained random forest.
+
+For documentation, see the docstings as well as the documentation of the balsa
+C++ library.)###" );
+
+PyDoc_STRVAR( balsa_train_py_doc, \
+R"###(Train a random forest given an array of data points and an array of
+ground-truth labels.
+
+Parameters
+----------
+data : array-like
+    Array of data points of shape [No. of data points, No. of features]. A copy
+    will be made unless the input is a 2-dimensional row-major
+    (C-order), continuous, data type aligned array of the expected data type.
+    The expected data type is 64-bit floats if `single_precision` is False
+    (the default), 32-bit floats otherwise.
+labels : array-like
+    Array of labels of shape [No. of data points].  A copy will be made unless
+    the input is a 1-dimensional row-major (C-order), continuous, data type
+    aligned array of the 8-bit unsigned integers.
+model_filename : path-like
+    Name (or path) of the file in which the trained forest will be stored.
+max_depth : int, optional, default = 4294967295
+    Maximum distance from any node to the root of the tree.
+tree_count : int, optional, default = 150
+    Number of decision trees that will be trained.
+concurrent_trainers : int, optional, default = 1
+    Number of decision trees that will be trained concurrently.
+features_to_scan : int, optional, default = 0
+    Number of features to consider when splitting nodes. When a node is to be
+    split, the specified number of features will be randomly selected from
+    total number of features, and the optimal location for the split will be
+    determined based on the selected features. If set to zero, the square root
+    of the number of features will be used (rounded down).
+single_precision : bool, optional, default = False
+    If True, single precision (32-bit) floats will be used instead of double
+    precision (64-bit) floats. This significantly reduces the amount of memory
+    used during training, at the expense of precision.
+
+Returns
+-------
+`None`; The trained random forest will be stored as a binary file (see the
+`model_filename` parameter).
+)###" );
+
+PyDoc_STRVAR( RandomForestClassifier_py_doc, \
+R"###(Create a random forest classifier from an existing model file.
+
+Parameters
+----------
+model_filename : path-like
+    Name (or path) of the file that contains the pre-trained random forest.
+number_of_features : int
+    Number of features used for classification. Arrays of data point passed to
+    the `classify` method should always have this number of features. The
+    number of features that the random forest was trained on must be smaller
+    than or equal to this number. If it is smaller, the additional features
+    will be ignored during classification.
+max_threads : int, optional, default = 0
+    Number of worker threads used for classification. Set to zero (the default)
+    for single threaded classification.
+max_preload : int, optional, default = 1
+    Number of decision trees to pre-load. Balsa can pre-load decision trees in
+    batches during classification, instead of reading the entire random forest
+    in memory all at once. This significantly reduces the amount of memory
+    needed. However, the decision trees will need to be reread for each call to
+    `classify`, which takes time. If enough memory is available, it is
+    therefore best to read the entire random forest into memory
+    (`max_preload` set to zero). Otherwise, set `max_preload` to a multiple of
+    the number of threads used for classification.
+single_precision : bool, optional, default = False
+    If True, single precision (32-bit) floats will be used instead of double
+    precision (64-bit) floats. This significantly reduces the amount of memory
+    used during training, at the expense of precision.
+
+Returns
+-------
+A random forest classifier object.
+)###" );
+
+PyDoc_STRVAR( RandomForestClassifier_classify_py_doc, \
+R"###(Classify an array data points using a pre-trained random forest classifier.
+
+Parameters
+----------
+data : array-like
+    Array of data points of shape [No. of data points, No. of features]. A copy
+    will be made unless the input is a 2-dimensional row-major
+    (C-order), continuous, data type aligned array of the expected data type.
+    The expected data type depends on the value provided for the
+    `single_precision` parameter when the `RandomForestClassifier` instance was
+    constructed: 64-bit floats if `single_precision` is False (the default),
+    32-bit floats otherwise.
+
+Returns
+-------
+An array of shape [No. of data points] with the predicted labels.
+)###" );
 
 ////////////////////////////////////////////////////////////////////////////////
 // RandomForestClassifier Python type.
@@ -48,6 +152,7 @@ static PyType_Slot RandomForestClassifier_py_type_slots[] = {
     { Py_tp_init, (void *) RandomForestClassifier_py_type_init },
     { Py_tp_dealloc, (void *) RandomForestClassifier_py_type_dealloc },
     { Py_tp_methods, RandomForestClassifier_py_type_methods },
+    { Py_tp_doc, (void *) RandomForestClassifier_py_doc },
     { 0, 0 } };
 
 // Type specification.
@@ -270,7 +375,7 @@ static PyObject * balsa_train( PyObject * self, PyObject * args, PyObject * kwar
     PyObject *   labels_py_object         = NULL;
     PyObject *   model_filename_py_object = NULL;
     unsigned int max_depth                = UINT_MAX;
-    unsigned int tree_count               = 1;
+    unsigned int tree_count               = 150;
     unsigned int concurrent_trainers      = 1;
     unsigned int features_to_scan         = 0;
     int          single_precision         = 0;
@@ -399,13 +504,13 @@ static PyMethodDef balsa_methods[] = {
 // Module definition.
 static struct PyModuleDef balsa_module = {
     PyModuleDef_HEAD_INIT,
-    "balsa",
+    "_balsa",
     balsa_py_doc,
     -1,
     balsa_methods };
 
-// Initializes the balsa Python module.
-PyMODINIT_FUNC PyInit_balsa( void )
+// Initializes the _balsa Python module.
+PyMODINIT_FUNC PyInit__balsa( void )
 {
     // Initialize the NumPy C API.
     import_array();
@@ -414,7 +519,7 @@ PyMODINIT_FUNC PyInit_balsa( void )
         return NULL;
     }
 
-    // Create the balsa extension module.
+    // Create the _balsa extension module.
     PyObject * module = PyModule_Create( &balsa_module );
     if ( module == NULL )
     {
