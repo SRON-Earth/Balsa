@@ -8,6 +8,9 @@
 
 #include "datatypes.h"
 
+namespace balsa
+{
+
 /**
  * A table for counting the number of occurrences of various labels in a set of data points.
  */
@@ -184,5 +187,7 @@ private:
     FeatureID   m_feature;
     FeatureType m_value;
 };
+
+} // namespace balsa
 
 #endif // DATATOOLS_H

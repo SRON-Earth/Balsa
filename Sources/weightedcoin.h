@@ -5,6 +5,9 @@
 #include <mutex>
 #include <random>
 
+namespace balsa
+{
+
 /**
  * A thread safe random number generator.
  */
@@ -101,5 +104,7 @@ private:
 
     T_RNG m_rng;
 };
+
+} // namespace balsa
 
 #endif // WEIGHTEDCOIN_H

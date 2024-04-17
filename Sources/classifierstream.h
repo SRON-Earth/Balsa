@@ -3,6 +3,9 @@
 
 #include "classifier.h"
 
+namespace balsa
+{
+
 /**
  * Abstract interface of a class that represents a collection of classifiers
  * that can be iterated.
@@ -33,4 +36,6 @@ public:
     virtual typename ClassifierType::SharedPointer next() = 0;
 };
 
-#endif
+} // namespace balsa
+
+#endif // CLASSIFIERSTREAM_H

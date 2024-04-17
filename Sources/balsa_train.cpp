@@ -11,6 +11,8 @@
 #include "timing.h"
 #include "weightedcoin.h"
 
+using namespace balsa;
+
 namespace
 {
 class Options

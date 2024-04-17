@@ -9,6 +9,9 @@
 #include "exceptions.h"
 #include "serdes.h"
 
+namespace balsa
+{
+
 /**
  * A row-major MxN data matrix that can be loaded and stored efficiently.
  * N.B. the Table does not support linear algebra operations.
@@ -242,9 +245,9 @@ public:
 
         // Write the dimensions.
         binOut.write( "rows", 4 );
-        ::serialize( binOut, static_cast<uint32_t>( getRowCount() ) );
+        balsa::serialize( binOut, static_cast<uint32_t>( getRowCount() ) );
         binOut.write( "cols", 4 );
-        ::serialize( binOut, static_cast<uint32_t>( getColumnCount() ) );
+        balsa::serialize( binOut, static_cast<uint32_t>( getColumnCount() ) );
 
         // Write the data
         binOut.write( "data", 4 );
@@ -338,5 +341,7 @@ std::ostream & operator<<( std::ostream & out, const Table<uint8_t> & table )
 
     return out;
 }
+
+} // namespace balsa
 
 #endif // TABLE_H

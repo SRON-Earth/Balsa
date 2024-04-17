@@ -10,6 +10,8 @@
 #include "serdes.h"
 #include "table.h"
 
+using namespace balsa;
+
 namespace
 {
 class Options

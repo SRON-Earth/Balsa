@@ -3,6 +3,9 @@
 
 #include <chrono>
 
+namespace balsa
+{
+
 /**
  * A class for performing basic timing measurements.
  */
@@ -60,5 +63,7 @@ private:
     Timestamp m_start;
     Timestamp m_end;
 };
+
+} // namespace balsa
 
 #endif // TIMING_H

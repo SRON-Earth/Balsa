@@ -12,6 +12,8 @@
 #include "table.h"
 #include "timing.h"
 
+using namespace balsa;
+
 namespace
 {
 class Options

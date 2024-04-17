@@ -7,6 +7,9 @@
 #include "decisiontreeclassifier.h"
 #include "exceptions.h"
 
+namespace balsa
+{
+
 /**
  * A classifier stream implementation for random forests that loads decision
  * trees on demand.
@@ -147,5 +150,7 @@ private:
     std::size_t                                         m_cacheIndex;
     std::vector<typename ClassifierType::SharedPointer> m_cache;
 };
+
+} // namespace balsa
 
 #endif

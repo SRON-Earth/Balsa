@@ -19,6 +19,9 @@
 #include "serdes.h"
 #include "table.h"
 
+namespace balsa
+{
+
 /**
  * Trains a random forest classifier on a set of datapoints and known labels.
  */
@@ -176,5 +179,7 @@ private:
     unsigned int m_featuresToScan;
     bool         m_writeGraphviz;
 };
+
+} // namespace balsa
 
 #endif // RANDOMFORESTTRAINER_H

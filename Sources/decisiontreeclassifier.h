@@ -11,6 +11,9 @@
 #include "iteratortools.h"
 #include "serdes.h"
 
+namespace balsa
+{
+
 /**
  * A Classifier based on an internal decision tree.
  */
@@ -95,7 +98,7 @@ public:
         assert( is.good() );
         expect( is, "tree", "Missing tree header." );
         expect( is, "fcnt", "Missing feature count field." );
-        auto featureCount = ::deserialize<uint32_t>( is );
+        auto featureCount = balsa::deserialize<uint32_t>( is );
 
         // Create an empty classifier.
         SharedPointer classifier( new DecisionTreeClassifier( featureCount ) );
@@ -163,5 +166,7 @@ private:
     Table<FeatureType> m_splitValue;
     Table<Label>       m_label;
 };
+
+} // namespace balsa
 
 #endif // DECISIONTREECLASSIFIER_H

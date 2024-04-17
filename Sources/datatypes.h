@@ -3,6 +3,9 @@
 
 #include <cstdint>
 
+namespace balsa
+{
+
 /**
  * The integer type used to identify a feature dimension in a data point or data set.
  */
@@ -22,5 +25,7 @@ typedef uint32_t DataPointID;
  * The integer type used to identify a node in a decision tree.
  */
 typedef uint32_t NodeID;
+
+} // namespace balsa
 
 #endif // DATATYPES_H

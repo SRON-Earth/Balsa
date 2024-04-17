@@ -3,6 +3,9 @@
 
 #include <string>
 
+namespace balsa
+{
+
 /**
  * Base class of all exceptions.
  */
@@ -77,5 +80,7 @@ public:
     {
     }
 };
+
+} // namespace balsa
 
 #endif // EXCEPTIONS_H

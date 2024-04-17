@@ -3,6 +3,9 @@
 
 #include <iterator>
 
+namespace balsa
+{
+
 /**
  * Iterator trait class whose \c type member typedef is equal to the type of the
  * values being iterated. Unlike std::iterator_traits<>, \c type is
@@ -19,5 +22,7 @@ struct iterator_value_type<T, std::void_t<typename T::container_type>>
 {
     using type = typename T::container_type::value_type;
 };
+
+} // namespace balsa
 
 #endif // ITERATORTOOLS_H

@@ -10,6 +10,9 @@
 #include "genericparser.h"
 #include "table.h"
 
+namespace balsa
+{
+
 template <typename FeatureType>
 class DataGenerator
 {
@@ -168,11 +171,6 @@ private:
     std::piecewise_constant_distribution<FeatureType>                       m_sourceDistribution;
 };
 
-namespace
-{
-
-};
-
 /**
  * Parse a data generator from a configuration file.
  */
@@ -252,5 +250,7 @@ DataGenerator<FeatureType>::SharedPointer parseDataGenerator( std::istream & in,
 
     throw ParseError( "Unrecognized data source definition: " + datasourceType );
 }
+
+} // namespace balsa
 
 #endif // DATAGENERATOR_H

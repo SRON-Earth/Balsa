@@ -12,6 +12,9 @@
 #include "table.h"
 #include "weightedcoin.h"
 
+namespace balsa
+{
+
 /**
  * A decision tree with an internal search index for fast training.
  */
@@ -645,5 +648,7 @@ private:
     unsigned int                    m_maximumDistanceToRoot;
     ImpurityType                    m_impurityThreshold;
 };
+
+} // namespace balsa
 
 #endif // INDEXEDDECISIONTREE_H

@@ -10,6 +10,9 @@
 
 #include "exceptions.h"
 
+namespace balsa
+{
+
 /**
  * Serialize a POD (plain old data) value to a binary output stream.
  */
@@ -149,5 +152,7 @@ std::string getTypeName<uint8_t>()
 {
     return "ui08";
 }
+
+} // namespace balsa
 
 #endif // SERDES_H

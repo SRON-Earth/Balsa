@@ -7,6 +7,9 @@
 #include "exceptions.h"
 #include "serdes.h"
 
+namespace balsa
+{
+
 /**
  * A non application specific parser for processing text streams.
  */
@@ -90,5 +93,7 @@ private:
     std::string    m_whitespace;
     std::istream & m_in;
 };
+
+} // namespace balsa
 
 #endif // GENERICPARSER_H

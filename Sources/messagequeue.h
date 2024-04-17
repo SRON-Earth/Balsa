@@ -5,6 +5,9 @@
 #include <mutex>
 #include <queue>
 
+namespace balsa
+{
+
 /**
  * A thread-safe queue for distributing messages over threads.
  */
@@ -54,5 +57,7 @@ private:
     mutable std::mutex      m_mutex;
     std::condition_variable m_condition;
 };
+
+} // namespace balsa
 
 #endif // MESSAGEQUEUE_H

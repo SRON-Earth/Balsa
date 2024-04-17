@@ -5,6 +5,9 @@
 #include "decisiontreeclassifierstream.h"
 #include "ensembleclassifier.h"
 
+namespace balsa
+{
+
 template <typename FeatureIterator = Table<double>::ConstIterator, typename OutputIterator = Table<Label>::Iterator>
 class RandomForestClassifier: public Classifier<FeatureIterator, OutputIterator>
 {
@@ -48,5 +51,7 @@ private:
     DecisionTreeClassifierStream<FeatureIterator, OutputIterator> m_treeStream;
     EnsembleClassifier<FeatureIterator, OutputIterator>           m_classifier;
 };
+
+} // namespace balsa
 
 #endif // RANDOMFORESTCLASSIFIER_H

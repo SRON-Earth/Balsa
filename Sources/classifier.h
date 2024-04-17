@@ -5,6 +5,9 @@
 
 #include "table.h"
 
+namespace balsa
+{
+
 /**
  * Abstract interface of a class that can classify data points.
  */
@@ -63,5 +66,7 @@ private:
 
     std::size_t m_featureCount;
 };
+
+} // namespace balsa
 
 #endif // CLASSIFIER_H

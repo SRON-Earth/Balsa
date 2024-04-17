@@ -10,6 +10,9 @@
 #include "exceptions.h"
 #include "messagequeue.h"
 
+namespace balsa
+{
+
 template <typename FeatureIterator, typename OutputIterator>
 class EnsembleClassifier: public Classifier<FeatureIterator, OutputIterator>
 {
@@ -202,5 +205,7 @@ private:
     unsigned int                                        m_maxWorkerThreads;
     ClassifierStream<FeatureIterator, OutputIterator> & m_classifierStream;
 };
+
+} // namespace balsa
 
 #endif // ENSEMBLECLASSIFIER_H
