@@ -544,18 +544,10 @@ private:
             if ( bestSplit.isValid() ) return bestSplit;
         }
 
-        // All points in this node must have exactly the same feature values. Issue a warning.
-        // TODO: proper warning object.
-        DataPointID anyPointInNode = m_featureIndex[0][m_nodes[node].getIndexOffset()].m_pointID;
-        std::cout << "WARNING: training data contains a cluster of identical points with different labels." << std::endl;
-        std::cout << "Feature values:";
-        for ( unsigned int f = 0; f < m_featureCount; ++f )
-        {
-            std::cout << ' ' << m_dataPoints[anyPointInNode * m_featureCount + f];
-        }
-        std::cout << std::endl;
-        std::cout << "Label frequencies: " << m_nodes[node].getLabelCounts().asText() << std::endl;
-
+        // All points in this node must have exactly the same feature values,
+        // which means this node cannot be split. It is possible that different
+        // points in this node have different labels. The most prevalent label
+        // will be assumed in that case.
         return bestSplit;
     }
 

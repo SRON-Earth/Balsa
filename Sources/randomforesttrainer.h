@@ -108,7 +108,7 @@ public:
         std::vector<std::thread> workers;
         for ( unsigned int i = 0; i < m_trainerCount; ++i )
         {
-            workers.push_back( std::thread( &RandomForestTrainer::workerThread, i, &jobOutbox, &treeInbox ) );
+            workers.push_back( std::thread( &RandomForestTrainer::workerThread, &jobOutbox, &treeInbox ) );
         }
 
         // Create jobs for all trees.
@@ -125,7 +125,6 @@ public:
         // Wait for all the trees to come in, and write each tree to a forest file.
         for ( unsigned int i = 0; i < m_treeCount; ++i )
         {
-            std::cout << "Tree #" << i << " completed." << std::endl;
             auto tree = treeInbox.receive();
 
             // Write the tree without the bulky index, which is no longer needed after training.
@@ -147,7 +146,7 @@ public:
 
 private:
 
-    static void workerThread( unsigned int workerID, JobQueue * jobInbox, JobResultQueue * treeOutbox )
+    static void workerThread( JobQueue * jobInbox, JobResultQueue * treeOutbox )
     {
         // Train trees until it is time to stop.
         unsigned int jobsPickedUp = 0;
@@ -157,7 +156,6 @@ private:
             TrainingJob job = jobInbox->receive();
             if ( job.m_stop ) break;
             ++jobsPickedUp;
-            std::cout << "Worker #" << workerID << ": job " << jobsPickedUp << " picked up." << std::endl;
 
             // Clone the sapling and grow it. Take care to re-seed the random
             // generator used for feature selection, otherwise identical trees
@@ -166,10 +164,7 @@ private:
             tree->seed( job.m_seed );
             tree->grow();
             treeOutbox->send( tree );
-            std::cout << "Worker #" << workerID << ": job " << jobsPickedUp << " finished." << std::endl;
         }
-
-        std::cout << "Worker #" << workerID << " finished." << std::endl;
     }
 
     std::string  m_outputFile;
