@@ -232,21 +232,21 @@ The **balsa_generate** tool generates structured random test data sets for exper
 
 A data set description for balsa_generate for our earlier apples-and-oranges example might look like this:
 
-	multisource(4)
+    multisource(4)
 	{
 		source(78)
 		{
-	                feature = gaussian(122, 11  );
-	                feature = gaussian(40 , 9   );
-	                feature = gaussian(13 , 12  );
-	                feature = uniform( 100, 150 );
+            gaussian(122, 11  );
+            gaussian(40 , 9   );
+            gaussian(13 , 12  );
+            uniform( 100, 150 );
 		}
 		source(22)
 		{
-	                feature = gaussian(100, 10  );
-	                feature = gaussian(100, 10  );
-	                feature = gaussian( 20, 10  );
-	                feature = uniform( 110, 155 );
+	        gaussian(100, 10  );
+	        gaussian(100, 10  );
+	        gaussian( 20, 10  );
+	        uniform( 110, 155 );
 		}
 	}
 
@@ -256,9 +256,31 @@ The body of the multisource population describes two data generation sources. Ea
 
 Each source definition contains an integer weight that defines the relative frequency of that class in the sample data set. By convention, these numbers add up to 100% (78% 'apples', 22% 'oranges', as per the earlier example), but this is not necessary. The data generator will normalize the numbers.
 
-Each source definition body contains one generator statement for each of the four features. Feature values can be drawn from either a Gaussian distribution (normal distribution) or from a uniform distribition. For gaussians, the parameters are mean and standard deviation, for uniform distributions, the parameters are the lower- and upper bounds.
+Each source definition body contains a number of generator statements. Each generator produces values for one or more features. The total number of features produced by a source must match the number of features of the population. In the above example, feature values are drawn from either a Gaussian distribution (normal distribution) or from a uniform distribition. The `gaussian` and `uniform` generators both produce values for a single feature. Therefore, each source in the example contains exactly four generator statements. For the `gaussian` generator, the parameters are mean and standard deviation, for the `uniform` generator, the parameters are the lower- and upper bounds.
 
-To generate data, save the example to a text file called "fruit.conf" and run balsa_generate:
+There are other generators that produce values for multiple features: `annulus` and `checkerboard`. The `annulus` generator draws feature values from a 2-dimensional ring; its parameters are the minimum and maximum radius of the ring. For each point a radius is drawn uniformly from this range, and an angle is drawn uniformly from the range [0, 360) degrees. The generator produces two feature values for each point, which are the Cartesian coordinates corresponding to the drawn radius and angle. The `checkboard` generator draws feature values from either the black or the white "squares" of an N-dimensional checkerboard; its parameters are the square color (`black` or `white`), the number of dimensions, and for each dimension the number of squares and their size. The number of feature values produced per point is equal to the specified number of dimensions. Both the `annulus` and the `checkerboard` generators produces feature values that are centered at the origin.
+
+A data set description for balsa_generate using these generators might look like this:
+
+    multisource(2)
+    {
+        source(40)
+        {
+            checkerboard(black, 2, 8, 2.0, 8, 2.0);
+        }
+        source(40)
+        {
+            checkerboard(white, 2, 8, 2.0, 8, 2.0);
+        }
+        source(20)
+        {
+            annulus(1.0, 3.0);
+        }
+    }
+
+This description specifies that the data set is to be drawn from a 'multisource' population with two features per data point. There are three sources in the population, and hence three unique classes: white checkerboard squares, black checkboard squares, and an annulus. The checkerboard is 2-dimensional and consists of 8x8 squares, where each square has a size of 2x2 (in arbitrary units). Thus, the size of the checkerboard is 16x16. The annulus has an inner radius of 1 and an outer radius of 3 (in arbitrary units). Since both the checkerboard and the annulus are centered at the origin, the annulus overlaps the center of the checkerboard, making this a very challenging multi-valued classification problem.
+
+Let's get back to our apples-and-oranges example. To generate data, save the data description shows at the top of this section to a text file called "fruit.conf" and run balsa_generate:
 
 	balsa_generate fruit.conf fruit-points.balsa fruit-labels.balsa
 
