@@ -1,6 +1,7 @@
 #ifndef TABLE_H
 #define TABLE_H
 
+#include <algorithm>
 #include <cassert>
 #include <fstream>
 #include <iomanip>
@@ -162,6 +163,29 @@ public:
         }
 
         return *this;
+    }
+
+    /**
+     * Test if this and another table are equal, that is, have the same shape
+     * and contain the same values.
+     */
+    bool operator==( const Table<CellType> & other ) const
+    {
+        // Check preconditions.
+        if ( other.m_columnCount != m_columnCount )
+            return false;
+        if ( other.m_data.size() != m_data.size() )
+            return false;
+        return std::equal( m_data.begin(), m_data.end(), other.m_data.begin() );
+    }
+
+    /**
+     * Test if this and another table are different, that is, have a different
+     * shape or contain different values.
+     */
+    bool operator!=( const Table<CellType> & other ) const
+    {
+        return !(*this == other);
     }
 
     /**

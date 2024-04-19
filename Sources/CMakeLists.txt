@@ -18,3 +18,6 @@ target_link_libraries( balsa_print balsa )
 
 add_executable( balsa_measure balsa_measure.cpp )
 target_link_libraries( balsa_measure balsa )
+
+add_executable( balsa_test balsa_test.cpp )
+target_link_libraries( balsa_test balsa )

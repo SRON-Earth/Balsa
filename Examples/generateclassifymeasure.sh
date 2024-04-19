@@ -15,31 +15,31 @@ multisource(4)
 {
     source(40)
     {
-                feature = gaussian(245, 40  );
-                feature = gaussian(188 ,40  );
-                feature = gaussian(66 , 40  );
-                feature = uniform( 90 , 115 );
+        gaussian(245, 40  );
+        gaussian(188 ,40  );
+        gaussian(66 , 40  );
+        uniform( 90 , 115 );
     }
     source(40)
     {
-                feature = gaussian(158, 30 );
-                feature = gaussian(245, 30  );
-                feature = gaussian(66 , 30  );
-                feature = uniform( 95 , 150 );
-    }
-   source(20)
-    {
-                feature = gaussian(245, 50  );
-                feature = gaussian(123, 40  );
-                feature = gaussian(66 , 40  );
-                feature = uniform( 90 , 140 );
+        gaussian(158, 30 );
+        gaussian(245, 30  );
+        gaussian(66 , 30  );
+        uniform( 95 , 150 );
     }
     source(20)
     {
-                feature = gaussian( 71,  40  );
-                feature = gaussian( 39,  40  );
-                feature = gaussian( 112, 40  );
-                feature = uniform(  90 , 155 );
+        gaussian(245, 50  );
+        gaussian(123, 40  );
+        gaussian(66 , 40  );
+        uniform( 90 , 140 );
+    }
+    source(20)
+    {
+        gaussian( 71,  40  );
+        gaussian( 39,  40  );
+        gaussian( 112, 40  );
+        uniform(  90 , 155 );
     }
 }
 EOF
