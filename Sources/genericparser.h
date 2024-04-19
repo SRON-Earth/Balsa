@@ -1,6 +1,7 @@
 #ifndef GENERICPARSER_H
 #define GENERICPARSER_H
 
+#include <cassert>
 #include <iostream>
 #include <string>
 
