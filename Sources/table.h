@@ -185,7 +185,7 @@ public:
      */
     bool operator!=( const Table<CellType> & other ) const
     {
-        return !(*this == other);
+        return !( *this == other );
     }
 
     /**

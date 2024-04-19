@@ -1,19 +1,14 @@
 #include <algorithm>
-#include <cassert>
-#include <cmath>
 #include <cstdint>
 #include <cstdio>
 #include <filesystem>
 #include <iostream>
-#include <numbers>
 #include <limits>
-#include <random>
 
 #include "datagenerator.h"
 #include "datatypes.h"
-#include "exceptions.h"
-#include "randomforesttrainer.h"
 #include "randomforestclassifier.h"
+#include "randomforesttrainer.h"
 #include "table.h"
 
 using namespace balsa;
@@ -30,6 +25,7 @@ using namespace balsa;
 class NamedTemporaryFile
 {
 public:
+
     NamedTemporaryFile():
     m_filename( std::tmpnam( NULL ) )
     {
@@ -46,6 +42,7 @@ public:
     }
 
 private:
+
     std::string m_filename;
 };
 
@@ -54,19 +51,16 @@ bool testCross2x2()
 {
     // Create a square where the data points on one diagonal belong to class A,
     // and the data points on the other diagonal belong to class B.
-    FeatureType points[] = { -1,  1,
-                              1,  1,
-                             -1, -1,
-                              1, -1 };
-    std::uint8_t truth[] = { 0, 1, 1, 0 };
+    FeatureType  points[] = { -1, 1, 1, 1, -1, -1, 1, -1 };
+    std::uint8_t truth[]  = { 0, 1, 1, 0 };
 
     // Train a single decision tree.
-    NamedTemporaryFile modelFile;
+    NamedTemporaryFile                                 modelFile;
     RandomForestTrainer<FeatureType *, std::uint8_t *> trainer( modelFile.getName(), std::numeric_limits<unsigned int>::max(), 1, 1, 2 );
     trainer.train( points, points + 8, truth, 2 );
 
     // Classify the training data.
-    std::uint8_t labels[4];
+    std::uint8_t                                          labels[4];
     RandomForestClassifier<FeatureType *, std::uint8_t *> classifier( modelFile.getName(), 2, 1, 0 );
     classifier.classify( points, points + 8, labels );
 
@@ -79,10 +73,10 @@ bool testCheckerboard()
 {
     // Construct a multi-source model with a 2-D checkerboard.
     typename CheckerboardFeatureGenerator<FeatureType>::SharedPointer black( new CheckerboardFeatureGenerator<FeatureType>( CheckerboardFeatureGenerator<FeatureType>::Color::BLACK ) );
-    black->addDimension( 16, 1.0  );
+    black->addDimension( 16, 1.0 );
     black->addDimension( 32, 0.75 );
     typename CheckerboardFeatureGenerator<FeatureType>::SharedPointer white( new CheckerboardFeatureGenerator<FeatureType>( CheckerboardFeatureGenerator<FeatureType>::Color::WHITE ) );
-    white->addDimension( 16, 1.0  );
+    white->addDimension( 16, 1.0 );
     white->addDimension( 32, 0.75 );
     typename SingleSourceGenerator<FeatureType>::SharedPointer blackSource( new SingleSourceGenerator<FeatureType>() );
     blackSource->addFeatureGenerator( black );
@@ -98,12 +92,12 @@ bool testCheckerboard()
     generator.generate( 10000, points, truth );
 
     // Train a single decision tree.
-    NamedTemporaryFile modelFile;
+    NamedTemporaryFile                                              modelFile;
     RandomForestTrainer<typename Table<FeatureType>::ConstIterator> trainer( modelFile.getName(), std::numeric_limits<unsigned int>::max(), 1, 1, generator.getFeatureCount() );
     trainer.train( points.begin(), points.end(), truth.begin(), points.getColumnCount() );
 
     // Classify the training data.
-    Table<Label> labels( points.getRowCount(), 1 );
+    Table<Label>                                                       labels( points.getRowCount(), 1 );
     RandomForestClassifier<typename Table<FeatureType>::ConstIterator> classifier( modelFile.getName(), points.getColumnCount(), 1, 0 );
     classifier.classify( points.begin(), points.end(), labels.begin() );
 
@@ -118,9 +112,9 @@ bool testConcentricRings()
     typename SingleSourceGenerator<FeatureType>::SharedPointer ring0( new SingleSourceGenerator<FeatureType>() );
     typename SingleSourceGenerator<FeatureType>::SharedPointer ring1( new SingleSourceGenerator<FeatureType>() );
     typename SingleSourceGenerator<FeatureType>::SharedPointer ring2( new SingleSourceGenerator<FeatureType>() );
-    ring0->addFeatureGenerator( typename FeatureGenerator<FeatureType>::SharedPointer( new AnnulusFeatureGenerator<FeatureType>( 0.0, 2.0   ) ) );
+    ring0->addFeatureGenerator( typename FeatureGenerator<FeatureType>::SharedPointer( new AnnulusFeatureGenerator<FeatureType>( 0.0, 2.0 ) ) );
     ring1->addFeatureGenerator( typename FeatureGenerator<FeatureType>::SharedPointer( new AnnulusFeatureGenerator<FeatureType>( 2.25, 3.25 ) ) );
-    ring2->addFeatureGenerator( typename FeatureGenerator<FeatureType>::SharedPointer( new AnnulusFeatureGenerator<FeatureType>( 3.5, 7.0   ) ) );
+    ring2->addFeatureGenerator( typename FeatureGenerator<FeatureType>::SharedPointer( new AnnulusFeatureGenerator<FeatureType>( 3.5, 7.0 ) ) );
     MultiSourceGenerator<FeatureType> generator( 0, 2 );
     generator.addSource( 1, ring0 );
     generator.addSource( 1, ring1 );
@@ -132,12 +126,12 @@ bool testConcentricRings()
     generator.generate( 10000, points, truth );
 
     // Train a single decision tree.
-    NamedTemporaryFile modelFile;
+    NamedTemporaryFile                                              modelFile;
     RandomForestTrainer<typename Table<FeatureType>::ConstIterator> trainer( modelFile.getName(), std::numeric_limits<unsigned int>::max(), 1, 1, generator.getFeatureCount() );
     trainer.train( points.begin(), points.end(), truth.begin(), points.getColumnCount() );
 
     // Classify the training data.
-    Table<Label> labels( points.getRowCount(), 1 );
+    Table<Label>                                                       labels( points.getRowCount(), 1 );
     RandomForestClassifier<typename Table<FeatureType>::ConstIterator> classifier( modelFile.getName(), points.getColumnCount(), 1, 0 );
     classifier.classify( points.begin(), points.end(), labels.begin() );
 
@@ -145,10 +139,10 @@ bool testConcentricRings()
     return labels == truth;
 }
 
-bool execute_test( const std::string & name, bool ( *test ) ( void ) )
+bool execute_test( const std::string & name, bool ( *test )( void ) )
 {
     // Run a single test and return the test result.
-    bool result = true;
+    bool              result  = true;
     const std::size_t padding = ( name.size() > 60 ? 0 : 60 - name.size() );
     std::cout << name << std::string( padding, '.' ) << " ";
     try
@@ -172,11 +166,11 @@ int main()
     // Run all tests (even if one or more tests fail).
     try
     {
-        result &= execute_test( "testCross2x2<float>"        , testCross2x2<float>         );
-        result &= execute_test( "testCross2x2<double>"       , testCross2x2<double>        );
-        result &= execute_test( "testCheckerboard<float>"    , testCheckerboard<float>     );
-        result &= execute_test( "testCheckerboard<double>"   , testCheckerboard<double>    );
-        result &= execute_test( "testConcentricRings<float>" , testConcentricRings<float>  );
+        result &= execute_test( "testCross2x2<float>", testCross2x2<float> );
+        result &= execute_test( "testCross2x2<double>", testCross2x2<double> );
+        result &= execute_test( "testCheckerboard<float>", testCheckerboard<float> );
+        result &= execute_test( "testCheckerboard<double>", testCheckerboard<double> );
+        result &= execute_test( "testConcentricRings<float>", testConcentricRings<float> );
         result &= execute_test( "testConcentricRings<double>", testConcentricRings<double> );
     }
     catch ( Exception & e )

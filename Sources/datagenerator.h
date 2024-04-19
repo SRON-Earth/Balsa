@@ -149,9 +149,9 @@ protected:
     const FeatureType * generate( FeatureGenerator<FeatureType>::RandomEngine & engine )
     {
         FeatureType radius = m_radiusDistribution( engine );
-        FeatureType angle = m_angleDistribution( engine );
-        m_value[0] = radius * std::cos( angle );
-        m_value[1] = radius * std::sin( angle );
+        FeatureType angle  = m_angleDistribution( engine );
+        m_value[0]         = radius * std::cos( angle );
+        m_value[1]         = radius * std::sin( angle );
         return m_value.data();
     }
 
@@ -210,7 +210,7 @@ protected:
             {
                 // Draw a coordinate along the current axis.
                 const FeatureType coordinate = m_distribution[i]( engine );
-                m_value[i] = coordinate;
+                m_value[i]                   = coordinate;
 
                 // Update the sum of cell coordinates.
                 const FeatureType cellCoordinate = std::floor( coordinate / m_cellSize[i] );
@@ -409,16 +409,16 @@ DataGenerator<FeatureType>::SharedPointer parseDataGenerator( std::istream & in,
                 else if ( distributionType == "checkerboard" )
                 {
                     // Add a generator to the source.
+                    auto color     = CheckerboardFeatureGenerator<FeatureType>::Color::BLACK;
                     auto colorName = parser.parseIdentifier();
-                    auto color = CheckerboardFeatureGenerator<FeatureType>::Color::BLACK;
                     if ( colorName == "white" )
                         color = CheckerboardFeatureGenerator<FeatureType>::Color::WHITE;
                     else if ( colorName != "black" )
                         throw ParseError( "Unrecognized checkerboard color name: " + colorName );
+                    typename CheckerboardFeatureGenerator<FeatureType>::SharedPointer checkerboard( new CheckerboardFeatureGenerator<FeatureType>( color ) );
                     parser.consume( ',' );
                     auto dimensionCount = parser.parseValue<unsigned int>();
-                    typename CheckerboardFeatureGenerator<FeatureType>::SharedPointer checkerboard( new CheckerboardFeatureGenerator<FeatureType>( color ) );
-                    for ( unsigned int dimension = 0; dimension < dimensionCount; ++ dimension )
+                    for ( unsigned int dimension = 0; dimension < dimensionCount; ++dimension )
                     {
                         parser.consume( ',' );
                         unsigned int cellCount = parser.parseValue<unsigned int>();
