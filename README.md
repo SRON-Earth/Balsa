@@ -4,9 +4,15 @@
 
 ## About
 
-Balsa is a fast and memory-efficient implementation of the RandomForest classification algorithm. Balsa is optimized for low memory usage and high speed during both training and classification. It is particularly useful for training on larger datasets, and for near-real time classification.
+Balsa is a fast and memory-efficient implementation of the RandomForest
+classification algorithm. Balsa is optimized for low memory usage and high
+speed during both training and classification. It is particularly useful for
+training on larger datasets, and for near-real time classification.
 
-This package contains the Python bindings for Balsa. The C++ implementation of Balsa contains extensive documentation, covering performance- and classification-optimization. This file covers the specifics of using the Python binding.
+This package contains the Python bindings for Balsa. The C++ implementation of
+Balsa contains extensive documentation, covering performance- and
+classification-optimization. This file covers the specifics of using the Python
+binding.
 
 ## Prerequisites
 
@@ -16,15 +22,18 @@ The balsa-python package uses NumPy.
 
 Balsa can be installed directly from a cloned Git repository, as follows:
 
-	git submodule init
-	git submodule update
 	pip install .
+
+Installation of the balsa-python package using `pip` requires a C/C++ compiler,
+CMake (>=3.18), a Python interpreter, NumPy, and the Python development headers
+and static library (on Ubuntu the required package is called `python3-dev`).
 
 ## Examples
 
 ### Training and Classification with Default Settings
 
-The following example code demonstrates how the Balsa trainer and classifier are called from Python, using all default parameters:
+The following example code demonstrates how the Balsa trainer and classifier are
+called from Python, using all default parameters:
 
 	import numpy as np
 	import balsa
@@ -46,8 +55,8 @@ The following example code demonstrates how the Balsa trainer and classifier are
 
 ### Additional Training Options
 
-The trainer has several options that can be accessed through the constructor and train() method:
-
+The trainer has several options that can be accessed through the constructor and
+`train()` method:
 
 	balsa.train( dataset, labels, "model.balsa", 
 	             features_to_scan = 2, 
@@ -56,7 +65,11 @@ The trainer has several options that can be accessed through the constructor and
 	             concurrent_trainers = 1, 
 	             single_precision = False )
 	
-The 'single_precision' flag switches from double-precision representation to single-precision. This leads to reduced memory usage and faster training, at the expense of precision, and possibly predictive performance. The purpose of the other parameters is described in the C++ Balsa documentation.
+
+The `single_precision` flag switches from double-precision representation to
+single-precision. This leads to reduced memory usage and faster training, at
+the expense of precision, and possibly predictive performance. The purpose of
+the other parameters is described in the C++ Balsa documentation.
 
 ### Additional Classification Options
 
@@ -67,4 +80,7 @@ Options for classification are passed to the classifier constructor:
 	             max_preload=0, 
 	             single_precision = False )
 
-The 'single_precision' flag switches from double-precision representation to single-precision. N.B. using a different representation during training and classification incurs a performance penalty during model-loading. The purpose of the other parameters is described in the C++ Balsa documentation.
+The `single_precision` flag switches from double-precision representation to
+single-precision. N.B. using a different representation during training and
+classification incurs a performance penalty during model-loading. The purpose
+of the other parameters is described in the C++ Balsa documentation.
