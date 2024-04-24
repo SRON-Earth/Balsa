@@ -403,7 +403,7 @@ The following complete example shows how a Balsa data model can be loaded and tr
 
 		// Train a random forest on the data, write the model to a file.
 		RandomForestTrainer trainer( "fruit-model.balsa" );
-		trainer.train( dataSet.begin(), dataSet.end(), labels.begin(), columnCount );
+		trainer.train( dataSet.begin(), dataSet.end(), featureCount, labels.begin() );
 
 		return 0;
 	}
@@ -429,12 +429,12 @@ The following complete example shows how a data set can be classified from withi
 
 		// Classify the data.
 		Table<Label> labels( dataSet.getRowCount(), 1 );
-		RandomForestClassifier classifier( "fruit-model.balsa", dataSet.getColumnCount() );
-		classifier.classify( dataSet.begin(), dataSet.end(), labels.begin() );
+		RandomForestClassifier classifier( "fruit-model.balsa" );
+		classifier.classify( dataSet.begin(), dataSet.end(), dataSet.getColumnCount(), labels.begin() );
 
 		// Write the result to a binary Balsa output file.
 		std::ofstream outFile( "fruit-classifier-labels.balsa", std::ios::binary );
-       labels.serialize( outFile );
+		labels.serialize( outFile );
 
 		// Print the results as text (or write to a text file).
 		std::cout << labels << std::endl;
@@ -471,10 +471,10 @@ The following program demonstrates how the classifier can be instantiated for di
 	Labels labels( 100 );
 
 	// Create a classifier for these container types.
-	RandomForestClassifier<Points::const_iterator,Labels::iterator> classifier( "fruit-model.dat", 4 );
+	RandomForestClassifier<Points::const_iterator, Labels::iterator> classifier( "fruit-model.dat" );
 
 	// Classify the points.
-	classifier.classify( points.begin(), points.end(), labels.begin() );
+	classifier.classify( points.begin(), points.end(), 4, labels.begin() );
 
 The default template parameters for RandomForestClassifier are `Table<double>::ConstIterator` for data point iterators and `Table<Label>::Iterator` for label iterators.
 
