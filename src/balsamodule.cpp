@@ -36,7 +36,7 @@ data : array-like
     Array of data points of shape [No. of data points, No. of features]. A copy
     will be made unless the input is a 2-dimensional row-major
     (C-order), continuous, data type aligned array of the expected data type.
-    The expected data type is 64-bit floats if `single_precision` is False
+    The expected data type is 64-bit floats if `single_precision` is `False`
     (the default), 32-bit floats otherwise.
 labels : array-like
     Array of labels of shape [No. of data points].  A copy will be made unless
@@ -56,8 +56,8 @@ features_to_scan : int, optional, default = 0
     total number of features, and the optimal location for the split will be
     determined based on the selected features. If set to zero, the square root
     of the number of features will be used (rounded down).
-single_precision : bool, optional, default = False
-    If True, single precision (32-bit) floats will be used instead of double
+single_precision : bool, optional, default = `False`
+    If `True`, single precision (32-bit) floats will be used instead of double
     precision (64-bit) floats. This significantly reduces the amount of memory
     used during training, at the expense of precision.
 
@@ -74,12 +74,6 @@ Parameters
 ----------
 model_filename : path-like
     Name (or path) of the file that contains the pre-trained random forest.
-number_of_features : int
-    Number of features used for classification. Arrays of data point passed to
-    the `classify` method should always have this number of features. The
-    number of features that the random forest was trained on must be smaller
-    than or equal to this number. If it is smaller, the additional features
-    will be ignored during classification.
 max_threads : int, optional, default = 0
     Number of worker threads used for classification. Set to zero (the default)
     for single threaded classification.
@@ -92,8 +86,8 @@ max_preload : int, optional, default = 1
     therefore best to read the entire random forest into memory
     (`max_preload` set to zero). Otherwise, set `max_preload` to a multiple of
     the number of threads used for classification.
-single_precision : bool, optional, default = False
-    If True, single precision (32-bit) floats will be used instead of double
+single_precision : bool, optional, default = `False`
+    If `True`, single precision (32-bit) floats will be used instead of double
     precision (64-bit) floats. This significantly reduces the amount of memory
     used during training, at the expense of precision.
 
@@ -113,8 +107,10 @@ data : array-like
     (C-order), continuous, data type aligned array of the expected data type.
     The expected data type depends on the value provided for the
     `single_precision` parameter when the `RandomForestClassifier` instance was
-    constructed: 64-bit floats if `single_precision` is False (the default),
-    32-bit floats otherwise.
+    constructed: 64-bit floats if `single_precision` is `False` (the default),
+    32-bit floats otherwise. If the number of features in `data` is larger than
+    the number of features that the random forest was trained on, the additional
+    features will be ignored. If it is smaller, an exception will be raised.
 
 Returns
 -------
@@ -184,14 +180,13 @@ static int RandomForestClassifier_py_type_init( PyObject * self, PyObject * args
 {
     // Placeholders for converted arguments.
     PyObject *   model_filename_py_object = NULL;
-    unsigned int feature_count            = 0;
     unsigned int max_threads              = 0;
     unsigned int max_preload              = 1;
     int          single_precision         = 0;
 
     // Convert positional and keyword arguments.
-    static const char * keywords[] = { "", "", "max_threads", "max_preload", "single_precision", NULL };
-    if ( !PyArg_ParseTupleAndKeywords( args, kwargs, "O&I|$IIp", (char **) keywords, PyUnicode_FSConverter, &model_filename_py_object, &feature_count, &max_threads, &max_preload, &single_precision ) )
+    static const char * keywords[] = { "", "max_threads", "max_preload", "single_precision", NULL };
+    if ( !PyArg_ParseTupleAndKeywords( args, kwargs, "O&|$IIp", (char **) keywords, PyUnicode_FSConverter, &model_filename_py_object, &max_threads, &max_preload, &single_precision ) )
     {
         // Depending on where PyArg_ParseTupleAndKeywords() fails, it may have
         // converted the model filename using PyUnicode_FSConverter. Using
@@ -234,11 +229,11 @@ static int RandomForestClassifier_py_type_init( PyObject * self, PyObject * args
     {
         if ( single_precision )
         {
-            new ( py_object->m_rfc_float ) RandomForestClassifier_float( model_filename, feature_count, max_threads, max_preload );
+            new ( py_object->m_rfc_float ) RandomForestClassifier_float( model_filename, max_threads, max_preload );
         }
         else
         {
-            new ( py_object->m_rfc_double ) RandomForestClassifier_double( model_filename, feature_count, max_threads, max_preload );
+            new ( py_object->m_rfc_double ) RandomForestClassifier_double( model_filename, max_threads, max_preload );
         }
     }
     catch ( ... )
@@ -306,17 +301,16 @@ static PyObject * RandomForestClassifier_classify( RandomForestClassifier_py_obj
         return NULL;
     }
 
-    // Ensure the number of features in the input data match the number of
-    // features the classifier was trained on.
-    const std::size_t number_of_features_cpp = single_precision ? self->m_rfc_float->getFeatureCount() : self->m_rfc_double->getFeatureCount();
-    const npy_intp    number_of_features_py  = PyArray_DIM( data_py_array, 1 );
+    // Extract the number of features from the shape of the data array.
+    const npy_intp number_of_features_py = PyArray_DIM( data_py_array, 1 );
     assert( number_of_features_py >= 0 );
-    if ( number_of_features_py != number_of_features_cpp )
+    if ( number_of_features_py > UINT_MAX )
     {
-        PyErr_SetString( PyExc_ValueError, "The number of features in the input data differs from the number of features the classifier was trained on." );
+        PyErr_SetString( PyExc_ValueError, "The input data contains too many features." );
         Py_DECREF( data_py_array );
         return NULL;
     }
+    const unsigned int number_of_features = (unsigned int) number_of_features_py;
 
     // Create an array to hold the classification labels.
     const npy_intp  labels_py_array_dims = PyArray_DIM( data_py_array, 0 );
@@ -332,17 +326,17 @@ static PyObject * RandomForestClassifier_classify( RandomForestClassifier_py_obj
     {
         if ( single_precision )
         {
-            const float * data_begin   = (const float *) PyArray_DATA( data_py_array );
-            const float * data_end     = data_begin + PyArray_SIZE( data_py_array );
-            uint8_t *     labels_begin = (uint8_t *) PyArray_DATA( labels_py_array );
-            self->m_rfc_float->classify( data_begin, data_end, labels_begin );
+            const float * data_begin = (const float *) PyArray_DATA( data_py_array );
+            const float * data_end   = data_begin + PyArray_SIZE( data_py_array );
+            uint8_t * labels_begin   = (uint8_t *) PyArray_DATA( labels_py_array );
+            self->m_rfc_float->classify( data_begin, data_end, number_of_features, labels_begin );
         }
         else
         {
-            const double * data_begin   = (const double *) PyArray_DATA( data_py_array );
-            const double * data_end     = data_begin + PyArray_SIZE( data_py_array );
-            uint8_t *      labels_begin = (uint8_t *) PyArray_DATA( labels_py_array );
-            self->m_rfc_double->classify( data_begin, data_end, labels_begin );
+            const double * data_begin = (const double *) PyArray_DATA( data_py_array );
+            const double * data_end   = data_begin + PyArray_SIZE( data_py_array );
+            uint8_t * labels_begin    = (uint8_t *) PyArray_DATA( labels_py_array );
+            self->m_rfc_double->classify( data_begin, data_end, number_of_features, labels_begin );
         }
     }
     catch ( const Exception & exception )
@@ -456,7 +450,7 @@ static PyObject * balsa_train( PyObject * self, PyObject * args, PyObject * kwar
             const float *   data_begin   = (const float *) PyArray_DATA( data_py_array );
             const float *   data_end     = data_begin + PyArray_SIZE( data_py_array );
             const uint8_t * labels_begin = (const uint8_t *) PyArray_DATA( labels_py_array );
-            trainer.train( data_begin, data_end, labels_begin, number_of_features );
+            trainer.train( data_begin, data_end, number_of_features, labels_begin );
         }
         else
         {
@@ -467,7 +461,7 @@ static PyObject * balsa_train( PyObject * self, PyObject * args, PyObject * kwar
             const double *  data_begin   = (const double *) PyArray_DATA( data_py_array );
             const double *  data_end     = data_begin + PyArray_SIZE( data_py_array );
             const uint8_t * labels_begin = (const uint8_t *) PyArray_DATA( labels_py_array );
-            trainer.train( data_begin, data_end, labels_begin, number_of_features );
+            trainer.train( data_begin, data_end, number_of_features, labels_begin );
         }
     }
     catch ( const Exception & exception )

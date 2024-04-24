@@ -47,8 +47,8 @@ called from Python, using all default parameters:
 	# Train a model, write the output to 'model.balsa'. 
 	balsa.train(dataset, labels, "model.balsa" )
 	
-	# Create a classifier (for 2 features).
-	classifier = balsa.RandomForestClassifier("model.balsa", 2)
+	# Create a classifier from the trained random forest.
+	classifier = balsa.RandomForestClassifier("model.balsa")
 	
 	# Classify the dataset.
 	predictions = classifier.classify(dataset)
@@ -59,10 +59,10 @@ The trainer has several options that can be accessed through the constructor and
 `train()` method:
 
 	balsa.train( dataset, labels, "model.balsa", 
-	             features_to_scan = 2, 
-	             max_depth = 10,
-	             tree_count = 1,
-	             concurrent_trainers = 1, 
+	             max_depth = 4294967295,
+	             tree_count = 150,
+	             concurrent_trainers = 1,
+	             features_to_scan = 0,
 	             single_precision = False )
 	
 
@@ -75,9 +75,9 @@ the other parameters is described in the C++ Balsa documentation.
 
 Options for classification are passed to the classifier constructor:
 
-	classifier = balsa.RandomForestClassifier( "model.balsa", 2, 
-	             max_threads=1,
-	             max_preload=0, 
+	classifier = balsa.RandomForestClassifier( "model.balsa",
+	             max_threads = 0,
+	             max_preload = 1,
 	             single_precision = False )
 
 The `single_precision` flag switches from double-precision representation to
