@@ -22,14 +22,6 @@ public:
     typedef Table<uint32_t> VoteTable;
 
     /**
-     * Constructor.
-     */
-    Classifier( std::size_t featureCount ):
-    m_featureCount( featureCount )
-    {
-    }
-
-    /**
      * Destructor.
      */
     virtual ~Classifier()
@@ -37,17 +29,14 @@ public:
     }
 
     /**
-     * Returns the number of features used by the classifier.
+     * Returns the number of classes distinguished by this classifier.
      */
-    std::size_t getFeatureCount() const
-    {
-        return m_featureCount;
-    }
+    virtual unsigned int getClassCount() const = 0;
 
     /**
      * Bulk-classifies a sequence of data points.
      */
-    virtual void classify( FeatureIterator pointsStart, FeatureIterator pointsEnd, OutputIterator labels ) const = 0;
+    virtual void classify( FeatureIterator pointsStart, FeatureIterator pointsEnd, unsigned int featureCount, OutputIterator labelsStart ) const = 0;
 
     /**
      * Bulk-classifies a set of points, adding a vote (+1) to the vote table for
@@ -56,15 +45,12 @@ public:
      *  the first point.
      * \param pointsEnd An itetartor that points to the end of the block of
      *  point data.
+     * \param featureCount The number of features for each data point.
      * \param table A table for counting votes.
      * \pre The column count of the vote table must match the number of
      *  features, the row count must match the number of points.
      */
-    virtual unsigned int classifyAndVote( FeatureIterator pointsStart, FeatureIterator pointsEnd, VoteTable & table ) const = 0;
-
-private:
-
-    std::size_t m_featureCount;
+     virtual unsigned int classifyAndVote( FeatureIterator pointsStart, FeatureIterator pointsEnd, unsigned int featureCount, VoteTable & table ) const = 0;
 };
 
 } // namespace balsa

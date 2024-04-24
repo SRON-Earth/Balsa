@@ -83,22 +83,25 @@ public:
     /**
      * Train a forest of random trees on the data. Results will be written to the current output file (see Constructor).
      */
-    void train( FeatureIterator pointsStart, FeatureIterator pointsEnd, LabelIterator labelsStart, const unsigned int numberOfFeatures )
+    void train( FeatureIterator pointsStart, FeatureIterator pointsEnd, unsigned int featureCount, LabelIterator labelsStart )
     {
         // Check precionditions, etc.
-        if ( numberOfFeatures == 0 ) throw ClientError( "Data points must have at least one feature." );
+        if ( featureCount == 0 ) throw ClientError( "Data points must have at least one feature." );
         auto dataset    = pointsStart;
         auto labels     = labelsStart;
         auto entryCount = std::distance( pointsStart, pointsEnd );
-        if ( entryCount % numberOfFeatures ) throw ClientError( "Malformed dataset." );
-        auto pointCount = entryCount / numberOfFeatures;
+        if ( entryCount % featureCount ) throw ClientError( "Malformed dataset." );
+        auto pointCount = entryCount / featureCount;
 
         // Determine the number of features to consider during each randomized split. If the supplied value was 0, default to floor(sqrt(featurecount)).
-        unsigned int featuresToConsider = m_featuresToScan ? m_featuresToScan : std::floor( std::sqrt( numberOfFeatures ) );
-        if ( featuresToConsider > numberOfFeatures ) throw ClientError( "The supplied number of features to scan exceeds the number of features in the dataset." );
+        unsigned int featuresToConsider = m_featuresToScan ? m_featuresToScan : std::floor( std::sqrt( featureCount ) );
+        if ( featuresToConsider > featureCount ) throw ClientError( "The supplied number of features to scan exceeds the number of features in the dataset." );
 
         // Create an indexed tree with only one node. This is expensive to build, so it is shared for copying between threads.
-        IndexedDecisionTree<FeatureIterator, LabelIterator> sapling( dataset, labels, numberOfFeatures, pointCount, featuresToConsider, m_maxDepth );
+        IndexedDecisionTree<FeatureIterator, LabelIterator> sapling( dataset, labels, featureCount, pointCount, featuresToConsider, m_maxDepth );
+
+        // Record the number of classes.
+        unsigned int classCount = sapling.getClassCount();
 
         // Create message queues for communicating with the worker threads.
         JobQueue       jobOutbox;
@@ -121,6 +124,10 @@ public:
         // Create a forest model file and write the forest header marker ("frst").
         std::ofstream out( m_outputFile, std::ios::binary | std::ios::out );
         out.write( "frst", 4 );
+
+        // Store the number of distinct classes distinguished by the forest.
+        out.write( "ccnt", 4 );
+        serialize( out, static_cast<uint32_t>( classCount ) );
 
         // Wait for all the trees to come in, and write each tree to a forest file.
         for ( unsigned int i = 0; i < m_treeCount; ++i )

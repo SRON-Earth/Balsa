@@ -39,14 +39,38 @@ public:
     m_maxPreload( maxPreload ),
     m_cacheIndex( 0 )
     {
+        // Open the model file.
+        m_modelFile.open( m_filename );
+        if ( !m_modelFile.is_open() )
+        {
+            throw SupplierError( "Unable to open model file." );
+        }
+
+        // Parse the model header. This will advance the file stream to the
+        // first tree.
+        expect( m_modelFile, "frst", "Missing forest header." );
+        expect( m_modelFile, "ccnt", "Missing class count field." );
+        m_classCount = balsa::deserialize<uint32_t>( m_modelFile );
+
+        // Store the offset of the first decision tree.
+        m_treeOffset = m_modelFile.tellg();
     }
 
     DecisionTreeClassifierStream( const DecisionTreeClassifierStream & ) = delete;
 
     /**
+     * Return the number of classes distinguished by the classifiers in this
+     * stream.
+     */
+    unsigned int getClassCount() const
+    {
+        return m_classCount;
+    }
+
+    /**
      * Rewind the stream to the beginning.
      */
-    virtual void rewind()
+    void rewind()
     {
         // Flush the cache, unless *all* trees are being kept in memory.
         if ( m_maxPreload != 0 )
@@ -57,16 +81,15 @@ public:
         // Reset the index of the next tree to the start of the cache.
         m_cacheIndex = 0;
 
-        // Close the model file. This will cause it to be re-opened in fetch(),
-        // thus re-starting the iteration over trees.
-        m_modelFile.close();
+        // Seek to the offset of the first decision tree in the model file.
+        m_modelFile.seekg( m_treeOffset );
     }
 
     /**
      * Return the next classifier in the stream, or an empty shared pointer when
      * the end of the stream has been reached.
      */
-    virtual typename ClassifierType::SharedPointer next()
+    typename ClassifierType::SharedPointer next()
     {
         // Fetch more trees if necessary.
         if ( m_cacheIndex == m_cache.size() )
@@ -98,26 +121,6 @@ private:
         m_cache.clear();
         m_cacheIndex = 0;
 
-        // Re-open the model file if necessary.
-        if ( !m_modelFile.is_open() )
-        {
-            // Open the model file.
-            m_modelFile.open( m_filename );
-            if ( !m_modelFile.is_open() )
-            {
-                throw SupplierError( "Unable to open model file." );
-            }
-
-            // Parse the model header. This will advance the file stream to the
-            // first tree.
-            auto marker = getFixedSizeToken( m_modelFile, 4 );
-            if ( m_modelFile.fail() ) throw ParseError( "Read failed." );
-            if ( marker != "frst" )
-            {
-                throw ParseError( "Unexpected header block." );
-            }
-        }
-
         // If the model file contains no more trees, do nothing.
         if ( m_modelFile.eof() )
         {
@@ -147,6 +150,8 @@ private:
     std::string                                         m_filename;
     std::size_t                                         m_maxPreload;
     std::ifstream                                       m_modelFile;
+    unsigned int                                        m_classCount;
+    std::streampos                                      m_treeOffset;
     std::size_t                                         m_cacheIndex;
     std::vector<typename ClassifierType::SharedPointer> m_cache;
 };

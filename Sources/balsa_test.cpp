@@ -57,12 +57,12 @@ bool testCross2x2()
     // Train a single decision tree.
     NamedTemporaryFile                                 modelFile;
     RandomForestTrainer<FeatureType *, std::uint8_t *> trainer( modelFile.getName(), std::numeric_limits<unsigned int>::max(), 1, 1, 2 );
-    trainer.train( points, points + 8, truth, 2 );
+    trainer.train( points, points + 8, 2, truth );
 
     // Classify the training data.
     std::uint8_t                                          labels[4];
-    RandomForestClassifier<FeatureType *, std::uint8_t *> classifier( modelFile.getName(), 2, 1, 0 );
-    classifier.classify( points, points + 8, labels );
+    RandomForestClassifier<FeatureType *, std::uint8_t *> classifier( modelFile.getName(), 1, 0 );
+    classifier.classify( points, points + 8, 2, labels );
 
     // Ensure the classification result matches the ground truth exactly.
     return std::equal( labels, labels + 4, truth );
@@ -94,12 +94,12 @@ bool testCheckerboard()
     // Train a single decision tree.
     NamedTemporaryFile                                              modelFile;
     RandomForestTrainer<typename Table<FeatureType>::ConstIterator> trainer( modelFile.getName(), std::numeric_limits<unsigned int>::max(), 1, 1, generator.getFeatureCount() );
-    trainer.train( points.begin(), points.end(), truth.begin(), points.getColumnCount() );
+    trainer.train( points.begin(), points.end(), points.getColumnCount(), truth.begin() );
 
     // Classify the training data.
     Table<Label>                                                       labels( points.getRowCount(), 1 );
-    RandomForestClassifier<typename Table<FeatureType>::ConstIterator> classifier( modelFile.getName(), points.getColumnCount(), 1, 0 );
-    classifier.classify( points.begin(), points.end(), labels.begin() );
+    RandomForestClassifier<typename Table<FeatureType>::ConstIterator> classifier( modelFile.getName(), 1, 0 );
+    classifier.classify( points.begin(), points.end(), points.getColumnCount(), labels.begin() );
 
     // Ensure the classification result matches the ground truth exactly.
     return labels == truth;
@@ -128,12 +128,12 @@ bool testConcentricRings()
     // Train a single decision tree.
     NamedTemporaryFile                                              modelFile;
     RandomForestTrainer<typename Table<FeatureType>::ConstIterator> trainer( modelFile.getName(), std::numeric_limits<unsigned int>::max(), 1, 1, generator.getFeatureCount() );
-    trainer.train( points.begin(), points.end(), truth.begin(), points.getColumnCount() );
+    trainer.train( points.begin(), points.end(), points.getColumnCount(), truth.begin() );
 
     // Classify the training data.
     Table<Label>                                                       labels( points.getRowCount(), 1 );
-    RandomForestClassifier<typename Table<FeatureType>::ConstIterator> classifier( modelFile.getName(), points.getColumnCount(), 1, 0 );
-    classifier.classify( points.begin(), points.end(), labels.begin() );
+    RandomForestClassifier<typename Table<FeatureType>::ConstIterator> classifier( modelFile.getName(), 1, 0 );
+    classifier.classify( points.begin(), points.end(), points.getColumnCount(), labels.begin() );
 
     // Ensure the classification result matches the ground truth exactly.
     return labels == truth;

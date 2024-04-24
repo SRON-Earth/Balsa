@@ -15,19 +15,27 @@ public:
 
     using typename Classifier<FeatureIterator, OutputIterator>::VoteTable;
 
-    RandomForestClassifier( const std::string & modelFileName, unsigned int featureCount, unsigned int maxThreads = 0, unsigned int maxPreload = 1 ):
-    Classifier<FeatureIterator, OutputIterator>( featureCount ),
-    m_treeStream( modelFileName, maxPreload ),
-    m_classifier( featureCount, m_treeStream, maxThreads )
+    RandomForestClassifier( const std::string & modelFileName, unsigned int maxThreads = 0, unsigned int maxPreload = 1 ):
+    Classifier<FeatureIterator, OutputIterator>(),
+    m_classifierStream( modelFileName, maxPreload ),
+    m_classifier( m_classifierStream, maxThreads )
     {
+    }
+
+    /**
+     * Returns the number of classes distinguished by this classifier.
+     */
+    unsigned int getClassCount() const
+    {
+        return m_classifier.getClassCount();
     }
 
     /**
      * Bulk-classifies a sequence of data points.
      */
-    void classify( FeatureIterator pointsStart, FeatureIterator pointsEnd, OutputIterator labels ) const
+    void classify( FeatureIterator pointsStart, FeatureIterator pointsEnd, unsigned int featureCount, OutputIterator labelsStart ) const
     {
-        m_classifier.classify( pointsStart, pointsEnd, labels );
+        m_classifier.classify( pointsStart, pointsEnd, featureCount, labelsStart );
     }
 
     /**
@@ -37,18 +45,19 @@ public:
      *  the first point.
      * \param pointsEnd An itetartor that points to the end of the block of
      *  point data.
+     * \param featureCount The number of features for each data point.
      * \param table A table for counting votes.
      * \pre The column count of the vote table must match the number of
      *  features, the row count must match the number of points.
      */
-    unsigned int classifyAndVote( FeatureIterator pointsStart, FeatureIterator pointsEnd, VoteTable & table ) const
+    unsigned int classifyAndVote( FeatureIterator pointsStart, FeatureIterator pointsEnd, unsigned int featureCount, VoteTable & table ) const
     {
-        return m_classifier.classifyAndVote( pointsStart, pointsEnd, table );
+        return m_classifier.classifyAndVote( pointsStart, pointsEnd, featureCount, table );
     }
 
 private:
 
-    DecisionTreeClassifierStream<FeatureIterator, OutputIterator> m_treeStream;
+    DecisionTreeClassifierStream<FeatureIterator, OutputIterator> m_classifierStream;
     EnsembleClassifier<FeatureIterator, OutputIterator>           m_classifier;
 };
 

@@ -23,7 +23,6 @@ class DecisionTreeClassifier: public Classifier<FeatureIterator, OutputIterator>
 public:
 
     using typename Classifier<FeatureIterator, OutputIterator>::VoteTable;
-    using Classifier<FeatureIterator, OutputIterator>::getFeatureCount;
 
     typedef std::shared_ptr<DecisionTreeClassifier>       SharedPointer;
     typedef std::shared_ptr<const DecisionTreeClassifier> ConstSharedPointer;
@@ -35,25 +34,36 @@ public:
     static_assert( std::is_same<LabelType, Label>::value, "Label type should an unsigned, 8 bits wide, integral type." );
 
     /**
+     * Returns the number of classes distinguished by the classifier.
+     */
+    unsigned int getClassCount() const
+    {
+        return m_classCount;
+    }
+
+    /**
      * Bulk-classifies a sequence of data points.
      */
-    void classify( FeatureIterator pointsStart, FeatureIterator pointsEnd, OutputIterator labels ) const
+    void classify( FeatureIterator pointsStart, FeatureIterator pointsEnd, unsigned int featureCount, OutputIterator labelsStart ) const
     {
         // Check the dimensions of the input data.
-        auto rawFeatureCount = std::distance( pointsStart, pointsEnd );
-        auto featureCount    = getFeatureCount();
-        assert( rawFeatureCount > 0 );
-        assert( ( rawFeatureCount % featureCount ) == 0 );
+        if ( featureCount == 0 ) throw ClientError( "Data points must have at least one feature." );
+        auto entryCount = std::distance( pointsStart, pointsEnd );
+        if ( entryCount % featureCount ) throw ClientError( "Malformed dataset." );
+        if ( featureCount < m_featureCount ) throw ClientError( "Dataset contains too few features." );
+
+        // Determine the number of points in the input data.
+        auto pointCount = entryCount / featureCount;
 
         // Create a table for the label votes.
-        unsigned int pointCount = rawFeatureCount / featureCount;
-        VoteTable    voteCounts( pointCount, featureCount );
+        VoteTable voteCounts( pointCount, m_classCount );
 
         // Bulk-classify all points.
-        classifyAndVote( pointsStart, pointsEnd, voteCounts );
+        classifyAndVote( pointsStart, pointsEnd, featureCount, voteCounts );
 
         // Generate the labels.
-        for ( unsigned int point = 0; point < pointCount; ++point ) *labels++ = static_cast<LabelType>( voteCounts.getColumnOfRowMaximum( point ) );
+        for ( unsigned int point = 0; point < pointCount; ++point )
+            *labelsStart++ = static_cast<LabelType>( voteCounts.getColumnOfRowMaximum( point ) );
     }
 
     /**
@@ -63,27 +73,28 @@ public:
      *  the first point.
      * \param pointsEnd An itetartor that points to the end of the block of
      *  point data.
+     * \param featureCount The number of features for each data point.
      * \param table A table for counting votes.
      * \pre The column count of the vote table must match the number of
      *  features, the row count must match the number of points.
      */
-    unsigned int classifyAndVote( FeatureIterator pointsStart, FeatureIterator pointsEnd, VoteTable & table ) const
+    unsigned int classifyAndVote( FeatureIterator pointsStart, FeatureIterator pointsEnd, unsigned int featureCount, VoteTable & table ) const
     {
         // Check the dimensions of the input data.
-        auto rawFeatureCount = std::distance( pointsStart, pointsEnd );
-        auto featureCount    = getFeatureCount();
-        assert( rawFeatureCount > 0 );
-        assert( ( rawFeatureCount % featureCount ) == 0 );
+        if ( featureCount == 0 ) throw ClientError( "Data points must have at least one feature." );
+        auto entryCount = std::distance( pointsStart, pointsEnd );
+        if ( entryCount % featureCount ) throw ClientError( "Malformed dataset." );
+        if ( featureCount < m_featureCount ) throw ClientError( "Dataset contains too few features." );
 
         // Determine the number of points in the input data.
-        unsigned int pointCount = rawFeatureCount / featureCount;
+        auto pointCount = entryCount / featureCount;
 
         // Create a list containing all datapoint IDs (0, 1, 2, etc.).
         std::vector<DataPointID> pointIDs( pointCount );
         std::iota( pointIDs.begin(), pointIDs.end(), 0 );
 
         // Recursively partition the list of point IDs according to the interior node criteria, and classify them by the leaf node labels.
-        recursiveClassifyVote( pointIDs.begin(), pointIDs.end(), pointsStart, table, NodeID( 0 ) );
+        recursiveClassifyVote( pointIDs.begin(), pointIDs.end(), pointsStart, featureCount, table, NodeID( 0 ) );
 
         // Return the number of classifiers that voted.
         return 1;
@@ -94,14 +105,16 @@ public:
      */
     static SharedPointer deserialize( std::istream & is )
     {
+        // Create an empty classifier.
+        SharedPointer classifier( new DecisionTreeClassifier() );
+
         // Read the header.
         assert( is.good() );
         expect( is, "tree", "Missing tree header." );
+        expect( is, "ccnt", "Missing class count field." );
+        classifier->m_classCount = balsa::deserialize<uint32_t>( is );
         expect( is, "fcnt", "Missing feature count field." );
-        auto featureCount = balsa::deserialize<uint32_t>( is );
-
-        // Create an empty classifier.
-        SharedPointer classifier( new DecisionTreeClassifier( featureCount ) );
+        classifier->m_featureCount = balsa::deserialize<uint32_t>( is );
 
         // Deserialize the tables.
         is >> classifier->m_leftChildID;
@@ -115,17 +128,17 @@ public:
 
 private:
 
-    explicit DecisionTreeClassifier( unsigned int featureCount ):
-    Classifier<FeatureIterator, OutputIterator>( featureCount ),
-    m_leftChildID( featureCount ),
-    m_rightChildID( featureCount ),
-    m_splitFeatureID( featureCount ),
-    m_splitValue( featureCount ),
-    m_label( featureCount )
+    DecisionTreeClassifier():
+    Classifier<FeatureIterator, OutputIterator>(),
+    m_leftChildID(0),
+    m_rightChildID(0),
+    m_splitFeatureID(0),
+    m_splitValue(0),
+    m_label(0)
     {
     }
 
-    void recursiveClassifyVote( std::vector<DataPointID>::iterator pointIDsStart, std::vector<DataPointID>::iterator pointIDsEnd, FeatureIterator pointsStart, VoteTable & voteTable, NodeID currentNodeID ) const
+    void recursiveClassifyVote( std::vector<DataPointID>::iterator pointIDsStart, std::vector<DataPointID>::iterator pointIDsEnd, FeatureIterator pointsStart, unsigned int featureCount, VoteTable & voteTable, NodeID currentNodeID ) const
     {
         // If the current node is an interior node, split the points along the split value, and classify both halves.
         if ( m_leftChildID( currentNodeID, 0 ) > 0 )
@@ -133,9 +146,6 @@ private:
             // Extract the split limit and split dimension of this node.
             auto splitValue = m_splitValue( currentNodeID, 0 );
             auto featureID  = m_splitFeatureID( currentNodeID, 0 );
-
-            // Retrieve feature count.
-            auto featureCount = getFeatureCount();
 
             // Split the point IDs in two halves: points that lie below the split value, and points that lie on or above the feature split value.
             auto pointIsBelowLimit = [&pointsStart, featureCount, splitValue, featureID]( const unsigned int & pointID )
@@ -145,8 +155,8 @@ private:
             auto secondHalf = std::partition( pointIDsStart, pointIDsEnd, pointIsBelowLimit );
 
             // Recursively classify-vote both halves.
-            recursiveClassifyVote( pointIDsStart, secondHalf, pointsStart, voteTable, m_leftChildID( currentNodeID, 0 ) );
-            recursiveClassifyVote( secondHalf, pointIDsEnd, pointsStart, voteTable, m_rightChildID( currentNodeID, 0 ) );
+            recursiveClassifyVote( pointIDsStart, secondHalf, pointsStart, featureCount, voteTable, m_leftChildID( currentNodeID, 0 ) );
+            recursiveClassifyVote( secondHalf, pointIDsEnd, pointsStart, featureCount, voteTable, m_rightChildID( currentNodeID, 0 ) );
         }
 
         // If the current node is a leaf node, cast a vote for the node-label for each point.
@@ -160,6 +170,8 @@ private:
         }
     }
 
+    unsigned int       m_classCount;
+    unsigned int       m_featureCount;
     Table<NodeID>      m_leftChildID;
     Table<NodeID>      m_rightChildID;
     Table<FeatureID>   m_splitFeatureID;

@@ -88,6 +88,15 @@ public:
     }
 
     /**
+     * Returns the number of classes distinguished by this decision tree.
+     */
+    unsigned int getClassCount() const
+    {
+        auto & rootNode = m_nodes.front();
+        return rootNode.getLabelCounts().size();
+    }
+
+    /**
      * Reinitialize the state of the random engine used to select features to
      * consider when deciding where to split.
      */
@@ -192,6 +201,8 @@ public:
 
         // Write the header and the data tables of the classifier.
         binOut.write( "tree", 4 );
+        binOut.write( "ccnt", 4 );
+        serialize( binOut, static_cast<uint32_t>( getClassCount() ) );
         binOut.write( "fcnt", 4 );
         serialize( binOut, static_cast<uint32_t>( m_featureCount ) );
         leftChildID.serialize( binOut );

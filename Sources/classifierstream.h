@@ -25,6 +25,12 @@ public:
     }
 
     /**
+     * Return the number of classes distinguished by the classifiers in this
+     * stream.
+     */
+    virtual unsigned int getClassCount() const = 0;
+
+    /**
      * Rewind the stream to the beginning.
      */
     virtual void rewind() = 0;

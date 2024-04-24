@@ -87,16 +87,20 @@ int main( int argc, char ** argv )
             {
                 // A forest is just a list of trees. Consume the marker and continue.
                 expect( in, "frst", "Missing 'frst' header." );
-                std::cout << "FOREST" << std::endl;
+                expect( in, "ccnt", "Missing class count field." );
+                auto classCount = balsa::deserialize<uint32_t>( in );
+                std::cout << "FOREST " << classCount << " classes." << std::endl;
                 continue;
             }
             else if ( header == "tree" )
             {
                 // Print the tree info.
                 expect( in, "tree", "Missing 'tree' header." );
+                expect( in, "ccnt", "Missing class count field." );
+                auto classCount = balsa::deserialize<uint32_t>( in );
                 expect( in, "fcnt", "Missing feature count marker." );
                 auto featureCount = deserialize<uint32_t>( in );
-                std::cout << "TREE " << featureCount << " features." << std::endl;
+                std::cout << "TREE " << classCount << " classes, " << featureCount << " features." << std::endl;
 
                 // Parse the tables that describe the tree.
                 Table<NodeID>    left( 1 ), right( 1 );
