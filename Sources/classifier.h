@@ -50,7 +50,7 @@ public:
      * \pre The column count of the vote table must match the number of
      *  features, the row count must match the number of points.
      */
-     virtual unsigned int classifyAndVote( FeatureIterator pointsStart, FeatureIterator pointsEnd, unsigned int featureCount, VoteTable & table ) const = 0;
+    virtual unsigned int classifyAndVote( FeatureIterator pointsStart, FeatureIterator pointsEnd, unsigned int featureCount, VoteTable & table ) const = 0;
 };
 
 } // namespace balsa

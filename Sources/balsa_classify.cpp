@@ -121,7 +121,7 @@ int main( int argc, char ** argv )
         Table<Label> labels( dataSet.getRowCount(), 1 );
         std::cout << labels.getRowCount() << " before " << std::endl;
         RandomForestClassifier<decltype( dataSet )::ConstIterator, decltype( labels )::Iterator> classifier( options.modelFile, options.threadCount - 1, options.maxPreload );
-        classifier.classify( dataSet.begin(), dataSet.end(), dataSet.getColumnCount(),labels.begin() );
+        classifier.classify( dataSet.begin(), dataSet.end(), dataSet.getColumnCount(), labels.begin() );
         std::cout << labels.getRowCount() << " after " << std::endl;
         watch.stop();
         const auto classificationTime = watch.getElapsedTime();

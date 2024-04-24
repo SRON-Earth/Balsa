@@ -130,11 +130,11 @@ private:
 
     DecisionTreeClassifier():
     Classifier<FeatureIterator, OutputIterator>(),
-    m_leftChildID(0),
-    m_rightChildID(0),
-    m_splitFeatureID(0),
-    m_splitValue(0),
-    m_label(0)
+    m_leftChildID( 0 ),
+    m_rightChildID( 0 ),
+    m_splitFeatureID( 0 ),
+    m_splitValue( 0 ),
+    m_label( 0 )
     {
     }
 
