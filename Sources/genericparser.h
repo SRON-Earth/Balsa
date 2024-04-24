@@ -68,7 +68,7 @@ public:
      */
     void consumeWhitespace()
     {
-        while ( m_whitespace.contains( m_in.peek() ) )
+        while ( m_whitespace.find( m_in.peek() ) != std::string::npos )
         {
             m_in.get();
             if ( m_in.fail() ) throw ParseError( "Error reading from stream." );

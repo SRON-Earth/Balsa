@@ -94,7 +94,8 @@ inline void expect( std::istream & is, const std::string & sequence, const std::
 std::string getNextToken( std::istream & is, const std::string & separators )
 {
     std::stringstream token;
-    while ( !separators.contains( is.peek() ) ) token << ( is.get() );
+    while ( separators.find( is.peek() ) != std::string::npos )
+        token << ( is.get() );
     return token.str();
 }
 

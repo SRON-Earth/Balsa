@@ -38,8 +38,8 @@ class FeatureGenerator
 {
 public:
 
-    typedef std::mt19937                                   RandomEngine;
-    typedef std::shared_ptr<FeatureGenerator<FeatureType>> SharedPointer;
+    typedef std::mt19937                                            RandomEngine;
+    typedef typename std::shared_ptr<FeatureGenerator<FeatureType>> SharedPointer;
 
     virtual ~FeatureGenerator()
     {
@@ -68,7 +68,7 @@ class UniformFeatureGenerator: public FeatureGenerator<FeatureType>
 {
 public:
 
-    typedef std::shared_ptr<UniformFeatureGenerator<FeatureType>> SharedPointer;
+    typedef typename std::shared_ptr<UniformFeatureGenerator<FeatureType>> SharedPointer;
 
     UniformFeatureGenerator( FeatureType lowerBound, FeatureType upperBound ):
     m_distribution( lowerBound, upperBound )
@@ -82,7 +82,7 @@ public:
 
 protected:
 
-    const FeatureType * generate( FeatureGenerator<FeatureType>::RandomEngine & engine )
+    const FeatureType * generate( typename FeatureGenerator<FeatureType>::RandomEngine & engine )
     {
         m_value[0] = m_distribution( engine );
         return m_value.data();
@@ -99,7 +99,7 @@ class GaussianFeatureGenerator: public FeatureGenerator<FeatureType>
 {
 public:
 
-    typedef std::shared_ptr<GaussianFeatureGenerator<FeatureType>> SharedPointer;
+    typedef typename std::shared_ptr<GaussianFeatureGenerator<FeatureType>> SharedPointer;
 
     GaussianFeatureGenerator( FeatureType mean, FeatureType standardDeviation ):
     m_distribution( mean, standardDeviation )
@@ -113,7 +113,7 @@ public:
 
 protected:
 
-    const FeatureType * generate( FeatureGenerator<FeatureType>::RandomEngine & engine )
+    const FeatureType * generate( typename FeatureGenerator<FeatureType>::RandomEngine & engine )
     {
         m_value[0] = m_distribution( engine );
         return m_value.data();
@@ -130,11 +130,12 @@ class AnnulusFeatureGenerator: public FeatureGenerator<FeatureType>
 {
 public:
 
-    typedef std::shared_ptr<AnnulusFeatureGenerator<FeatureType>> SharedPointer;
+    typedef typename std::shared_ptr<AnnulusFeatureGenerator<FeatureType>> SharedPointer;
 
     AnnulusFeatureGenerator( FeatureType minRadius, FeatureType maxRadius ):
     m_radiusDistribution( minRadius, maxRadius ),
-    m_angleDistribution( 0.0, 2.0 * std::numbers::pi )
+    // m_angleDistribution( 0.0, 2.0 * std::numbers::pi )
+    m_angleDistribution( 0.0, 2.0 * 3.1415 )
     {
         assert( minRadius >= 0.0 && maxRadius > minRadius );
     }
@@ -146,7 +147,7 @@ public:
 
 protected:
 
-    const FeatureType * generate( FeatureGenerator<FeatureType>::RandomEngine & engine )
+    const FeatureType * generate( typename FeatureGenerator<FeatureType>::RandomEngine & engine )
     {
         FeatureType radius = m_radiusDistribution( engine );
         FeatureType angle  = m_angleDistribution( engine );
@@ -167,7 +168,7 @@ class CheckerboardFeatureGenerator: public FeatureGenerator<FeatureType>
 {
 public:
 
-    typedef std::shared_ptr<CheckerboardFeatureGenerator<FeatureType>> SharedPointer;
+    typedef typename std::shared_ptr<CheckerboardFeatureGenerator<FeatureType>> SharedPointer;
 
     enum class Color
     {
@@ -195,7 +196,7 @@ public:
 
 protected:
 
-    const FeatureType * generate( FeatureGenerator<FeatureType>::RandomEngine & engine )
+    const FeatureType * generate( typename FeatureGenerator<FeatureType>::RandomEngine & engine )
     {
         // Randomly draw points inside the checkerboard; stop when a point is
         // found that is located on a cell of the selected color. Since half of
@@ -261,13 +262,13 @@ public:
         return m_featureCount;
     }
 
-    void addFeatureGenerator( FeatureGenerator<FeatureType>::SharedPointer generator )
+    void addFeatureGenerator( typename FeatureGenerator<FeatureType>::SharedPointer generator )
     {
         m_featureCount += generator->getFeatureCount();
         m_features.push_back( generator );
     }
 
-    void generatePoint( FeatureGenerator<FeatureType>::RandomEngine & engine, Table<FeatureType> & points, unsigned int point )
+    void generatePoint( typename FeatureGenerator<FeatureType>::RandomEngine & engine, Table<FeatureType> & points, unsigned int point )
     {
         // Generate data for the point.
         assert( points.getColumnCount() == m_featureCount );
@@ -322,7 +323,7 @@ public:
         }
     }
 
-    void addSource( FeatureType relativeFrequency, SingleSourceGenerator<FeatureType>::SharedPointer source )
+    void addSource( FeatureType relativeFrequency, typename SingleSourceGenerator<FeatureType>::SharedPointer source )
     {
         // Add the source to the list of sources.
         assert( source->getFeatureCount() == m_featureCount );
@@ -338,7 +339,7 @@ public:
 private:
 
     unsigned int                                                            m_featureCount;
-    FeatureGenerator<FeatureType>::RandomEngine                             m_engine;
+    typename FeatureGenerator<FeatureType>::RandomEngine                    m_engine;
     std::vector<typename SingleSourceGenerator<FeatureType>::SharedPointer> m_sources;
     std::vector<FeatureType>                                                m_frequencies;
     std::piecewise_constant_distribution<FeatureType>                       m_sourceDistribution;
@@ -348,7 +349,7 @@ private:
  * Parse a data generator from a configuration file.
  */
 template <typename FeatureType>
-DataGenerator<FeatureType>::SharedPointer parseDataGenerator( std::istream & in, unsigned int seed = 0 )
+typename DataGenerator<FeatureType>::SharedPointer parseDataGenerator( std::istream & in, unsigned int seed = 0 )
 {
     // Parse the datasource type name.
     GenericParser parser( in );

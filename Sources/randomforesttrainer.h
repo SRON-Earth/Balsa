@@ -35,7 +35,7 @@ class RandomForestTrainer
     {
     public:
 
-        typedef IndexedDecisionTree<FeatureIterator, LabelIterator>::SeedType SeedType;
+        typedef typename IndexedDecisionTree<FeatureIterator, LabelIterator>::SeedType SeedType;
 
         TrainingJob( FeatureIterator dataSet, const IndexedDecisionTree<FeatureIterator, LabelIterator> & sapling, SeedType seed, unsigned int maxDepth, bool stop ):
         m_dataSet( dataSet ),

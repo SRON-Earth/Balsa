@@ -24,8 +24,8 @@ class Table
 
 public:
 
-    typedef std::vector<CellType>::iterator       Iterator;
-    typedef std::vector<CellType>::const_iterator ConstIterator;
+    typedef typename std::vector<CellType>::iterator       Iterator;
+    typedef typename std::vector<CellType>::const_iterator ConstIterator;
 
     /**
      * Constructs an empty table with the specified number of columns.
