@@ -13,6 +13,7 @@ using namespace balsa;
 // Python docstrings.
 ////////////////////////////////////////////////////////////////////////////////
 
+/* clang-format off */
 PyDoc_STRVAR( balsa_py_doc, R"###(
 Balsa
 =====
@@ -116,6 +117,7 @@ Returns
 -------
 An array of shape [No. of data points] with the predicted labels.
 )###" );
+/* clang-format on */
 
 ////////////////////////////////////////////////////////////////////////////////
 // RandomForestClassifier Python type.
@@ -326,16 +328,16 @@ static PyObject * RandomForestClassifier_classify( RandomForestClassifier_py_obj
     {
         if ( single_precision )
         {
-            const float * data_begin = (const float *) PyArray_DATA( data_py_array );
-            const float * data_end   = data_begin + PyArray_SIZE( data_py_array );
-            uint8_t * labels_begin   = (uint8_t *) PyArray_DATA( labels_py_array );
+            const float * data_begin   = (const float *) PyArray_DATA( data_py_array );
+            const float * data_end     = data_begin + PyArray_SIZE( data_py_array );
+            uint8_t *     labels_begin = (uint8_t *) PyArray_DATA( labels_py_array );
             self->m_rfc_float->classify( data_begin, data_end, number_of_features, labels_begin );
         }
         else
         {
-            const double * data_begin = (const double *) PyArray_DATA( data_py_array );
-            const double * data_end   = data_begin + PyArray_SIZE( data_py_array );
-            uint8_t * labels_begin    = (uint8_t *) PyArray_DATA( labels_py_array );
+            const double * data_begin   = (const double *) PyArray_DATA( data_py_array );
+            const double * data_end     = data_begin + PyArray_SIZE( data_py_array );
+            uint8_t *      labels_begin = (uint8_t *) PyArray_DATA( labels_py_array );
             self->m_rfc_double->classify( data_begin, data_end, number_of_features, labels_begin );
         }
     }
