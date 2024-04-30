@@ -151,6 +151,8 @@ int main( int argc, char ** argv )
         Table<double> PPV( numberOfClasses, 1 );
         Table<double> NPV( numberOfClasses, 1 );
         Table<double> F1( numberOfClasses, 1 );
+        Table<double> LRP( numberOfClasses, 1 );
+        Table<double> LRN( numberOfClasses, 1 );
         Table<double> DOR( numberOfClasses, 1 );
         Table<double> P4( numberOfClasses, 1 );
         for ( Label l = 0; l < numberOfClasses; ++l )
@@ -162,8 +164,11 @@ int main( int argc, char ** argv )
             PPV( l, 0 ) = static_cast<double>( TP( l, 0 ) ) / PP( l, 0 );
             NPV( l, 0 ) = static_cast<double>( TN( l, 0 ) ) / PN( l, 0 );
 
+            LRP( l, 0 ) = TPR( l, 0 ) / ( 1.0 - TNR( l, 0 ) );
+            LRN( l, 0 ) = ( 1.0 - TPR( l, 0 ) ) / TNR( l, 0 );
+
             F1( l, 0 )  = 2.0 * PPV( l, 0 ) * TPR( l, 0 ) / ( PPV( l, 0 ) + TPR( l, 0 ) );
-            DOR( l, 0 ) = static_cast<double>( TP( l, 0 ) * TN( l, 0 ) ) / ( FP( l, 0 ) * FN( l, 0 ) );
+            DOR( l, 0 ) = LRP( l, 0 ) / LRN( l, 0 );
             P4( l, 0 )  = 4.0 / ( ( 1.0 / TPR( l, 0 ) ) + ( 1.0 / TNR( l, 0 ) ) + ( 1.0 / PPV( l, 0 ) ) + ( 1.0 / NPV( l, 0 ) ) );
         }
 
@@ -189,9 +194,11 @@ int main( int argc, char ** argv )
         printClassMetric( "FNR", FNR );
         printClassMetric( "PPV", PPV );
         printClassMetric( "NPV", NPV );
-        printClassMetric( "F1 ", F1 );
+        printClassMetric( "LR+", LRP );
+        printClassMetric( "LR-", LRN );
+        printClassMetric( "F1 ", F1  );
         printClassMetric( "DOR", DOR );
-        printClassMetric( "P4 ", P4 );
+        printClassMetric( "P4 ", P4  );
         std::cout << std::endl;
     }
     catch ( Exception & e )
