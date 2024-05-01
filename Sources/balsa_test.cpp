@@ -56,7 +56,7 @@ bool testCross2x2()
 
     // Train a single decision tree.
     NamedTemporaryFile                                 modelFile;
-    RandomForestTrainer<FeatureType *, std::uint8_t *> trainer( modelFile.getName(), std::numeric_limits<unsigned int>::max(), 1, 1, 2 );
+    RandomForestTrainer<FeatureType *, std::uint8_t *> trainer( modelFile.getName(), 2, std::numeric_limits<unsigned int>::max(), 1.0, 1, 1 );
     trainer.train( points, points + 8, 2, truth );
 
     // Classify the training data.
@@ -93,7 +93,7 @@ bool testCheckerboard()
 
     // Train a single decision tree.
     NamedTemporaryFile                                              modelFile;
-    RandomForestTrainer<typename Table<FeatureType>::ConstIterator> trainer( modelFile.getName(), std::numeric_limits<unsigned int>::max(), 1, 1, generator.getFeatureCount() );
+    RandomForestTrainer<typename Table<FeatureType>::ConstIterator> trainer( modelFile.getName(), generator.getFeatureCount(), std::numeric_limits<unsigned int>::max(), 1.0, 1, 1 );
     trainer.train( points.begin(), points.end(), points.getColumnCount(), truth.begin() );
 
     // Classify the training data.
@@ -127,7 +127,7 @@ bool testConcentricRings()
 
     // Train a single decision tree.
     NamedTemporaryFile                                              modelFile;
-    RandomForestTrainer<typename Table<FeatureType>::ConstIterator> trainer( modelFile.getName(), std::numeric_limits<unsigned int>::max(), 1, 1, generator.getFeatureCount() );
+    RandomForestTrainer<typename Table<FeatureType>::ConstIterator> trainer( modelFile.getName(), generator.getFeatureCount(), std::numeric_limits<unsigned int>::max(), 1.0, 1, 1 );
     trainer.train( points.begin(), points.end(), points.getColumnCount(), truth.begin() );
 
     // Classify the training data.

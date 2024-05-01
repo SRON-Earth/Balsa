@@ -21,9 +21,10 @@ public:
 
     Options():
     maxDepth( std::numeric_limits<unsigned int>::max() ),
+    minPurity( 1.0 ),
     treeCount( 150 ),
     threadCount( 1 ),
-    featuresToScan( 0 ), // Will be chosen internally by trainer if 0.
+    featuresToConsider( 0 ), // Will be chosen internally by trainer if 0.
     seed( std::random_device{}() ),
     writeDotty( false )
     {
@@ -40,6 +41,7 @@ public:
            << std::endl
            << "   -t <thread count>: Sets the number of threads (default is 1)." << std::endl
            << "   -d <max depth>   : Sets the maximum tree depth (default is +inf)." << std::endl
+           << "   -p <min purity>  : Sets the minimum Gini purity (default is 1)." << std::endl
            << "   -c <tree count>  : Sets the number of trees (default is 150)." << std::endl
            << "   -s <random seed> : Sets the random seed (default is a random value)." << std::endl
            << "   -f <count>       : Sets the number of features to randomly scan per split (default is floor(sqrt(feature count))." << std::endl
@@ -73,6 +75,10 @@ public:
             {
                 if ( !( args >> options.maxDepth ) ) throw ParseError( "Missing parameter to -d option." );
             }
+            else if ( token == "-p" )
+            {
+                if ( !( args >> options.minPurity ) ) throw ParseError( "Missing parameter to -p option." );
+            }
             else if ( token == "-c" )
             {
                 if ( !( args >> options.treeCount ) ) throw ParseError( "Missing parameter to -c option." );
@@ -83,7 +89,7 @@ public:
             }
             else if ( token == "-f" )
             {
-                if ( !( args >> options.featuresToScan ) ) throw ParseError( "Missing parameter to -f option." );
+                if ( !( args >> options.featuresToConsider ) ) throw ParseError( "Missing parameter to -f option." );
             }
             else if ( token == "-g" )
             {
@@ -109,9 +115,10 @@ public:
     std::string                     labelFile;
     std::string                     outputFile;
     unsigned int                    maxDepth;
+    double                          minPurity;
     unsigned int                    treeCount;
     unsigned int                    threadCount;
-    unsigned int                    featuresToScan;
+    unsigned int                    featuresToConsider;
     std::random_device::result_type seed;
     bool                            writeDotty;
 };
@@ -129,9 +136,10 @@ int main( int argc, char ** argv )
         std::cout << "Label File : " << options.labelFile << std::endl;
         std::cout << "Output File: " << options.outputFile << std::endl;
         std::cout << "Max. Depth : " << options.maxDepth << std::endl;
+        std::cout << "Min. Purity: " << options.minPurity << std::endl;
         std::cout << "Tree Count : " << options.treeCount << std::endl;
         std::cout << "Threads    : " << options.threadCount << std::endl;
-        std::cout << "Feat. scan : " << options.featuresToScan << std::endl;
+        std::cout << "Feat. scan : " << options.featuresToConsider << std::endl;
         std::cout << "Random Seed: " << options.seed << std::endl;
 
         // Seed master seed sequence.
@@ -150,7 +158,7 @@ int main( int argc, char ** argv )
 
         // Train a random forest on the data.
         std::cout << "Training..." << std::endl;
-        RandomForestTrainer trainer( options.outputFile, options.maxDepth, options.treeCount, options.threadCount, options.featuresToScan, options.writeDotty );
+        RandomForestTrainer trainer( options.outputFile, options.featuresToConsider, options.maxDepth, options.minPurity, options.treeCount, options.threadCount, options.writeDotty );
         watch.start();
         trainer.train( dataSet.begin(), dataSet.end(), dataSet.getColumnCount(), labels.begin() );
         std::cout << "Done (" << watch.stop() << " seconds)." << std::endl;

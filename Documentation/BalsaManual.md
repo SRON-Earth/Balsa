@@ -412,7 +412,7 @@ Remarks:
 
 * This example is included for documentation completeness. For most applications, the recommended approach is to train using the stand-alone balsa_train tool. The results will be identical either way.
 * In this example, training points and labels are loaded into Balsa tables (instances of the Table<T> template). These tables are strongly typed. The 'readFileAs()' function reads the data from a Balsa file as-is if the type of the Table matches the type of the data in the file. Conversion is performed if there is a mismatch. This conversion comes at a minor performance penalty that may be significant for large datasets. Conversion from a higher precision file to a lower precision Table results in information loss.
-* The constructor of the RandomForestTrainer takes a number of parameters (defaulted in this example). These parameters control the maximum depth, number of trees, number of thread to use, etc. Consult the API documentation for the details and options.
+* The constructor of the RandomForestTrainer takes a number of parameters (defaulted in this example). These parameters control the number of features to consider, the maximum depth, the number of decision trees to train, the number of threads to use, etc. Please consult the API documentation for the details.
 
 <a name="cppclassification"></a>
 ### Classification in C++ [(top)](#tableofcontents)

@@ -61,16 +61,41 @@ public:
     /**
      * Constructor.
      * \param outputFile Name of the model file that will be written.
-     * \param concurrentTrainers The maximum number of trees that may be trained concurrently.
+     * \param featuresToConsider Number of features to consider when splitting
+     *  nodes. When a node is to be split, the specified number of features
+     *  will be randomly selected from total number of features, and the
+     *  optimal location for the split will be determined based on the selected
+     *  features. If set to zero, the square root of the number of features
+     *  will be used (rounded down).
+     * \param max_depth Maximum distance from any node to the root of the tree.
+     * \param min_purity Minimum Gini-purity to reach. When the purity of a node
+     *  reaches this minimum, the node will not be split further. A minimum
+     *  purity of 1.0 (the default) means nodes will be split until all
+     *  remaining data points in a node have the same label. The minimum
+     *  possible Gini-purity for any node in a classification problem with M
+     *  labels is 1/M. Setting the minimum purity to this number or lower means
+     *  no nodes will be split at all.
+     * \param treeCount Number of decision trees that will be trained.
+     * \param concurrent_trainers The maximum number of decision trees that will
+     *  be trained concurrently.
+     * \param single_precision If `true`, single precision (32-bit) floats will
+     *  be used instead of double precision (64-bit) floats. This significantly
+     *  reduces the amount of memory used during training, at the expense of
+     *  precision.
      */
-    RandomForestTrainer( const std::string & outputFile, unsigned maxDepth = std::numeric_limits<unsigned int>::max(), unsigned int treeCount = 10, unsigned int concurrentTrainers = 10, unsigned int featuresToScan = 0, bool writeGraphviz = false ):
+    RandomForestTrainer( const std::string & outputFile, unsigned int featuresToConsider = 0, unsigned maxDepth = std::numeric_limits<unsigned int>::max(), double minPurity = 1.0,
+                         unsigned int treeCount = 10, unsigned int concurrentTrainers = 10, bool writeGraphviz = false ):
     m_outputFile( outputFile ),
+    m_featuresToConsider( featuresToConsider ),
     m_maxDepth( maxDepth ),
-    m_trainerCount( concurrentTrainers ),
+    m_minPurity( minPurity ),
     m_treeCount( treeCount ),
-    m_featuresToScan( featuresToScan ),
+    m_trainerCount( concurrentTrainers ),
     m_writeGraphviz( writeGraphviz )
     {
+        // Ensure the specified minimum purity is in range.
+        if ( m_minPurity < 0.0 || m_minPurity > 1.0 )
+            throw ClientError( "The specified minimum purity is out of range [0.0, 1.0]." );
     }
 
     /**
@@ -94,11 +119,15 @@ public:
         auto pointCount = entryCount / featureCount;
 
         // Determine the number of features to consider during each randomized split. If the supplied value was 0, default to floor(sqrt(featurecount)).
-        unsigned int featuresToConsider = m_featuresToScan ? m_featuresToScan : std::floor( std::sqrt( featureCount ) );
+        unsigned int featuresToConsider = m_featuresToConsider ? m_featuresToConsider : std::floor( std::sqrt( featureCount ) );
         if ( featuresToConsider > featureCount ) throw ClientError( "The supplied number of features to scan exceeds the number of features in the dataset." );
 
+        // Determine the impurity treshold from the specified minimum purity.
+        assert( m_minPurity >= 0.0 && m_minPurity <= 1.0 );
+        double impurityTreshold = 1.0 - m_minPurity;
+
         // Create an indexed tree with only one node. This is expensive to build, so it is shared for copying between threads.
-        IndexedDecisionTree<FeatureIterator, LabelIterator> sapling( dataset, labels, featureCount, pointCount, featuresToConsider, m_maxDepth );
+        IndexedDecisionTree<FeatureIterator, LabelIterator> sapling( dataset, labels, featureCount, pointCount, featuresToConsider, m_maxDepth, impurityTreshold );
 
         // Record the number of classes.
         unsigned int classCount = sapling.getClassCount();
@@ -175,10 +204,11 @@ private:
     }
 
     std::string  m_outputFile;
+    unsigned int m_featuresToConsider;
     unsigned int m_maxDepth;
-    unsigned int m_trainerCount;
+    double       m_minPurity;
     unsigned int m_treeCount;
-    unsigned int m_featuresToScan;
+    unsigned int m_trainerCount;
     bool         m_writeGraphviz;
 };
 
