@@ -32,9 +32,8 @@ public:
            << std::endl
            << " Options:" << std::endl
            << std::endl
-           << "   -p <points> : Sets the number of points (default is 1000)." << std::endl
-           << "   -s <seed>   : Sets the random seed for data generation (default is 0)." << std::endl;
-
+           << "   -p <points> : Number of points to generate (default: 1000)." << std::endl
+           << "   -s <seed>   : Random seed for data generation (default: 0)." << std::endl;
         return ss.str();
     }
 
@@ -47,6 +46,7 @@ public:
         // Discard the executable name.
         std::string token;
         args >> token;
+        token = "";
 
         // Parse all flags.
         Options options;

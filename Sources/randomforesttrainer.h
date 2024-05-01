@@ -119,7 +119,7 @@ public:
 
         // Determine the number of features to consider during each randomized split. If the supplied value was 0, default to floor(sqrt(featurecount)).
         unsigned int featuresToConsider = m_featuresToConsider ? m_featuresToConsider : std::floor( std::sqrt( featureCount ) );
-        if ( featuresToConsider > featureCount ) throw ClientError( "The supplied number of features to scan exceeds the number of features in the dataset." );
+        if ( featuresToConsider > featureCount ) throw ClientError( "The specified number of features to consider exceeds the number of features in the dataset." );
 
         // Determine the impurity treshold from the specified minimum purity.
         assert( m_minPurity >= 0.0 && m_minPurity <= 1.0 );

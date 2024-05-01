@@ -27,8 +27,7 @@ public:
         std::stringstream ss;
         ss << "Usage:" << std::endl
            << std::endl
-           << "   balsa_print <balsa_file>" << std::endl
-           << std::endl;
+           << "   balsa_print <balsa_file>" << std::endl;
         return ss.str();
     }
 
@@ -41,6 +40,7 @@ public:
         // Discard the executable name.
         std::string token;
         args >> token;
+        token = "";
 
         // Parse all flags.
         Options options;

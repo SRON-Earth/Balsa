@@ -39,12 +39,13 @@ public:
            << std::endl
            << " Options:" << std::endl
            << std::endl
-           << "   -t <thread count>: Sets the number of threads (default is 1)." << std::endl
-           << "   -d <max depth>   : Sets the maximum tree depth (default is +inf)." << std::endl
-           << "   -p <min purity>  : Sets the minimum Gini purity (default is 1)." << std::endl
-           << "   -c <tree count>  : Sets the number of trees (default is 150)." << std::endl
-           << "   -s <random seed> : Sets the random seed (default is a random value)." << std::endl
-           << "   -f <count>       : Sets the number of features to randomly scan per split (default is floor(sqrt(feature count))." << std::endl
+           << "   -t <thread count>: Number of threads (default: 1)." << std::endl
+           << "   -d <max depth>   : Maximum tree depth (default: +inf)." << std::endl
+           << "   -p <min purity>  : Minimum Gini purity (default: 1)." << std::endl
+           << "   -c <tree count>  : Number of trees (default: 150)." << std::endl
+           << "   -s <random seed> : Random seed (default: a random value)." << std::endl
+           << "   -f <count>       : Number of (randomly selected) features to consider per" << std::endl
+           << "                      split (default: floor(sqrt(feature count))." << std::endl
            << "   -g               : Generates Graphviz/Dotty files of all trees." << std::endl;
         return ss.str();
     }
@@ -58,6 +59,7 @@ public:
         // Discard the executable name.
         std::string token;
         args >> token;
+        token = "";
 
         // Parse all flags.
         Options options;
@@ -132,15 +134,15 @@ int main( int argc, char ** argv )
         Options options = Options::parseOptions( argc, argv );
 
         // Debug.
-        std::cout << "Data File  : " << options.dataFile << std::endl;
-        std::cout << "Label File : " << options.labelFile << std::endl;
-        std::cout << "Output File: " << options.outputFile << std::endl;
-        std::cout << "Max. Depth : " << options.maxDepth << std::endl;
-        std::cout << "Min. Purity: " << options.minPurity << std::endl;
-        std::cout << "Tree Count : " << options.treeCount << std::endl;
-        std::cout << "Threads    : " << options.threadCount << std::endl;
-        std::cout << "Feat. scan : " << options.featuresToConsider << std::endl;
-        std::cout << "Random Seed: " << options.seed << std::endl;
+        std::cout << "Data File        : " << options.dataFile << std::endl;
+        std::cout << "Label File       : " << options.labelFile << std::endl;
+        std::cout << "Output File      : " << options.outputFile << std::endl;
+        std::cout << "Max. Depth       : " << options.maxDepth << std::endl;
+        std::cout << "Min. Purity      : " << options.minPurity << std::endl;
+        std::cout << "Tree Count       : " << options.treeCount << std::endl;
+        std::cout << "Threads          : " << options.threadCount << std::endl;
+        std::cout << "Feat. to Consider: " << options.featuresToConsider << std::endl;
+        std::cout << "Random Seed      : " << options.seed << std::endl;
 
         // Seed master seed sequence.
         getMasterSeedSequence().seed( options.seed );

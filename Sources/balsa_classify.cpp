@@ -35,8 +35,8 @@ public:
            << std::endl
            << " Options:" << std::endl
            << std::endl
-           << "   -t <thread count> :  Sets the number of threads (default is 1)." << std::endl
-           << "   -p <preload count>: Sets the number of trees to preload (default is 1)." << std::endl;
+           << "   -t <thread count> : Number of threads (default: 1)." << std::endl
+           << "   -p <preload count>: Number of trees to preload (default: 1)." << std::endl;
         return ss.str();
     }
 
@@ -49,6 +49,7 @@ public:
         // Discard the executable name.
         std::string token;
         args >> token;
+        token = "";
 
         // Parse all flags.
         Options options;
