@@ -44,8 +44,7 @@ public:
      * indices. When training multiple trees on the same data, it is much more
      * efficient to create one tree and to copy the initial tree multiple times.
      */
-    IndexedDecisionTree( FeatureIterator dataPoints, LabelIterator labels, unsigned int featureCount, unsigned int pointCount, unsigned int featuresToConsider,
-                         unsigned int maximumDistanceToRoot = std::numeric_limits<unsigned int>::max(), FeatureType impurityTreshold = 0.0 ):
+    IndexedDecisionTree( FeatureIterator dataPoints, LabelIterator labels, unsigned int featureCount, unsigned int pointCount, unsigned int featuresToConsider, unsigned int maximumDistanceToRoot = std::numeric_limits<unsigned int>::max(), FeatureType impurityTreshold = 0.0 ):
     m_dataPoints( dataPoints ),
     m_pointCount( pointCount ),
     m_featureCount( featureCount ),

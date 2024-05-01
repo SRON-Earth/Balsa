@@ -83,8 +83,7 @@ public:
      *  reduces the amount of memory used during training, at the expense of
      *  precision.
      */
-    RandomForestTrainer( const std::string & outputFile, unsigned int featuresToConsider = 0, unsigned maxDepth = std::numeric_limits<unsigned int>::max(), double minPurity = 1.0,
-                         unsigned int treeCount = 10, unsigned int concurrentTrainers = 10, bool writeGraphviz = false ):
+    RandomForestTrainer( const std::string & outputFile, unsigned int featuresToConsider = 0, unsigned maxDepth = std::numeric_limits<unsigned int>::max(), double minPurity = 1.0, unsigned int treeCount = 10, unsigned int concurrentTrainers = 10, bool writeGraphviz = false ):
     m_outputFile( outputFile ),
     m_featuresToConsider( featuresToConsider ),
     m_maxDepth( maxDepth ),

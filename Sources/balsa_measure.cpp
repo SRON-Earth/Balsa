@@ -196,9 +196,9 @@ int main( int argc, char ** argv )
         printClassMetric( "NPV", NPV );
         printClassMetric( "LR+", LRP );
         printClassMetric( "LR-", LRN );
-        printClassMetric( "F1 ", F1  );
+        printClassMetric( "F1 ", F1 );
         printClassMetric( "DOR", DOR );
-        printClassMetric( "P4 ", P4  );
+        printClassMetric( "P4 ", P4 );
         std::cout << std::endl;
     }
     catch ( Exception & e )
