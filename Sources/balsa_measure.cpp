@@ -163,8 +163,8 @@ int main( int argc, char ** argv )
             PPV( l, 0 ) = static_cast<double>( TP( l, 0 ) ) / PP( l, 0 );
             NPV( l, 0 ) = static_cast<double>( TN( l, 0 ) ) / PN( l, 0 );
 
-            LRP( l, 0 ) = TPR( l, 0 ) / ( 1.0 - TNR( l, 0 ) );
-            LRN( l, 0 ) = ( 1.0 - TPR( l, 0 ) ) / TNR( l, 0 );
+            LRP( l, 0 ) = TPR( l, 0 ) / FPR( l, 0 );
+            LRN( l, 0 ) = FNR( l, 0 ) / TNR( l, 0 );
 
             F1( l, 0 )  = 2.0 * PPV( l, 0 ) * TPR( l, 0 ) / ( PPV( l, 0 ) + TPR( l, 0 ) );
             DOR( l, 0 ) = LRP( l, 0 ) / LRN( l, 0 );
