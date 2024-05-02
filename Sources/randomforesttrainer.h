@@ -61,12 +61,15 @@ public:
     /**
      * Constructor.
      * \param outputFile Name of the model file that will be written.
-     * \param featuresToConsider Number of features to consider when splitting
-     *  nodes. When a node is to be split, the specified number of features
-     *  will be randomly selected from total number of features, and the
-     *  optimal location for the split will be determined based on the selected
-     *  features. If set to zero, the square root of the number of features
-     *  will be used (rounded down).
+     * \param featuresToConsider Number of features to consider when splitting a
+     *  node. When a node is to be split, the specified number of features will
+     *  be randomly selected from the set of all features, and the optimal
+     *  location for the split will be determined using the selected features.
+     *  If no valid split can be found, then features that were initially
+     *  skipped will be considered as well. Effectively, this parameter sets
+     *  the minimum number of features that will be considered. More features
+     *  will be considered if necessary to find a valid split. If set to zero,
+     *  the square root of the number of features will be used(rounded down).
      * \param max_depth Maximum distance from any node to the root of the tree.
      * \param min_purity Minimum Gini-purity to reach. When the purity of a node
      *  reaches this minimum, the node will not be split further. A minimum
