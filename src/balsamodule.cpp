@@ -45,18 +45,29 @@ labels : array-like
     aligned array of the 8-bit unsigned integers.
 model_filename : path-like
     Name (or path) of the file in which the trained forest will be stored.
+features_to_consider : int, optional, default = 0
+    Number of features to consider when splitting a node. When a node is to be
+    split, the specified number of features will be randomly selected from the
+    set of all features, and the optimal location for the split will be
+    determined using the selected features. If no valid split can be found,
+    then features that were initially skipped will be considered as well.
+    Effectively, this parameter sets the minimum number of features that will
+    be considered. More features will be considered if necessary to find a
+    valid split. If set to zero, the square root of the number of features will
+    be used(rounded down).
 max_depth : int, optional, default = 4294967295
     Maximum distance from any node to the root of the tree.
+min_purity : float, optional, default = 1.0
+    Minimum Gini-purity to reach. When the purity of a node reaches this
+    minimum, the node will not be split further. A minimum purity of 1.0 (the
+    default) means nodes will be split until all remaining data points in a node
+    have the same label. The minimum possible Gini-purity for any node in a
+    classification problem with M labels is 1/M. Setting the minimum purity to
+    this number or lower means no nodes will be split at all.
 tree_count : int, optional, default = 150
     Number of decision trees that will be trained.
 concurrent_trainers : int, optional, default = 1
     Number of decision trees that will be trained concurrently.
-features_to_scan : int, optional, default = 0
-    Number of features to consider when splitting nodes. When a node is to be
-    split, the specified number of features will be randomly selected from
-    total number of features, and the optimal location for the split will be
-    determined based on the selected features. If set to zero, the square root
-    of the number of features will be used (rounded down).
 single_precision : bool, optional, default = `False`
     If `True`, single precision (32-bit) floats will be used instead of double
     precision (64-bit) floats. This significantly reduces the amount of memory
@@ -373,14 +384,15 @@ static PyObject * balsa_train( PyObject * self, PyObject * args, PyObject * kwar
     PyObject *   labels_py_object         = NULL;
     PyObject *   model_filename_py_object = NULL;
     unsigned int max_depth                = UINT_MAX;
+    double       min_purity               = 1.0;
     unsigned int tree_count               = 150;
     unsigned int concurrent_trainers      = 1;
-    unsigned int features_to_scan         = 0;
+    unsigned int features_to_consider     = 0;
     int          single_precision         = 0;
 
     // Convert positional and keyword arguments.
-    static const char * keywords[] = { "", "", "", "max_depth", "tree_count", "concurrent_trainers", "features_to_scan", "single_precision", NULL };
-    if ( !PyArg_ParseTupleAndKeywords( args, kwargs, "OOO&|$IIIIp", (char **) keywords, &data_py_object, &labels_py_object, PyUnicode_FSConverter, &model_filename_py_object, &max_depth, &tree_count, &concurrent_trainers, &features_to_scan, &single_precision ) )
+    static const char * keywords[] = { "", "", "", "features_to_consider", "max_depth", "min_purity", "tree_count", "concurrent_trainers", "single_precision", NULL };
+    if ( !PyArg_ParseTupleAndKeywords( args, kwargs, "OOO&|$IIdIIp", (char **) keywords, &data_py_object, &labels_py_object, PyUnicode_FSConverter, &model_filename_py_object, &features_to_consider, &max_depth, &min_purity, &tree_count, &concurrent_trainers, &single_precision ) )
     {
         // Depending on where PyArg_ParseTupleAndKeywords() fails, it may have
         // converted the model filename using PyUnicode_FSConverter. Using
@@ -446,7 +458,7 @@ static PyObject * balsa_train( PyObject * self, PyObject * args, PyObject * kwar
         if ( single_precision )
         {
             // Instantiate single precision trainer.
-            RandomForestTrainer<const float *, const uint8_t *> trainer( model_filename, max_depth, tree_count, concurrent_trainers, features_to_scan );
+            RandomForestTrainer<const float *, const uint8_t *> trainer( model_filename, features_to_consider, max_depth, min_purity, tree_count, concurrent_trainers );
 
             // Train.
             const float *   data_begin   = (const float *) PyArray_DATA( data_py_array );
@@ -457,7 +469,7 @@ static PyObject * balsa_train( PyObject * self, PyObject * args, PyObject * kwar
         else
         {
             // Instantiate double precision trainer.
-            RandomForestTrainer<const double *, const uint8_t *> trainer( model_filename, max_depth, tree_count, concurrent_trainers, features_to_scan );
+            RandomForestTrainer<const double *, const uint8_t *> trainer( model_filename, features_to_consider, max_depth, min_purity, tree_count, concurrent_trainers );
 
             // Train.
             const double *  data_begin   = (const double *) PyArray_DATA( data_py_array );
