@@ -51,6 +51,7 @@ Balsa is a fast and memory-efficient C++ implementation of the RandomForest clas
 		1. [False Positive Rate and False Negative Rate](#fprfnr)
 		1. [True Positive Odds and False Positive Odds](#tpofpo)
 		1. [Positive Predictive Value and Negative Predictive Value](#ppvnpv)
+		1. [Positive Likelihood Ratio and Negative Likelihood Ratio](#lrplrn)
 		1. [Accuracy](#acc)
 		1. [F-beta Score](#fbeta)
 		1. [Diagnostic Odds Ratio](#dor)
@@ -733,21 +734,17 @@ The FPR and FNR indicate how frequently the classifier is wrong, for each respec
 
 ##### Definition
 
-The *True Positive Odds* indicate how many times more likely it is that a positively classified point is correctly labeled, versus it being incorrectly labeled:
+The *True Positive Odds* indicate how many times more likely it is that a positive point in the ground truth is correctly labelled by the classifier, versus it being incorrectly labelled:
 
-	TPO = TPR / FPR = (TP/P) / (FN/P) = TP/FN
+	TPO = TPR / (1 - TPR) = TPR / FNR = (TP/P) / (FN/P) = TP/FN
 
-The TPO are also known as the *Positive Likelihood Ratio* (LR+).
+The *False Positive Odds* indicate how many times more likely it is that a negative point in the ground thruth is incorrectly labelled by the classifier, versus it being correctly labelled:
 
-The *False Negative Odds* indicate how many times more likely it is that a negatively classified point is incorrectly labeled, versus it being correctly labeled:
-
-	FNO = FNR / TNR =  (FP/N) / (TN/N) = FP/TN
-
-The FNO are also known as the *Negative Likelihood Ratio* (LR-).
+	FPO = FPR / (1 - FPR) = FPR / TNR = (FP/N) / (TN/N) = FP/TN
 
 ##### Discussion
 
-These metrics are simply the TNR and FNR written in odds-form. They are primarily useful as a basis for deriving other metrics.
+These metrics are simply the TPR and FPR written in odds-form. They are primarily useful as a basis for deriving other metrics.
 
 <a name="ppvnpv"></a>
 #### Positive Predictive Value and Negative Predictive Value [(top)](#tableofcontents)
@@ -769,6 +766,27 @@ The *Negative Predictive Value* (NPV) is the fraction of all points that have be
 Intuitively, these metrics indicate in how much information about the ground truth a classifier gives us when it classifies a point as true or false. If PPV is zero, a positive label will be meaningless. If it is 1, we can be confident that the point is actually positive.
 
 The PPV is most useful when the cost of dealing with a false positive is high. The NPV is most useful when the cost of dealing with a false negative is high. Both metrics are sensitive to prevalence, in the sense that the resolution of possible PPV and NPV values becomes low when the population is very imbalanced.
+
+<a name="lrplrn"></a>
+#### Positive Likelihood Ratio and Negative Likelihood Ratio [(top)](#tableofcontents)
+
+##### Definition
+
+The *Positive Likelihood Ratio* indicates how many times more likely it is that a positively classified point is correctly labeled, versus it being incorrectly labeled:
+
+	LR+ = TPR / (1 - TNR) = TPR / FPR = (TP/P) / (FP/N) = (TP * N) / (FP * P)
+
+The *Negative Likelihood Ratio* indicates how many times more likely it is that a negatively classified point is incorrectly labeled, versus it being correctly labeled:
+
+	LR- = (1 - TPR) / TNR = FNR / TNR = (FN/P) / (TN/N) = (FN * N) / (TN * P)
+
+##### Discussion
+
+Both the positive and negative likelihood ratios range from zero to positive infinity. A positive likelihood ratio (LR+) *larger* than one indicates that the probability that a point is labeled *positive* given that the point is *positive* in the ground truth (a true positive) is larger than the probability that a point is labeled *positive* given that the point is *negative* in the ground truth (a false negative). The larger LR+, the more information a positive classification provides about the ground thruth. An LR+ value of one indicates the probabilities are equal, and thus a positive classification provides no information about the ground truth. If LR+ is smaller than one then the classification labels can be swapped such that LR+ becomes larger than one.
+
+For the negative likelihood ratio (LR-), a value *smaller* than one indicates that the probability that a point is labeled *negative* given that the point is *negative* in the ground truth (a true negative) is larger than the probability that a point is labeled *negative* given that the point is *positive* in the ground truth (a false positive). The smaller LR-, the more information a negative classification provides about the ground thruth. An LR- value of one indicates the probabilities are equal, and thus a negative classification provides no information about the ground truth. If LR- is larger than one then the classification labels can be swapped such that LR- becomes smaller than one.
+
+In summary, the *larger* LR+ and the *smaller* LR-, the more information the classifier provides about the ground truth. An important advantage of likelihood ratios is that these measures are insensitive to dataset imbalance.
 
 <a name="acc"></a>
 #### Accuracy [(top)](#tableofcontents)
@@ -809,10 +827,13 @@ The F-1 Score is an all-round useful single-number metric that gives more realis
 
 ##### Definition
 
-The Diagnostic Odds Ratio is the ratio between the TPO (a.k.a. LR+) and the FNO (a.k.a. LR-):
+The Diagnostic Odds Ratio is the ratio between the True Positive Odds (TPO) and the False Positive Odds (FPO):
 
-	DOR = TPO / FNO = (TP/FN)/(FP/TN) = (TP * TN) / (FP * FN)
-	DOR = LR+ / LR-
+	DOR = TPO / FPO = (TP/FN)/(FP/TN) = (TP*TN)/(FP*FN)
+
+It may also be expressed as the ratio between the Positive Likelihood Ratio (LR+) and the Negative Likelihood Ratio (LR-):
+
+	DOR = LR+ / LR- = ((TP*N)/(FP*P))/((FN*N)/(TN*P)) = (TP*P*TN*N)/(FP*P*FN*N) = (TP*TN)/(FP*FN)
 
 ##### Discussion
 
