@@ -734,11 +734,11 @@ The FPR and FNR indicate how frequently the classifier is wrong, for each respec
 
 ##### Definition
 
-The *True Positive Odds* indicate how many times more likely it is that a positive point in the ground truth is correctly labelled by the classifier, versus it being incorrectly labelled:
+The *True Positive Odds* indicate how many times more likely it is that a positive point in the ground truth is correctly labeled by the classifier, versus it being incorrectly labeled:
 
 	TPO = TPR / (1 - TPR) = TPR / FNR = (TP/P) / (FN/P) = TP/FN
 
-The *False Positive Odds* indicate how many times more likely it is that a negative point in the ground thruth is incorrectly labelled by the classifier, versus it being correctly labelled:
+The *False Positive Odds* indicate how many times more likely it is that a negative point in the ground thruth is incorrectly labeled by the classifier, versus it being correctly labeled:
 
 	FPO = FPR / (1 - FPR) = FPR / TNR = (FP/N) / (TN/N) = FP/TN
 
@@ -786,7 +786,7 @@ Both the positive and negative likelihood ratios range from zero to positive inf
 
 For the negative likelihood ratio (LR-), a value *smaller* than one indicates that the probability that a point is labeled *negative* given that the point is *negative* in the ground truth (a true negative) is larger than the probability that a point is labeled *negative* given that the point is *positive* in the ground truth (a false positive). The smaller LR-, the more information a negative classification provides about the ground thruth. An LR- value of one indicates the probabilities are equal, and thus a negative classification provides no information about the ground truth. If LR- is larger than one then the classification labels can be swapped such that LR- becomes smaller than one.
 
-In summary, the *larger* LR+ and the *smaller* LR-, the more information the classifier provides about the ground truth. An important advantage of likelihood ratios is that these measures are insensitive to dataset imbalance.
+In summary, the *larger* LR+ and the *smaller* LR-, the more information the classifier provides about the ground truth. An important advantage of likelihood ratios is that these metrics are insensitive to population imbalance. LR+ and LR- could be viewed as "prevalence insensitive" analogues of the PPV and NPV.
 
 <a name="acc"></a>
 #### Accuracy [(top)](#tableofcontents)
