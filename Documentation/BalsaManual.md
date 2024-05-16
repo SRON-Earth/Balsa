@@ -57,7 +57,6 @@ Balsa is a fast and memory-efficient C++ implementation of the RandomForest clas
 		1. [Diagnostic Odds Ratio](#dor)
 		1. [P4 Metric](#p4metric)
 1. [Contact and Credits](#contactandcredits)
-1. [License](#license)
 
 <a name="packagecontents"></a>
 ## Package Contents [(top)](#tableofcontents)
@@ -860,8 +859,3 @@ The P4 metric combines the four basic metrics into one single score. If either v
 ## Contact and Credits [(top)](#tableofcontents)
 
 Balsa was developed for the [Netherlands Institute of Space Research](https://www.sron.nl) by Denis de Leeuw Duarte and Joris van Zwieten of [Jigsaw B.V.](https://www.jigsaw.nl) in The Netherlands, using funding from the [European Space Agency](https://www.esa.int).
-
-<a name="license"></a>
-## License [(top)](#tableofcontents)
-
-TBD
