@@ -59,7 +59,6 @@ public:
         return std::distance( rowData, largest );
     }
 
-
     /**
      * Find the largest element in a row and return its column number, after applying a weight.
      * In case of a tie, the lowest tied column number is returned.
@@ -79,7 +78,6 @@ public:
             topColumn = column;
             topScore  = score;
         }
-
         return topColumn;
     }
 
