@@ -187,13 +187,11 @@ private:
     static void workerThread( JobQueue * jobInbox, JobResultQueue * treeOutbox )
     {
         // Train trees until it is time to stop.
-        unsigned int jobsPickedUp = 0;
         while ( true )
         {
             // Get an assignment or stop message from the queue.
             TrainingJob job = jobInbox->receive();
             if ( job.m_stop ) break;
-            ++jobsPickedUp;
 
             // Clone the sapling and grow it. Take care to re-seed the random
             // generator used for feature selection, otherwise identical trees

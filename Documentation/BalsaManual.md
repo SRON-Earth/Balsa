@@ -394,6 +394,8 @@ The following complete example shows how a Balsa data model can be loaded and tr
 
 	#include <iostream>
 	#include <balsa.h>
+	
+	using namespace balsa;
 
 	int main( int, char ** )
 	{
@@ -422,6 +424,8 @@ The following complete example shows how a data set can be classified from withi
 
 	#include <iostream>
 	#include <balsa.h>
+	
+	using namespace balsa;
 
 	int main( int, char ** )
 	{

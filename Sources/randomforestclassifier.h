@@ -55,6 +55,11 @@ public:
         return m_classifier.classifyAndVote( pointsStart, pointsEnd, featureCount, table );
     }
 
+    void setClassWeights( const std::vector<float> &classWeights )
+    {
+        m_classifier.setClassWeights( classWeights );
+    }
+
 private:
 
     DecisionTreeClassifierStream<FeatureIterator, OutputIterator> m_classifierStream;

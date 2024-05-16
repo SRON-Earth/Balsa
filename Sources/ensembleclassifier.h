@@ -28,8 +28,22 @@ public:
     EnsembleClassifier( ClassifierStream<FeatureIterator, OutputIterator> & classifiers, unsigned int maxWorkerThreads = 0 ):
     Classifier<FeatureIterator, OutputIterator>(),
     m_maxWorkerThreads( maxWorkerThreads ),
-    m_classifierStream( classifiers )
+    m_classifierStream( classifiers ),
+    m_classWeights( m_classifierStream.getClassCount(), 1.0 )
     {
+    }
+
+    /**
+     * Set the relative weights of each class.
+     * \param classWeights Multiplication factors that will be applied to each class vote total before determining the maximum score and final label.
+     * \pre The weights must be non-negative.
+     * \pre There must be a weight for each class.
+     */
+    void setClassWeights( const std::vector<float> &classWeights )
+    {
+        assert( classWeights.size() == m_classWeights.size() );
+        for ( auto w: classWeights ) assert( w >= 0 );
+        m_classWeights = classWeights;
     }
 
     /**
@@ -61,7 +75,7 @@ public:
 
         // Generate the labels.
         for ( unsigned int point = 0; point < pointCount; ++point )
-            *labelsStart++ = static_cast<Label>( voteCounts.getColumnOfRowMaximum( point ) );
+            *labelsStart++ = static_cast<Label>( voteCounts.getColumnOfWeightedRowMaximum( point, m_classWeights ) );
     }
 
     /**
@@ -224,6 +238,7 @@ private:
 
     unsigned int                                        m_maxWorkerThreads;
     ClassifierStream<FeatureIterator, OutputIterator> & m_classifierStream;
+    std::vector<float>                                  m_classWeights    ;
 };
 
 } // namespace balsa

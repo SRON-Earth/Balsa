@@ -49,7 +49,7 @@ public:
     /**
      * Find the largest element in a row and return its column number.
      * In case of a tie, the lowest tied column number is returned.
-     * \param rowNumber
+     * \param rowNumber The row that is to be scanned.
      */
     std::size_t getColumnOfRowMaximum( std::size_t rowNumber ) const
     {
@@ -57,6 +57,30 @@ public:
         auto rowDataEnd = rowData + m_columnCount;
         auto largest    = std::max_element( rowData, rowDataEnd );
         return std::distance( rowData, largest );
+    }
+
+
+    /**
+     * Find the largest element in a row and return its column number, after applying a weight.
+     * In case of a tie, the lowest tied column number is returned.
+     * \param rowNumber The row that is to be scanned.
+     * \param weights The list of non-negative weight factors that will be applied to the counts.
+     */
+    std::size_t getColumnOfWeightedRowMaximum( std::size_t rowNumber, const std::vector<float> &weights ) const
+    {
+        // Find the maximum of the weighted values.
+        auto rowData    =  m_data.begin() + rowNumber * m_columnCount;
+        double topScore = 0;
+        std::size_t topColumn = 0;
+        for ( std::size_t column = 0; column < m_columnCount; ++column )
+        {
+            float score = rowData[column] * weights[column];
+            if ( score <= topScore ) continue;
+            topColumn = column;
+            topScore  = score;
+        }
+
+        return topColumn;
     }
 
     /**
