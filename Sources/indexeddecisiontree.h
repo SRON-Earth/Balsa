@@ -5,6 +5,7 @@
 #include <fstream>
 #include <valarray>
 #include <vector>
+#include <cmath>
 
 #include "datatools.h"
 #include "datatypes.h"
@@ -69,7 +70,9 @@ public:
             {
                 auto index = point * m_featureCount + feature;
                 assert( index < ( pointCount * featureCount ) );
-                singleFeatureIndex.push_back( FeatureIndexEntry( dataPoints[point * m_featureCount + feature], point, labels[point] ) );
+                auto featureValue = dataPoints[point * m_featureCount + feature];
+                if ( std::isnan( featureValue ) ) throw ClientError( "Feature value is not a number." );
+                singleFeatureIndex.push_back( FeatureIndexEntry( featureValue, point, labels[point] ) );
             }
 
             // Sort the index by feature value.

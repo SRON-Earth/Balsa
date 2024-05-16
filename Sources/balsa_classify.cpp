@@ -137,7 +137,6 @@ int main( int argc, char ** argv )
         // Create a random forest classifier.
         watch.start();
         Table<Label> labels( dataSet.getRowCount(), 1 );
-        std::cout << labels.getRowCount() << " before " << std::endl;
         RandomForestClassifier<decltype( dataSet )::ConstIterator, decltype( labels )::Iterator> classifier( options.modelFile, options.threadCount - 1, options.maxPreload );
 
         // Override the class weights.
