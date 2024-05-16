@@ -26,6 +26,7 @@ Balsa is a fast and memory-efficient C++ implementation of the RandomForest clas
 	1. [Building and Installing Balsa](#buildandinstall)
 1. [Using Balsa from the Command Line](#balsacommandline)
 	1. [Creating Test Data](#balsagenerate)
+	1. [Importing Test Data](#balsaprint)
 	1. [Training on the Command Line](#balsatrain)
 	1. [Classification on the Command Line](#balsaclassify)
 	1. [Measuring Classifier Performance](#balsameasure)
@@ -285,6 +286,15 @@ Let's get back to our apples-and-oranges example. To generate data, save the dat
 	balsa_generate fruit.conf fruit-points.balsa fruit-labels.balsa
 
 The generator will create two output files: "fruit-points.balsa", which contains the point data drawn from the two sources, and "fruit-labels.balsa" containing the labels/ground truth. By default, the generator will draw 1000 points using a randomly chosen random seed. Running balsa_generate without giving it file names will print usage information. The usage information describes how the default point count and random seed can be changed.
+
+<a name="balsaconvert"></a>
+### Importing Test Data [(top)](#tableofcontents)
+
+The Balsa command-line tools use a binary file format for input and output. The balsa_convert tool can be used to convert comma-separated value files (CSV) containing integer- or floating-point data to Balsa's native file format, as follows:
+
+	balsa_convert fruit-points.csv fruit-points.balsa
+
+N.B. CSV files must contain (non-NaN) floating point values or integers only, separated by commas. Each row must contain the same number of entries. Empty lines and spaces are allowed.
 
 <a name="balsatrain"></a>
 ### Training on the Command Line [(top)](#tableofcontents)
