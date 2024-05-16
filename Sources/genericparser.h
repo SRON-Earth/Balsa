@@ -18,8 +18,8 @@ class GenericParser
 {
 public:
 
-    GenericParser( std::istream & in ):
-    m_whitespace( " \t\r\n" ),
+    GenericParser( std::istream & in, const std::string &whitespace = std::string( " \t\r\n" ) ):
+    m_whitespace( whitespace ),
     m_in( in )
     {
         assert( in.good() );
@@ -87,6 +87,11 @@ public:
     char peek() const
     {
         return m_in.peek();
+    }
+
+    bool atEOF() const
+    {
+        return peek() == EOF;
     }
 
 private:

@@ -7,6 +7,7 @@
 #include <iomanip>
 #include <vector>
 
+#include "genericparser.h"
 #include "exceptions.h"
 #include "serdes.h"
 
@@ -386,6 +387,86 @@ std::ostream & operator<<( std::ostream & out, const Table<uint8_t> & table )
     }
 
     return out;
+}
+
+template<typename CellType>
+Table<CellType> parseCSV( std::istream &in )
+{
+    // Create a generic parser that does not consume newlines as whitespace.
+    GenericParser parser( in, " \t\r" );
+
+    // Consume whitespace and empty lines.
+    while ( !parser.atEOF() )
+    {
+        parser.consumeWhitespace();
+        if ( parser.peek() != '\n' ) break;
+        parser.consume( '\n' );
+    }
+
+    // Parse the first row with data. This determines the width of the table.
+    std::vector<CellType> firstRow;
+    while ( !parser.atEOF() && parser.peek() != '\n' )
+    {
+        // Parse a value.
+        parser.consumeWhitespace();
+        firstRow.push_back( parser.parseValue<CellType>() );
+        parser.consumeWhitespace();
+
+        // Break on line endings.
+        if ( parser.peek() == '\n' )
+        {
+            parser.consume( '\n' );
+            break;
+        }
+
+        // Consume the separator.
+        parser.consume( ',' );
+    }
+
+    if ( firstRow.size() == 0 ) throw ParseError( "No data in CSV file." );
+
+    // Create an empty table.
+    Table<CellType> result( firstRow.size() );
+    result.append( firstRow.begin(), firstRow.end() );
+
+    // Parse all remaining rows.
+    while ( !parser.atEOF() )
+    {
+        // Consume whitespace and empty lines.
+        while ( !parser.atEOF() )
+        {
+            parser.consumeWhitespace();
+            if ( parser.peek() != '\n' ) break;
+            parser.consume( '\n' );
+        }
+
+        // Parse an actual row.
+        std::vector<CellType> row;
+        while ( !parser.atEOF() )
+        {
+            // Parse a value.
+            parser.consumeWhitespace();
+            row.push_back( parser.parseValue<CellType>() );
+            parser.consumeWhitespace();
+
+            // Break on line endings.
+            if ( parser.peek() == '\n' )
+            {
+                parser.consume( '\n' );
+                break;
+            }
+
+            // Check for a valid separator.
+            parser.consume( ',' );
+        }
+
+        // Add the row to the table.
+        if ( row.size() == 0 ) continue;
+        if ( row.size() != firstRow.size() ) throw ParseError( "CSV rows must be of equal length." );
+        result.append( row.begin(), row.end() );
+    }
+
+    return result;
 }
 
 } // namespace balsa
