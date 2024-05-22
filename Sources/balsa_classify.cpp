@@ -145,7 +145,7 @@ int main( int argc, char ** argv )
         {
             auto label = std::get<0>( pair );
             auto weight = std::get<1>( pair );
-            if ( label < 0 || label >= weights.size() ) throw ClientError( "Class out of range: " + std::to_string( label ) );
+            if ( label >= weights.size() ) throw ClientError( "Class out of range: " + std::to_string( label ) );
             if ( weight != weight || weight < 0 ) throw ClientError( "Invalid weight: " + std::to_string( weight ) );
             weights[label] = weight;
         }
