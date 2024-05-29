@@ -71,7 +71,6 @@ The following grammar rules describe basic building blocks of Balsa files:
 Balsa files currently support three types of objects that can be stored: tables,
 trees, and forests. The production rules for tables are as follows:
 
-
     ROWSIZE     := uint32
     COLSIZE     := uint32
     TABLE       := "tabl" ROWSIZE COLSIZE SCALARTYPEID SCALAR* "lbat"
@@ -82,6 +81,7 @@ of the scalars that comprise the table. Scalars are stored in row-major order.
 
 The following context-free production rules define trees:
 
+    FEATUREID     := uint8
     FLOATTYPE     := float | double
     TREEHEADER    := DICTIONARY
     NODEID        := uint32
@@ -89,7 +89,7 @@ The following context-free production rules define trees:
 
     LEFTCHILDREN  := TABLE<NODEID>
     RIGHTCHILDREN := TABLE<NODEID>
-    SPLITFEATURES := TABLE<FLOATTYPE>
+    SPLITFEATURES := TABLE<FEATUREID>
     SPLITVALUES   := TABLE<FLOATTYPE>
     LABELS        := TABLE<LABEL>
 
@@ -111,29 +111,37 @@ The TREEHEADER dictionary must contain at least the following fields:
 The following context-free grammar describes the structure of a forest:
 
     FORESTHEADER := DICTIONARY
-    FOREST        := "frst" TREE+ "frst"
+    FOREST       := "frst" TREE+ "frst"
 
 The following contextual restrictions apply:
 
 - The FORESTHEADER must contain a "classcount" and "featurecount" entry,
-  analogous to those in the TREEHEADER.
+  identical to those in the TREEHEADERs of the indidual trees in the forest.
 
 ## File Structure
 
-The following grammar rules describe the overall file structure.
+The following grammar rules describe the overall file structure:
 
     ENDIANNESS := "bend" | "lend"
     FILEHEADER := DICTIONARY
-    BALSAFILE  := "blsa" ENDIANNESS BALSAOBJECT
+    BALSAFILE  := "blsa" ENDIANNESS BALSAOBJECT "alsb"
 
 The speficied endianness applies to all scalars in the file.
 
 The following entries must be present in the header:
 
-- "MAJORVERSION" uint8: Major version number.
-- "MINORVERSION" uint8: Minor version number.
-- "PATCH" uint8: patch number.
+- "FILEMAJORVERSION" uint8: Major version number of the file format.
+- "FILEMINORVERSION" uint8: Minor version number of the file format.
+- "FILEPATCH"        uint8: Patch number of the file format.
 
 Semantic versioning applies to the version numbers: patches are for bug fixes,
 minor version bumps may add functionality in a backward compatible manner, major
 version updates may break backward compatibility.
+
+The following entries in the file header are optional:
+
+- "CREATOR"             string: The name of the software that created the file.
+- "CREATORMAJORVERSION" uint8 : Major version number of the creator.
+- "CREATORMINORVERSION" uint8 : Minor version number of the creator.
+- "CREATORPATCH"        uint8 : Patch number of the creator.
+
