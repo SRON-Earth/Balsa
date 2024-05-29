@@ -1,0 +1,139 @@
+# About
+
+The Balsa binary file format is used for storing trained models, data sets, and
+output labels. It is a simple format, optimized for fast bulk loading and storage
+of data.
+
+# File Format
+
+## Endianness
+
+The Balsa file format supports both big-endian and little endian encoding. The
+endianness is determined at file level. It is specified unambiguously in the
+file header. For fast model- and data loading, the native endianness of the
+platform on which Balsa is run should be used.
+
+# Elementary Types
+
+Balsa files are composed of values of the following elementary data types:
+
+* 'uint8' : 8-bit unsigned integer
+* 'uint16': 16-bit unsigned integer
+* 'uint32': 32-bit unsigned integer
+* 'int8'  : 8-bit signed integer
+* 'int16' : 16-bit signed integer
+* 'int32' : 32-bit signed integer
+* 'float' : 32-bit IEEE 754 single-precision floating point number.
+* 'double': 64-bit IEEE 754 double-precision floating point number.
+* 'char'  : 7-bit ASCII characters, encoded in 8 bits.
+* 'bool'  : boolean value, encoded in 8 bits (zero is false, non-zero is true).
+
+These elementary data types are refenced as terminal symbols in the grammar.
+
+# Grammar
+
+## Basic Constructs
+
+The following grammar rules describe basic building blocks of Balsa files:
+
+    SCALAR       := uint8  |
+               	    uint16 |
+               	    uint32 |
+	       	    int8   |
+	       	    int16  |
+	       	    int32  |
+	       	    float  |
+	       	    double |
+                    bool
+
+    SCALARTYPEID := "ui08"  |
+               	    "ui16"  |
+               	    "ui32"  |
+	       	    "in08"  |
+	       	    "in16"  |
+	       	    "in32"  |
+	       	    "fl32"  |
+	       	    "fl64"  |
+                    "bool"
+
+    STRINGSIZE   := uint8
+    STRING       := STRINGSIZE char*
+
+    FIELDTYPEID  := SCALARTYPEID | "strn"
+    FIELDVALUE   := STRING | SCALAR
+    KEY          := STRING
+    KEYVALUEPAIR := KEY FIELDTYPEID FIELDVALUE
+
+    DICTIONARY   := "dict" KEYVALUEPAIR* "tcid"
+
+## Balsa Objects
+
+Balsa files currently support three types of objects that can be stored: tables,
+trees, and forests. The production rules for tables are as follows:
+
+
+    ROWSIZE     := uint32
+    COLSIZE     := uint32
+    TABLE       := "tabl" ROWSIZE COLSIZE SCALARTYPEID SCALAR* "lbat"
+
+The meta rule TABLE<SCALARTYPE> will be used subsequently to denote a table with
+entries of the stated type. The SCALARTYPEID specified corresponds to the type
+of the scalars that comprise the table. Scalars are stored in row-major order.
+
+The following context-free production rules define trees:
+
+    FLOATTYPE     := float | double
+    TREEHEADER    := DICTIONARY
+    NODEID        := uint32
+    LABEL         := uint8
+
+    LEFTCHILDREN  := TABLE<NODEID>
+    RIGHTCHILDREN := TABLE<NODEID>
+    SPLITFEATURES := TABLE<FLOATTYPE>
+    SPLITVALUES   := TABLE<FLOATTYPE>
+    LABELS        := TABLE<LABEL>
+
+    TREEBODY      := LEFTCHILDREN RIGHTCHILDREN SPLITFEATURES SPLITVALUES LABELS
+
+    TREE          := "tree" TREEHEADER TREEBODY "eert"
+
+The float types for the split feature- and value arrays must be identical. All
+the tables in a tree have exactly one column. All the tables must have the same
+length (i.e. the number of nodes in the tree).
+
+The TREEHEADER dictionary must contain at least the following fields:
+
+- "classcount" (uint8): the number of classes (labels) in the dataset on which
+   the tree was trained.
+- "featurecount" (uint8): the number of features in the dataset on which the
+   tree was trained.
+
+The following context-free grammar describes the structure of a forest:
+
+    FORESTHEADER := DICTIONARY
+    FOREST        := "frst" TREE+ "frst"
+
+The following contextual restrictions apply:
+
+- The FORESTHEADER must contain a "classcount" and "featurecount" entry,
+  analogous to those in the TREEHEADER.
+
+## File Structure
+
+The following grammar rules describe the overall file structure.
+
+    ENDIANNESS := "bend" | "lend"
+    FILEHEADER := DICTIONARY
+    BALSAFILE  := "blsa" ENDIANNESS BALSAOBJECT
+
+The speficied endianness applies to all scalars in the file.
+
+The following entries must be present in the header:
+
+- "MAJORVERSION" uint8: Major version number.
+- "MINORVERSION" uint8: Minor version number.
+- "PATCH" uint8: patch number.
+
+Semantic versioning applies to the version numbers: patches are for bug fixes,
+minor version bumps may add functionality in a backward compatible manner, major
+version updates may break backward compatibility.
