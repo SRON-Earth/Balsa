@@ -47,7 +47,8 @@ EOF
 POINTCOUNT=10000
 THREADCOUNT=10
 TREECOUNT=400
-IMPORTANCEPOINTCOUNT=500
+IMPORTANCEPOINTCOUNT=1000
+IMPORTANCEREPEATS=10
 
 # Generate a training set.
 echo "Generating training data..."
@@ -83,5 +84,5 @@ balsa_generate -p ${IMPORTANCEPOINTCOUNT} -s 1 testgenscript.txt testgen-fimp-da
 
 # Evaluate feature importance.
 echo "Evaluating feature-importance of the classifier..."
-balsa_featureimportance testgen-model.balsa testgen-fimp-data.balsa testgen-fimp-labels.balsa
+balsa_featureimportance -r ${IMPORTANCEREPEATS} testgen-model.balsa testgen-fimp-data.balsa testgen-fimp-labels.balsa
 
