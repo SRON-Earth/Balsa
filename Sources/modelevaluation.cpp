@@ -6,9 +6,9 @@ namespace
   template <typename T>
   void printClassMetric( std::ostream &out, const std::string & name, const balsa::Table<T> & metric, unsigned int precision = 8 )
   {
-      std::cout << name << ":";
-      for ( auto v : metric ) std::cout << ' ' << std::setw( precision + 4 ) << std::setprecision( precision ) << v;
-      std::cout << std::endl;
+      out << name << ":";
+      for ( auto v : metric ) out << ' ' << std::setw( precision + 4 ) << std::setprecision( precision ) << v;
+      out << std::endl;
   }
 
 } // Anonymous namespace.
@@ -30,6 +30,9 @@ std::ostream &operator<<( std::ostream &out, const balsa::ModelStatistics &stats
     printClassMetric( out, "FN ", stats.FN );
     out << std::endl;
 
+    out << "Global metrics:" << std::endl;
+    out << "ACC: " << stats.ACC << std::endl << std::endl;
+
     out << "Metrics per class:" << std::endl;
     printClassMetric( out, "TPR", stats.TPR );
     printClassMetric( out, "TNR", stats.TNR );
@@ -43,6 +46,19 @@ std::ostream &operator<<( std::ostream &out, const balsa::ModelStatistics &stats
     printClassMetric( out, "DOR", stats.DOR );
     printClassMetric( out, "P4 ", stats.P4  );
     out << std::endl;
+
+    return out;
+}
+
+std::ostream &operator<<( std::ostream &out, const balsa::FeatureImportances  &stats )
+{
+    out << "-----------------------------------" << std::endl;
+    out << "Feature #: Importance (ACC-based): " << std::endl;
+    out << "-----------------------------------" << std::endl;
+    for ( unsigned int i = 0; i < stats.getFeatureCount(); ++i )
+    {
+        std::cout << std::setw( 10 ) << std::left << i << " " << stats.getAccuracyImportance( i ) << std::endl;
+    }
 
     return out;
 }

@@ -19,6 +19,9 @@ target_link_libraries( balsa_print balsa )
 add_executable( balsa_measure balsa_measure.cpp )
 target_link_libraries( balsa_measure balsa )
 
+add_executable( balsa_featureimportance balsa_featureimportance.cpp )
+target_link_libraries( balsa_featureimportance balsa )
+
 add_executable( balsa_convert balsa_convert.cpp )
 target_link_libraries( balsa_convert balsa )
 
