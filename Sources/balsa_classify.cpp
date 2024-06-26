@@ -4,6 +4,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <filesystem>
 
 #include "datatypes.h"
 #include "exceptions.h"
@@ -96,7 +97,12 @@ public:
 
         // Parse the input file names.
         std::string fileName;
-        while ( args >> fileName ) options.dataFiles.push_back( fileName );
+        while ( args >> fileName )
+        {
+            auto path = std::filesystem::path( fileName );
+            if ( !path.has_filename() ) throw ParseError( "Input path has no filename." );
+            options.dataFiles.push_back( fileName );
+        }
         if ( options.dataFiles.size() == 0 ) throw ParseError( "No input files." );
 
         // Return  results.
@@ -113,15 +119,13 @@ public:
 
 std::string createOutputFileName( const std::string &inputFilePath )
 {
-    // Extract the base file name and the extension.
-    std::string fileName  = inputFilePath.substr( inputFilePath.find_last_of("/\\") + 1 );
-    auto dotPosition = fileName.find_last_of( '.' );
-    std::string baseName  = fileName.substr( 0, dotPosition );
-    std::string extension = fileName.substr( dotPosition );
+    // Extract the base name and the extensions.
+    auto path =  std::filesystem::path( inputFilePath );
 
     // Create the output file name.
-    std::string outFile = baseName + "-predictions" + extension;
-    if ( extension != ".balsa" ) outFile += ".balsa";
+    auto extension = path.extension();
+    if ( extension != ".balsa" ) extension += ".balsa";
+    std::string outFile = path.stem().string() + "-predictions" + extension.string();
     return outFile;
 }
 
