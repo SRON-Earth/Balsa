@@ -31,7 +31,7 @@ public:
         std::stringstream ss;
         ss << "Usage:" << std::endl
            << std::endl
-           << "   balsa_classify [options] <model file> <datapoint file> <output file>" << std::endl
+           << "   balsa_classify [options] <model file> [<datapoint file>]+" << std::endl
            << std::endl
            << " Options:" << std::endl
            << std::endl
@@ -90,23 +90,40 @@ public:
             }
         }
 
-        // Parse the filenames.
+        // Parse the model file name.
         if ( token.size() == 0 ) throw ParseError( getUsage() );
         options.modelFile = token;
-        if ( !( args >> options.dataFile ) ) throw ParseError( getUsage() );
-        if ( !( args >> options.outputFile ) ) throw ParseError( getUsage() );
+
+        // Parse the input file names.
+        std::string fileName;
+        while ( args >> fileName ) options.dataFiles.push_back( fileName );
+        if ( options.dataFiles.size() == 0 ) throw ParseError( "No input files." );
 
         // Return  results.
         return options;
     }
 
-    std::string  modelFile;
-    std::string  dataFile;
-    std::string  outputFile;
-    unsigned int threadCount;
-    unsigned int maxPreload;
-    std::vector< std::tuple<unsigned int,float> > m_classWeights;
+    std::string                                  modelFile;
+    std::vector<std::string>                     dataFiles;
+    std::string                                  outputFile;
+    unsigned int                                 threadCount;
+    unsigned int                                 maxPreload;
+    std::vector<std::tuple<unsigned int, float>> m_classWeights;
 };
+
+std::string createOutputFileName( const std::string &inputFilePath )
+{
+    // Extract the base file name and the extension.
+    std::string fileName  = inputFilePath.substr( inputFilePath.find_last_of("/\\") + 1 );
+    auto dotPosition = fileName.find_last_of( '.' );
+    std::string baseName  = fileName.substr( 0, dotPosition );
+    std::string extension = fileName.substr( dotPosition );
+
+    // Create the output file name.
+    std::string outFile = baseName + "-predictions" + extension;
+    if ( extension != ".balsa" ) outFile += ".balsa";
+    return outFile;
+}
 
 } // namespace
 
@@ -119,25 +136,16 @@ int main( int argc, char ** argv )
 
         // Debug.
         std::cout << "Model File : " << options.modelFile << std::endl;
-        std::cout << "Data File  : " << options.dataFile << std::endl;
+        std::cout << "Data Files :";
+        for ( auto &f: options.dataFiles ) std::cout << ' ' << f << std::endl;
         std::cout << "Output File: " << options.outputFile << std::endl;
         std::cout << "Threads    : " << options.threadCount << std::endl;
         std::cout << "Preload    : " << options.maxPreload << std::endl;
         std::cout << std::endl;
         assert( options.threadCount > 0 );
 
-        // Load the data.
-        StopWatch watch;
-        std::cout << "Ingesting data..." << std::endl;
-        watch.start();
-        auto dataSet = Table<double>::readFileAs( options.dataFile );
-        std::cout << "Dataset loaded: " << dataSet.getColumnCount() << " features x " << dataSet.getRowCount() << " points." << std::endl;
-        const auto dataLoadTime = watch.getElapsedTime();
-
         // Create a random forest classifier.
-        watch.start();
-        Table<Label> labels( dataSet.getRowCount(), 1 );
-        RandomForestClassifier<decltype( dataSet )::ConstIterator, decltype( labels )::Iterator> classifier( options.modelFile, options.threadCount - 1, options.maxPreload );
+        RandomForestClassifier< Table<double>::ConstIterator, Table<Label>::Iterator> classifier( options.modelFile, options.threadCount - 1, options.maxPreload );
 
         // Override the class weights.
         std::vector<float> weights( classifier.getClassCount(), 1.0 );
@@ -151,18 +159,35 @@ int main( int argc, char ** argv )
         }
         classifier.setClassWeights( weights );
 
-        // Classify the data.
-        classifier.classify( dataSet.begin(), dataSet.end(), dataSet.getColumnCount(), labels.begin() );
-        std::cout << labels.getRowCount() << " after " << std::endl;
-        watch.stop();
-        const auto classificationTime = watch.getElapsedTime();
+        // Load and classify all files, measuring the duration.
+        StopWatch::Seconds dataLoadTime       = 0;
+        StopWatch::Seconds classificationTime = 0;
+        StopWatch::Seconds labelStoreTime     = 0;
+        for ( auto & dataFile: options.dataFiles )
+        {
+            // Load the data.
+            StopWatch watch;
+            std::cout << "Ingesting data..." << std::endl;
+            watch.start();
+            auto dataSet = Table<double>::readFileAs( dataFile );
+            Table<Label> labels( dataSet.getRowCount(), 1 );
+            std::cout << "Dataset loaded: " << dataSet.getColumnCount() << " features x " << dataSet.getRowCount() << " points." << std::endl;
+            dataLoadTime += watch.getElapsedTime();
 
-        // Store the labels.
-        watch.start();
-        std::ofstream outFile( options.outputFile, std::ios::binary );
-        labels.serialize( outFile );
-        watch.stop();
-        const auto labelStoreTime = watch.getElapsedTime();
+            // Classify the data.
+            watch.start();
+            classifier.classify( dataSet.begin(), dataSet.end(), dataSet.getColumnCount(), labels.begin() );
+            std::cout << labels.getRowCount() << " after " << std::endl;
+            watch.stop();
+            classificationTime += watch.getElapsedTime();
+
+            // Store the labels.
+            watch.start();
+            std::ofstream outFile( createOutputFileName( dataFile ), std::ios::binary );
+            labels.serialize( outFile );
+            watch.stop();
+            labelStoreTime += watch.getElapsedTime();
+        }
 
         std::cout << "Timings:" << std::endl
                   << "Data Load Time: " << dataLoadTime << std::endl

@@ -64,11 +64,13 @@ balsa_generate -p ${POINTCOUNT} -s 1 testgenscript.txt testgen-test-data.balsa t
 
 # Classify the in-bag test data set.
 echo "Classifying the in-bag data..."
-balsa_classify testgen-model.balsa testgen-training-data.balsa testgen-inbag-predictions.balsa
+balsa_classify testgen-model.balsa testgen-training-data.balsa
+mv testgen-training-data-predictions.balsa testgen-inbag-predictions.balsa
 
 # Classify the out-of-bag test data.
 echo "Classifying the out-of-bag test data..."
-balsa_classify testgen-model.balsa testgen-test-data.balsa testgen-outofbag-predictions.balsa
+balsa_classify testgen-model.balsa testgen-test-data.balsa
+mv testgen-test-data.balsa testgen-outofbag-predictions.balsa
 
 # Evaluate the performance on the in-bag data.
 echo "Evaluating classifier performance on in-bag data..."
