@@ -1,8 +1,8 @@
 # About
 
 The Balsa binary file format is used for storing trained models, data sets, and
-output labels. It is a simple format, optimized for fast bulk loading and storage
-of data.
+output labels. It is a simple format, optimized for fast bulk loading and
+storage of data.
 
 # File Format
 
@@ -37,52 +37,59 @@ These elementary data types are refenced as terminal symbols in the grammar.
 The following grammar rules describe basic building blocks of Balsa files:
 
     SCALAR       := uint8  |
-               	    uint16 |
-               	    uint32 |
-	       	    int8   |
-	       	    int16  |
-	       	    int32  |
-	       	    float  |
-	       	    double |
+                    uint16 |
+                    uint32 |
+                    int8   |
+                    int16  |
+                    int32  |
+                    float  |
+                    double |
                     bool
 
-    SCALARTYPEID := "ui08"  |
-               	    "ui16"  |
-               	    "ui32"  |
-	       	    "in08"  |
-	       	    "in16"  |
-	       	    "in32"  |
-	       	    "fl32"  |
-	       	    "fl64"  |
+    SCALARTYPEID := "ui08" |
+                    "ui16" |
+                    "ui32" |
+                    "in08" |
+                    "in16" |
+                    "in32" |
+                    "fl32" |
+                    "fl64" |
                     "bool"
 
-    STRINGSIZE   := uint8
-    STRING       := STRINGSIZE char*
+    STRINGSIZE     := uint8
+    STRING         := STRINGSIZE char*
 
-    FIELDTYPEID  := SCALARTYPEID | "strn"
-    FIELDVALUE   := STRING | SCALAR
-    KEY          := STRING
-    KEYVALUEPAIR := KEY FIELDTYPEID FIELDVALUE
+    FIELDTYPEID    := SCALARTYPEID | "strn"
+    FIELDVALUE     := STRING | SCALAR
+    KEY            := STRING
+    KEYVALUEPAIR   := KEY FIELDTYPEID FIELDVALUE
 
-    DICTIONARY   := "dict" KEYVALUEPAIR* "tcid"
+    DICTIONARYSIZE := uint8
+    DICTIONARY     := "dict" DICTIONARYSIZE KEYVALUEPAIR* "tcid"
 
 ## Balsa Objects
 
 Balsa files currently support three types of objects that can be stored: tables,
 trees, and forests. The production rules for tables are as follows:
 
-    ROWSIZE     := uint32
-    COLSIZE     := uint32
-    TABLE       := "tabl" ROWSIZE COLSIZE SCALARTYPEID SCALAR* "lbat"
+    TABLEHEADER := DICTIONARY
+    TABLE       := "tabl" TABLEHEADER SCALAR* "lbat"
 
 The meta rule TABLE<SCALARTYPE> will be used subsequently to denote a table with
-entries of the stated type. The SCALARTYPEID specified corresponds to the type
-of the scalars that comprise the table. Scalars are stored in row-major order.
+entries of the stated type. Scalars are stored in row-major order.
+
+The TABLEHEADER dictionary must contain at least the following fields:
+
+- "row_count" (uint32): the number of rows in the table.
+- "column_count" (uint32): the number of columns in the table.
+- "scalar_type_id" (string): the type of the scalars that comprise the table;
+   must be one of SCALARTYPEID.
 
 The following context-free production rules define trees:
 
     FEATUREID     := uint8
-    FLOATTYPE     := float | double
+    FEATURETYPE   := float | double
+    FEATURETYPEID := "fl32" | "fl64"
     TREEHEADER    := DICTIONARY
     NODEID        := uint32
     LABEL         := uint8
@@ -90,33 +97,35 @@ The following context-free production rules define trees:
     LEFTCHILDREN  := TABLE<NODEID>
     RIGHTCHILDREN := TABLE<NODEID>
     SPLITFEATURES := TABLE<FEATUREID>
-    SPLITVALUES   := TABLE<FLOATTYPE>
+    SPLITVALUES   := TABLE<FEATURETYPE>
     LABELS        := TABLE<LABEL>
 
     TREEBODY      := LEFTCHILDREN RIGHTCHILDREN SPLITFEATURES SPLITVALUES LABELS
 
     TREE          := "tree" TREEHEADER TREEBODY "eert"
 
-The float types for the split feature- and value arrays must be identical. All
-the tables in a tree have exactly one column. All the tables must have the same
-length (i.e. the number of nodes in the tree).
+All the tables in a tree have exactly one column. All the tables must have the
+same length (i.e. the number of nodes in the tree).
 
 The TREEHEADER dictionary must contain at least the following fields:
 
-- "classcount" (uint8): the number of classes (labels) in the dataset on which
+- "class_count" (uint8): the number of classes (labels) in the dataset on which
    the tree was trained.
-- "featurecount" (uint8): the number of features in the dataset on which the
+- "feature_count" (uint8): the number of features in the dataset on which the
    tree was trained.
+- "feature_type_id" (string): the numeric type used for features values; must be
+   one of FEATURETYPEID.
 
 The following context-free grammar describes the structure of a forest:
 
     FORESTHEADER := DICTIONARY
-    FOREST       := "frst" TREE+ "frst"
+    FOREST       := "frst" FORESTHEADER TREE+ "tsrf"
 
 The following contextual restrictions apply:
 
-- The FORESTHEADER must contain a "classcount" and "featurecount" entry,
-  identical to those in the TREEHEADERs of the indidual trees in the forest.
+- The FORESTHEADER must contain a "class_count", "feature_count", and
+  "feature_type_id" entry, identical to those in the TREEHEADERs of the
+  individual trees in the forest.
 
 ## File Structure
 
@@ -124,24 +133,22 @@ The following grammar rules describe the overall file structure:
 
     ENDIANNESS := "bend" | "lend"
     FILEHEADER := DICTIONARY
-    BALSAFILE  := "blsa" ENDIANNESS BALSAOBJECT "alsb"
+    BALSAFILE  := "blsa" ENDIANNESS FILEHEADER BALSAOBJECT
 
-The speficied endianness applies to all scalars in the file.
+The specified endianness applies to all scalars in the file.
 
 The following entries must be present in the header:
 
-- "FILEMAJORVERSION" uint8: Major version number of the file format.
-- "FILEMINORVERSION" uint8: Minor version number of the file format.
-- "FILEPATCH"        uint8: Patch number of the file format.
-
-Semantic versioning applies to the version numbers: patches are for bug fixes,
-minor version bumps may add functionality in a backward compatible manner, major
-version updates may break backward compatibility.
+- "file_major_version" (uint8): Major version number of the file format.
+- "file_minor_version" (uint8): Minor version number of the file format.
 
 The following entries in the file header are optional:
 
-- "CREATOR"             string: The name of the software that created the file.
-- "CREATORMAJORVERSION" uint8 : Major version number of the creator.
-- "CREATORMINORVERSION" uint8 : Minor version number of the creator.
-- "CREATORPATCH"        uint8 : Patch number of the creator.
+- "creator_name"          (string): The name of the tool that created the file.
+- "creator_major_version" (uint8) : Major version number of the creator.
+- "creator_minor_version" (uint8) : Minor version number of the creator.
+- "creator_patch_version" (uint8) : Patch number of the creator.
 
+Semantic versioning applies to the version numbers: patches are for bug fixes,
+minor version bumps may add functionality in a backward compatible manner,
+major version updates may break backward compatibility.
