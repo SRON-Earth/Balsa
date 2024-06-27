@@ -9,7 +9,8 @@
 PATH=$PATH:.
 
 # Create a test set generation script.
-echo "Generating a test data generator script..."
+echo ":: Generating a test data generator script..."
+echo
 cat << EOF > testgenscript.txt
 multisource(4)
 {
@@ -51,40 +52,47 @@ IMPORTANCEPOINTCOUNT=1000
 IMPORTANCEREPEATS=10
 
 # Generate a training set.
-echo "Generating training data..."
+echo ":: Generating training data..."
 balsa_generate -p ${POINTCOUNT} -s 0 testgenscript.txt testgen-training-data.balsa testgen-training-labels.balsa
+echo
 
 # Train the model on the training set.
-echo "Training a model on the test data..."
+echo ":: Training a model on the test data..."
 balsa_train -t ${THREADCOUNT} -c ${TREECOUNT} testgen-training-data.balsa testgen-training-labels.balsa testgen-model.balsa
+echo
 
 # Generate a test test.
-echo "Generating out-of-bag test data..."
+echo ":: Generating out-of-bag test data..."
 balsa_generate -p ${POINTCOUNT} -s 1 testgenscript.txt testgen-test-data.balsa testgen-test-labels.balsa
+echo
 
 # Classify the in-bag test data set.
-echo "Classifying the in-bag data..."
+echo ":: Classifying the in-bag data..."
 balsa_classify testgen-model.balsa testgen-training-data.balsa
 mv testgen-training-data-predictions.balsa testgen-inbag-predictions.balsa
+echo
 
 # Classify the out-of-bag test data.
-echo "Classifying the out-of-bag test data..."
+echo ":: Classifying the out-of-bag test data..."
 balsa_classify testgen-model.balsa testgen-test-data.balsa
-mv testgen-test-data.balsa testgen-outofbag-predictions.balsa
+mv testgen-test-data-predictions.balsa testgen-outofbag-predictions.balsa
+echo
 
 # Evaluate the performance on the in-bag data.
-echo "Evaluating classifier performance on in-bag data..."
+echo ":: Evaluating classifier performance on in-bag data..."
 balsa_measure testgen-training-labels.balsa testgen-inbag-predictions.balsa
+echo
 
-# Evaluate the performance on the in-bag data.
-echo "Evaluating classifier performance on out-of-bag data..."
+# Evaluate the performance on the out-of-bag data.
+echo ":: Evaluating classifier performance on out-of-bag data..."
 balsa_measure testgen-test-labels.balsa testgen-outofbag-predictions.balsa
+echo
 
 # Generate a test test.
-echo "Generating test data for feature importance evaluation..."
+echo ":: Generating test data for feature importance evaluation..."
 balsa_generate -p ${IMPORTANCEPOINTCOUNT} -s 1 testgenscript.txt testgen-fimp-data.balsa testgen-fimp-labels.balsa
+echo
 
 # Evaluate feature importance.
-echo "Evaluating feature-importance of the classifier..."
+echo ":: Evaluating feature-importance of the classifier..."
 balsa_featureimportance -r ${IMPORTANCEREPEATS} testgen-model.balsa testgen-fimp-data.balsa testgen-fimp-labels.balsa
-

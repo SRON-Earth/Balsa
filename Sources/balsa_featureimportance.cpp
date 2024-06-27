@@ -97,7 +97,7 @@ int main( int argc, char ** argv )
         std::cout << "Analyzing feature importance..." << std::endl;
         FeatureImportances importances( classifier, dataSet.begin(), dataSet.end(), labels.begin(), dataSet.getColumnCount(), options.repeatCount );
         std::cout << "Done." << std::endl;
-        std::cout << importances << std::endl;
+        std::cout << importances;
     }
     catch ( Exception & e )
     {

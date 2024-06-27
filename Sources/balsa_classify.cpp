@@ -111,7 +111,6 @@ public:
 
     std::string                                  modelFile;
     std::vector<std::string>                     dataFiles;
-    std::string                                  outputFile;
     unsigned int                                 threadCount;
     unsigned int                                 maxPreload;
     std::vector<std::tuple<unsigned int, float>> m_classWeights;
@@ -142,7 +141,6 @@ int main( int argc, char ** argv )
         std::cout << "Model File : " << options.modelFile << std::endl;
         std::cout << "Data Files :";
         for ( auto &f: options.dataFiles ) std::cout << ' ' << f << std::endl;
-        std::cout << "Output File: " << options.outputFile << std::endl;
         std::cout << "Threads    : " << options.threadCount << std::endl;
         std::cout << "Preload    : " << options.maxPreload << std::endl;
         std::cout << std::endl;
@@ -174,14 +172,13 @@ int main( int argc, char ** argv )
             std::cout << "Ingesting data..." << std::endl;
             watch.start();
             auto dataSet = Table<double>::readFileAs( dataFile );
-            Table<Label> labels( dataSet.getRowCount(), 1 );
             std::cout << "Dataset loaded: " << dataSet.getColumnCount() << " features x " << dataSet.getRowCount() << " points." << std::endl;
             dataLoadTime += watch.getElapsedTime();
 
             // Classify the data.
             watch.start();
+            Table<Label> labels( dataSet.getRowCount(), 1 );
             classifier.classify( dataSet.begin(), dataSet.end(), dataSet.getColumnCount(), labels.begin() );
-            std::cout << labels.getRowCount() << " after " << std::endl;
             watch.stop();
             classificationTime += watch.getElapsedTime();
 

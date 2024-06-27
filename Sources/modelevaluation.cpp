@@ -45,7 +45,6 @@ std::ostream &operator<<( std::ostream &out, const balsa::ModelStatistics &stats
     printClassMetric( out, "F1 ", stats.F1  );
     printClassMetric( out, "DOR", stats.DOR );
     printClassMetric( out, "P4 ", stats.P4  );
-    out << std::endl;
 
     return out;
 }
