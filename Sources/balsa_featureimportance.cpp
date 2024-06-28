@@ -6,7 +6,7 @@
 
 #include "randomforestclassifier.h"
 #include "exceptions.h"
-#include "serdes.h"
+#include "fileio.h"
 #include "table.h"
 #include "modelevaluation.h"
 
@@ -87,8 +87,8 @@ int main( int argc, char ** argv )
         Options options = Options::parseOptions( argc, argv );
 
         // Load the test data.
-        auto dataSet = Table<double>::readFileAs( options.dataFile );
-        auto labels  = Table<Label>::readFileAs( options.labelFile );
+        auto dataSet = readTableAs<double>( options.dataFile );
+        auto labels  = readTableAs<Label>( options.labelFile );
 
         // Create a classifier for the model.
         RandomForestClassifier< decltype( dataSet )::ConstIterator, decltype( labels )::Iterator > classifier( options.modelFile  );

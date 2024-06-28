@@ -9,6 +9,7 @@
 
 #include "datatools.h"
 #include "datatypes.h"
+#include "decisiontreeclassifier.h"
 #include "iteratortools.h"
 #include "table.h"
 #include "weightedcoin.h"
@@ -179,41 +180,37 @@ public:
     }
 
     /**
-     * Serialize this indexed decision tree as a plain, un-indexed decision tree classifier.
+     * Convert this indexed decision tree to a plain, un-indexed decision tree classifier.
      */
-    void writeDecisionTreeClassifier( std::ostream & binOut )
+    template <typename ClassifierFeatureIterator, typename ClassifierOutputIterator>
+    typename DecisionTreeClassifier<ClassifierFeatureIterator, ClassifierOutputIterator>::SharedPointer getDecisionTree()
     {
+        // Create an empty classifier.
+        typedef DecisionTreeClassifier<ClassifierFeatureIterator, ClassifierOutputIterator> ClassifierType;
+        typename ClassifierType::SharedPointer classifier( new ClassifierType( getClassCount(), m_featureCount ) );
+
         // Create data structures that directly mirror the internal table-representation used by the classifier.
-        NodeID             nodeCount = m_nodes.size();
-        Table<NodeID>      leftChildID( nodeCount, 1, 0 );
-        Table<NodeID>      rightChildID( nodeCount, 1, 0 );
-        Table<FeatureID>   splitFeatureID( nodeCount, 1, 0 );
-        Table<FeatureType> splitValue( nodeCount, 1, 0 );
-        Table<Label>       label( nodeCount, 1, 0 );
+        NodeID nodeCount = m_nodes.size();
+        classifier->m_leftChildID    = Table<NodeID>( nodeCount, 1, 0 );
+        classifier->m_rightChildID   = Table<NodeID>( nodeCount, 1, 0 );
+        classifier->m_splitFeatureID = Table<FeatureID>( nodeCount, 1, 0 );
+        classifier->m_splitValue     = Table<FeatureType>( nodeCount, 1, 0 );
+        classifier->m_label          = Table<Label>( nodeCount, 1, 0 );
 
         // Copy the tree data to the tables.
         for ( NodeID nodeID = 0; nodeID < nodeCount; ++nodeID )
         {
-            auto & node                 = m_nodes[nodeID];
-            auto & split                = node.getSplit();
-            leftChildID( nodeID, 0 )    = node.getLeftChild();
-            rightChildID( nodeID, 0 )   = node.getRightChild();
-            splitFeatureID( nodeID, 0 ) = split.getFeatureID();
-            splitValue( nodeID, 0 )     = split.getFeatureValue();
-            label( nodeID, 0 )          = node.getLabel();
+            auto & node                               = m_nodes[nodeID];
+            auto & split                              = node.getSplit();
+            classifier->m_leftChildID( nodeID, 0 )    = node.getLeftChild();
+            classifier->m_rightChildID( nodeID, 0 )   = node.getRightChild();
+            classifier->m_splitFeatureID( nodeID, 0 ) = split.getFeatureID();
+            classifier->m_splitValue( nodeID, 0 )     = split.getFeatureValue();
+            classifier->m_label( nodeID, 0 )          = node.getLabel();
         }
 
-        // Write the header and the data tables of the classifier.
-        binOut.write( "tree", 4 );
-        binOut.write( "ccnt", 4 );
-        serialize( binOut, static_cast<uint32_t>( getClassCount() ) );
-        binOut.write( "fcnt", 4 );
-        serialize( binOut, static_cast<uint32_t>( m_featureCount ) );
-        leftChildID.serialize( binOut );
-        rightChildID.serialize( binOut );
-        splitFeatureID.serialize( binOut );
-        splitValue.serialize( binOut );
-        label.serialize( binOut );
+        // Return the result.
+        return classifier;
     }
 
 private:

@@ -5,8 +5,8 @@
 #include <string>
 
 #include "exceptions.h"
+#include "fileio.h"
 #include "randomforesttrainer.h"
-#include "serdes.h"
 #include "table.h"
 #include "timing.h"
 #include "weightedcoin.h"
@@ -151,8 +151,8 @@ int main( int argc, char ** argv )
         StopWatch watch;
         std::cout << "Ingesting data..." << std::endl;
         watch.start();
-        auto dataSet = Table<double>::readFileAs( options.dataFile );
-        auto labels  = Table<Label>::readFileAs( options.labelFile );
+        auto dataSet = readTableAs<double>( options.dataFile );
+        auto labels = readTableAs<Label>( options.labelFile );
         if ( labels.getRowCount() != dataSet.getRowCount() ) throw ParseError( "Point file and label file have different row counts." );
         if ( labels.getColumnCount() != 1 ) throw ParseError( "Invalid label file: table has too many columns." );
         std::cout << "Dataset loaded: " << dataSet.getRowCount() << " points. (" << watch.stop() << " seconds)." << std::endl;
@@ -160,7 +160,9 @@ int main( int argc, char ** argv )
 
         // Train a random forest on the data.
         std::cout << "Training..." << std::endl;
-        RandomForestTrainer trainer( options.outputFile, options.featuresToConsider, options.maxDepth, options.minPurity, options.treeCount, options.threadCount, options.writeDotty );
+        BalsaFileWriter fileWriter( options.outputFile );
+        fileWriter.setCreatorName( "balsa_train" );
+        RandomForestTrainer trainer( fileWriter, options.featuresToConsider, options.maxDepth, options.minPurity, options.treeCount, options.threadCount, options.writeDotty );
         watch.start();
         trainer.train( dataSet.begin(), dataSet.end(), dataSet.getColumnCount(), labels.begin() );
         std::cout << "Done (" << watch.stop() << " seconds)." << std::endl;

@@ -7,7 +7,7 @@
 
 #include "datatypes.h"
 #include "exceptions.h"
-#include "serdes.h"
+#include "fileio.h"
 #include "table.h"
 
 using namespace balsa;
@@ -84,9 +84,9 @@ int main( int argc, char ** argv )
         auto table = parseCSV<double>( in );
 
         // Write the output file.
-        std::ofstream out;
-        out.open( options.outputFile, std::ios::binary );
-        table.serialize( out );
+        BalsaFileWriter fileWriter( options.outputFile );
+        fileWriter.setCreatorName( "balsa_convert" );
+        fileWriter.writeTable( table );
     }
     catch ( Exception & e )
     {

@@ -9,10 +9,19 @@
 #include "datatypes.h"
 #include "exceptions.h"
 #include "iteratortools.h"
-#include "serdes.h"
 
 namespace balsa
 {
+
+// Forward declaration.
+class BalsaFileParser;
+
+// Forward declaration.
+class BalsaFileWriter;
+
+// Forward declaration.
+template <typename FeatureIterator, typename LabelIterator>
+class IndexedDecisionTree;
 
 /**
  * A Classifier based on an internal decision tree.
@@ -100,41 +109,12 @@ public:
         return 1;
     }
 
-    /**
-     * Deserialize a classifier instance from a binary input stream.
-     */
-    static SharedPointer deserialize( std::istream & is )
-    {
-        // Create an empty classifier.
-        SharedPointer classifier( new DecisionTreeClassifier() );
-
-        // Read the header.
-        assert( is.good() );
-        expect( is, "tree", "Missing tree header." );
-        expect( is, "ccnt", "Missing class count field." );
-        classifier->m_classCount = balsa::deserialize<uint32_t>( is );
-        expect( is, "fcnt", "Missing feature count field." );
-        classifier->m_featureCount = balsa::deserialize<uint32_t>( is );
-
-        // Deserialize the tables.
-        is >> classifier->m_leftChildID;
-        is >> classifier->m_rightChildID;
-        is >> classifier->m_splitFeatureID;
-        is >> classifier->m_splitValue;
-        is >> classifier->m_label;
-
-        return classifier;
-    }
-
 private:
 
-    DecisionTreeClassifier():
+    DecisionTreeClassifier(unsigned int classCount, unsigned int featureCount):
     Classifier<FeatureIterator, OutputIterator>(),
-    m_leftChildID( 0 ),
-    m_rightChildID( 0 ),
-    m_splitFeatureID( 0 ),
-    m_splitValue( 0 ),
-    m_label( 0 )
+    m_classCount( classCount ),
+    m_featureCount( featureCount )
     {
     }
 
@@ -169,6 +149,13 @@ private:
             }
         }
     }
+
+    friend class BalsaFileParser;
+
+    friend class BalsaFileWriter;
+
+    template <typename T, typename U>
+    friend class IndexedDecisionTree;
 
     unsigned int       m_classCount;
     unsigned int       m_featureCount;

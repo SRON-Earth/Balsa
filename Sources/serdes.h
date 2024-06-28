@@ -1,14 +1,10 @@
 #ifndef SERDES_H
 #define SERDES_H
 
-#include <algorithm>
-#include <cstdint>
 #include <istream>
 #include <ostream>
-#include <sstream>
+#include <string>
 #include <type_traits>
-
-#include "exceptions.h"
 
 namespace balsa
 {
@@ -28,10 +24,7 @@ void serialize( std::ostream & os, const T & value )
  * integers.
  */
 template <>
-inline void serialize( std::ostream & os, const bool & value )
-{
-    serialize<std::uint8_t>( os, value );
-}
+void serialize( std::ostream & os, const bool & value );
 
 /**
  * Deserialize a POD (plain old data) value from a binary input stream.
@@ -50,109 +43,27 @@ T deserialize( std::istream & is )
  * integers.
  */
 template <>
-inline bool deserialize( std::istream & is )
-{
-    return ( deserialize<std::uint8_t>( is ) != 0 );
-}
+bool deserialize( std::istream & is );
 
 /**
  * Read a fixed-size token from a stream.
  */
-inline std::string getFixedSizeToken( std::istream & is, std::size_t size )
-{
-    std::string token;
-    auto        it = std::istreambuf_iterator<char>( is );
-    std::copy_n( it, size, std::back_inserter( token ) );
-    ++it;
-    if ( is.fail() ) throw ParseError( "Read failed." );
-    return token;
-}
+std::string getFixedSizeToken( std::istream & is, std::size_t size );
 
 /**
  * Peek at a fixed-size token.
  */
-inline std::string peekFixedSizeToken( std::istream & is, std::size_t size )
-{
-    auto        position = is.tellg();
-    std::string token    = getFixedSizeToken( is, size );
-    is.seekg( position );
-    return token;
-}
+std::string peekFixedSizeToken( std::istream & is, std::size_t size );
 
 /**
  * Read an expected sequence of characters from a stream, throw an exception if the is a mismatch.
  */
-inline void expect( std::istream & is, const std::string & sequence, const std::string & errorMessage )
-{
-    std::string token = getFixedSizeToken( is, sequence.size() );
-    if ( token != sequence ) throw ParseError( errorMessage );
-}
+void expect( std::istream & is, const std::string & sequence, const std::string & errorMessage );
 
 /**
  * Read until a separator is encountered. Separators are not consumed.
  */
-std::string getNextToken( std::istream & is, const std::string & separators )
-{
-    std::stringstream token;
-    while ( separators.find( is.peek() ) != std::string::npos )
-        token << ( is.get() );
-    return token.str();
-}
-
-template <typename Type>
-std::string getTypeName()
-{
-    static_assert( sizeof( Type ) != sizeof( Type ), "Unsupported type." );
-    return "";
-}
-
-template <>
-std::string getTypeName<bool>()
-{
-    return "bool";
-}
-
-template <>
-std::string getTypeName<float>()
-{
-    return "fl32";
-}
-
-template <>
-std::string getTypeName<double>()
-{
-    return "fl64";
-}
-
-template <>
-std::string getTypeName<uint32_t>()
-{
-    return "ui32";
-}
-
-template <>
-std::string getTypeName<int32_t>()
-{
-    return "in32";
-}
-
-template <>
-std::string getTypeName<int16_t>()
-{
-    return "in16";
-}
-
-template <>
-std::string getTypeName<uint16_t>()
-{
-    return "ui16";
-}
-
-template <>
-std::string getTypeName<uint8_t>()
-{
-    return "ui08";
-}
+std::string getNextToken( std::istream & is, const std::string & separators );
 
 } // namespace balsa
 

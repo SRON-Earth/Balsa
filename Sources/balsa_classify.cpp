@@ -8,8 +8,8 @@
 
 #include "datatypes.h"
 #include "exceptions.h"
+#include "fileio.h"
 #include "randomforestclassifier.h"
-#include "serdes.h"
 #include "table.h"
 #include "timing.h"
 
@@ -171,7 +171,7 @@ int main( int argc, char ** argv )
             StopWatch watch;
             std::cout << "Ingesting data..." << std::endl;
             watch.start();
-            auto dataSet = Table<double>::readFileAs( dataFile );
+            auto dataSet = readTableAs<double>( dataFile );
             std::cout << "Dataset loaded: " << dataSet.getColumnCount() << " features x " << dataSet.getRowCount() << " points." << std::endl;
             dataLoadTime += watch.getElapsedTime();
 
@@ -184,8 +184,9 @@ int main( int argc, char ** argv )
 
             // Store the labels.
             watch.start();
-            std::ofstream outFile( createOutputFileName( dataFile ), std::ios::binary );
-            labels.serialize( outFile );
+            BalsaFileWriter fileWriter( createOutputFileName( dataFile ) );
+            fileWriter.setCreatorName( "balsa_classify" );
+            fileWriter.writeTable( labels );
             watch.stop();
             labelStoreTime += watch.getElapsedTime();
         }

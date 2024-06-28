@@ -7,7 +7,7 @@
 
 #include "datatypes.h"
 #include "exceptions.h"
-#include "serdes.h"
+#include "fileio.h"
 #include "table.h"
 #include "modelevaluation.h"
 
@@ -78,8 +78,8 @@ int main( int argc, char ** argv )
         auto options = Options::parseOptions( argc, argv );
 
         // Read the gound truth labels and the classifier labels.
-        auto groundTruthLabels = Table<Label>::readFileAs( options.groundTruthLabelsFile );
-        auto classifierLabels  = Table<Label>::readFileAs( options.classifierLabelsFile );
+        Table<Label> groundTruthLabels = readTableAs<Label>( options.groundTruthLabelsFile );
+        Table<Label> classifierLabels  = readTableAs<Label>( options.classifierLabelsFile );
         if ( groundTruthLabels.getColumnCount() != 1 ) throw ParseError( "Unexpected number of columns." );
         if ( classifierLabels.getColumnCount() != 1 ) throw ParseError( "Unexpected number of columns." );
         if ( groundTruthLabels.getRowCount() != classifierLabels.getRowCount() ) throw ParseError( "The input files have a different number of points." );

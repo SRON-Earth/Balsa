@@ -7,7 +7,7 @@
 
 #include "datatypes.h"
 #include "exceptions.h"
-#include "serdes.h"
+#include "fileio.h"
 #include "table.h"
 
 using namespace balsa;
@@ -63,6 +63,56 @@ public:
     std::string fileName;
 };
 
+template <typename Type>
+std::string getCommonTypeName()
+{
+    static_assert( sizeof( Type ) != sizeof( Type ), "Unsupported type." );
+    return "";
+}
+
+template <> std::string getCommonTypeName<uint8_t>() { return "unsigned 8-bit integers"; }
+template <> std::string getCommonTypeName<uint16_t>() { return "unsigned 16-bit integers"; }
+template <> std::string getCommonTypeName<uint32_t>() { return "unsigned 32-bit integers"; }
+template <> std::string getCommonTypeName<int8_t>() { return "signed 8-bit integers"; }
+template <> std::string getCommonTypeName<int16_t>() { return "signed 16-bit integers"; }
+template <> std::string getCommonTypeName<int32_t>() { return "signed 32-bit integers"; }
+template <> std::string getCommonTypeName<bool>() { return "booleans"; }
+template <> std::string getCommonTypeName<float>() { return "single precision floating point numbers"; }
+template <> std::string getCommonTypeName<double>() { return "double precision floating point numbers"; }
+
+template <typename Type>
+void parseAndPrintTable( BalsaFileParser & parser )
+{
+    // Parse the table.
+    auto table = parser.parseTable<Type>();
+
+    // Print the header.
+    std::cout << "TABLE " << table.getRowCount() << " rows x " << table.getColumnCount() << " columns of " << getCommonTypeName<Type>() << std::endl;
+
+    // Print the values.
+    std::cout << table;
+}
+
+template <typename Type>
+void parseAndPrintTree( BalsaFileParser & parser )
+{
+    // Parse the tree.
+    auto data = parser.parseTreeData<Type>();
+
+    // Print the header.
+    std::cout << "TREE " << data.classCount << " classes, " << data.featureCount << " features." << std::endl;
+
+    // Print the values.
+    std::cout << "N:   L:   R:   F:   V:              L:" << std::endl;
+    for ( unsigned int row = 0; row < data.leftChildID.getRowCount(); ++row )
+    {
+        std::cout << std::left << std::setw( 4 ) << row << " "
+                  << std::left << std::setw( 4 ) << data.leftChildID( row, 0 ) << " " << std::setw( 4 ) << data.rightChildID( row, 0 ) << " "
+                  << std::left << std::setw( 4 ) << static_cast<int>( data.splitFeatureID( row, 0 ) ) << " " << std::setw( 4 ) << std::setw( 16 ) << data.splitValue( row, 0 )
+                  << std::left << std::setw( 4 ) << int( data.label( row, 0 ) ) << std::endl;
+    }
+}
+
 } // namespace
 
 int main( int argc, char ** argv )
@@ -73,85 +123,61 @@ int main( int argc, char ** argv )
         auto options = Options::parseOptions( argc, argv );
 
         // Open the input file.
-        std::ifstream in;
-        in.open( options.fileName, std::ios::binary );
+        BalsaFileParser parser( options.fileName );
+
+        // Print the file format version.
+        std::cout << "File version   : " << parser.getFileMajorVersion() << "." << parser.getFileMinorVersion() << std::endl;
+
+        // Print information about the tool that created the file.
+        auto creatorName = parser.getCreatorName();
+        auto creatorMajorVersion = parser.getCreatorMajorVersion();
+        auto creatorMinorVersion = parser.getCreatorMinorVersion();
+        auto creatorPatchVersion = parser.getCreatorPatchVersion();
+        std::cout << "Creator name   : "
+            << (creatorName ? *creatorName : "*** UNKNOWN ***") << std::endl;
+        std::cout << "Creator version: "
+            << (creatorMajorVersion ? std::to_string(*creatorMajorVersion) : "?") << "."
+            << (creatorMinorVersion ? std::to_string(*creatorMinorVersion) : "?") << "."
+            << (creatorPatchVersion ? std::to_string(*creatorPatchVersion) : "?") << std::endl;
 
         // Read and print data objects until the end of the file.
-        while ( in.peek() != EOF )
+        while ( !parser.atEOF() )
         {
-            // Peek at the first token.
-            auto header = peekFixedSizeToken( in, 4 );
+            // Print a newline.
+            std::cout << std::endl;
 
-            // Handle the various supported file types.
-            if ( header == "frst" )
+            // Print the object at the current position in the file.
+            if ( parser.atForest() )
             {
                 // A forest is just a list of trees. Consume the marker and continue.
-                expect( in, "frst", "Missing 'frst' header." );
-                expect( in, "ccnt", "Missing class count field." );
-                auto classCount = balsa::deserialize<uint32_t>( in );
-                std::cout << "FOREST " << classCount << " classes." << std::endl;
-                continue;
+                ForestHeader header = parser.enterForest();
+                std::cout << "FOREST " << header.classCount << " classes." << std::endl;
             }
-            else if ( header == "tree" )
+            else if ( parser.atEndOfForest() )
             {
-                // Print the tree info.
-                expect( in, "tree", "Missing 'tree' header." );
-                expect( in, "ccnt", "Missing class count field." );
-                auto classCount = balsa::deserialize<uint32_t>( in );
-                expect( in, "fcnt", "Missing feature count marker." );
-                auto featureCount = deserialize<uint32_t>( in );
-                std::cout << "TREE " << classCount << " classes, " << featureCount << " features." << std::endl;
-
-                // Parse the tables that describe the tree.
-                Table<NodeID>    left( 1 ), right( 1 );
-                Table<FeatureID> featureID( 1 );
-                Table<double>    featureValue( 1 );
-                Table<Label>     label( 1 );
-                in >> left;
-                in >> right;
-                in >> featureID;
-                in >> featureValue;
-                in >> label;
-
-                // Print the values.
-                std::cout << "N:   L:   R:   F:   V:              L:" << std::endl;
-                for ( unsigned int row = 0; row < left.getRowCount(); ++row )
-                {
-                    std::cout << std::left << std::setw( 4 ) << row << " "
-                              << std::left << std::setw( 4 ) << left( row, 0 ) << " " << std::setw( 4 ) << right( row, 0 ) << " "
-                              << std::left << std::setw( 4 ) << static_cast<int>( featureID( row, 0 ) ) << " " << std::setw( 4 ) << std::setw( 16 ) << featureValue( row, 0 )
-                              << std::left << std::setw( 4 ) << int( label( row, 0 ) ) << std::endl;
-                    ;
-                }
+                std::cout << "END OF FOREST" << std::endl;
+                parser.leaveForest();
             }
-            else if ( header == "tabl" )
+            else if ( parser.atTree() )
             {
-                // Peek at the table specification.
-                std::size_t rowCount( 0 ), columnCount( 0 );
-                std::string typeName;
-                auto        position = in.tellg();
-                Table<uint32_t>::parseTableSpecification( in, rowCount, columnCount, typeName );
-                in.seekg( position );
-
+                // Parse and print the tree.
+                if      ( parser.atTreeOfType<float >() ) parseAndPrintTree<float >( parser );
+                else if ( parser.atTreeOfType<double>() ) parseAndPrintTree<double>( parser );
+                else assert( false );
+            }
+            else if ( parser.atTable() )
+            {
                 // Parse and print the table.
-                if ( typeName == getTypeName<Label>() )
-                {
-                    Table<Label> t( 1 );
-                    in >> t;
-                    std::cout << t;
-                }
-                else if ( typeName == getTypeName<float>() )
-                {
-                    Table<float> t( 1 );
-                    in >> t;
-                    std::cout << t;
-                }
-                else if ( typeName == getTypeName<double>() )
-                {
-                    Table<double> t( 1 );
-                    in >> t;
-                    std::cout << t;
-                }
+                if      ( parser.atTableOfType<uint8_t >() ) parseAndPrintTable<uint8_t >( parser );
+                else if ( parser.atTableOfType<uint16_t>() ) parseAndPrintTable<uint16_t>( parser );
+                else if ( parser.atTableOfType<uint32_t>() ) parseAndPrintTable<uint32_t>( parser );
+                else if ( parser.atTableOfType<int8_t  >() ) parseAndPrintTable<int8_t  >( parser );
+                else if ( parser.atTableOfType<int16_t >() ) parseAndPrintTable<int16_t >( parser );
+                else if ( parser.atTableOfType<int32_t >() ) parseAndPrintTable<int32_t >( parser );
+                else if ( parser.atTableOfType<float   >() ) parseAndPrintTable<float   >( parser );
+                else if ( parser.atTableOfType<double  >() ) parseAndPrintTable<double  >( parser );
+                else if ( parser.atTableOfType<bool    >() ) parseAndPrintTable<bool    >( parser );
+                else assert( false );
             }
         }
     }

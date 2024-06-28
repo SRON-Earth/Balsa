@@ -1,12 +1,13 @@
 #include <algorithm>
-#include <cstdint>
 #include <cstdio>
 #include <filesystem>
 #include <iostream>
 #include <limits>
+#include <string>
 
 #include "datagenerator.h"
 #include "datatypes.h"
+#include "fileio.h"
 #include "randomforestclassifier.h"
 #include "randomforesttrainer.h"
 #include "table.h"
@@ -22,28 +23,31 @@ using namespace balsa;
  * NamedTemporaryFile is dangerous. It should only be used after due
  * consideration of the inherent risks.
  */
-class NamedTemporaryFile
+class NamedTemporaryDirectory
 {
 public:
 
-    NamedTemporaryFile():
-    m_filename( std::tmpnam( NULL ) )
+    NamedTemporaryDirectory()
     {
+        std::string nameTemplate = std::filesystem::temp_directory_path() / "balsa_test_XXXXXX";
+        char * result = mkdtemp( nameTemplate.data() );
+        if ( result == NULL ) throw SupplierError( "Unable to create temporary directory." );
+        m_path = std::filesystem::path( result );
     }
 
-    ~NamedTemporaryFile()
+    ~NamedTemporaryDirectory()
     {
-        std::filesystem::remove( m_filename );
+        std::filesystem::remove_all( m_path );
     }
 
-    const std::string & getName() const
+    const std::filesystem::path & getPath() const
     {
-        return m_filename;
+        return m_path;
     }
 
 private:
 
-    std::string m_filename;
+    std::filesystem::path m_path;
 };
 
 template <typename FeatureType>
@@ -52,16 +56,20 @@ bool testCross2x2()
     // Create a square where the data points on one diagonal belong to class A,
     // and the data points on the other diagonal belong to class B.
     FeatureType  points[] = { -1, 1, 1, 1, -1, -1, 1, -1 };
-    std::uint8_t truth[]  = { 0, 1, 1, 0 };
+    uint8_t truth[]  = { 0, 1, 1, 0 };
 
     // Train a single decision tree.
-    NamedTemporaryFile                                 modelFile;
-    RandomForestTrainer<FeatureType *, std::uint8_t *> trainer( modelFile.getName(), 2, std::numeric_limits<unsigned int>::max(), 1.0, 1, 1 );
-    trainer.train( points, points + 8, 2, truth );
+    NamedTemporaryDirectory directory;
+    auto modelFile = directory.getPath() / "model.balsa";
+    {
+        BalsaFileWriter writer( modelFile );
+        RandomForestTrainer<FeatureType *, uint8_t *> trainer( writer, 2, std::numeric_limits<unsigned int>::max(), 1.0, 1, 1 );
+        trainer.train( points, points + 8, 2, truth );
+    }
 
     // Classify the training data.
-    std::uint8_t                                          labels[4];
-    RandomForestClassifier<FeatureType *, std::uint8_t *> classifier( modelFile.getName(), 1, 0 );
+    uint8_t                                          labels[4];
+    RandomForestClassifier<FeatureType *, uint8_t *> classifier( modelFile, 1, 0 );
     classifier.classify( points, points + 8, 2, labels );
 
     // Ensure the classification result matches the ground truth exactly.
@@ -92,13 +100,17 @@ bool testCheckerboard()
     generator.generate( 10000, points, truth );
 
     // Train a single decision tree.
-    NamedTemporaryFile                                              modelFile;
-    RandomForestTrainer<typename Table<FeatureType>::ConstIterator> trainer( modelFile.getName(), generator.getFeatureCount(), std::numeric_limits<unsigned int>::max(), 1.0, 1, 1 );
-    trainer.train( points.begin(), points.end(), points.getColumnCount(), truth.begin() );
+    NamedTemporaryDirectory directory;
+    auto modelFile = directory.getPath() / "model.balsa";
+    {
+        BalsaFileWriter writer( modelFile );
+        RandomForestTrainer<typename Table<FeatureType>::ConstIterator> trainer( writer, generator.getFeatureCount(), std::numeric_limits<unsigned int>::max(), 1.0, 1, 1 );
+        trainer.train( points.begin(), points.end(), points.getColumnCount(), truth.begin() );
+    }
 
     // Classify the training data.
     Table<Label>                                                       labels( points.getRowCount(), 1 );
-    RandomForestClassifier<typename Table<FeatureType>::ConstIterator> classifier( modelFile.getName(), 1, 0 );
+    RandomForestClassifier<typename Table<FeatureType>::ConstIterator> classifier( modelFile, 1, 0 );
     classifier.classify( points.begin(), points.end(), points.getColumnCount(), labels.begin() );
 
     // Ensure the classification result matches the ground truth exactly.
@@ -126,13 +138,17 @@ bool testConcentricRings()
     generator.generate( 10000, points, truth );
 
     // Train a single decision tree.
-    NamedTemporaryFile                                              modelFile;
-    RandomForestTrainer<typename Table<FeatureType>::ConstIterator> trainer( modelFile.getName(), generator.getFeatureCount(), std::numeric_limits<unsigned int>::max(), 1.0, 1, 1 );
-    trainer.train( points.begin(), points.end(), points.getColumnCount(), truth.begin() );
+    NamedTemporaryDirectory directory;
+    auto modelFile = directory.getPath() / "model.balsa";
+    {
+        BalsaFileWriter writer( modelFile );
+        RandomForestTrainer<typename Table<FeatureType>::ConstIterator> trainer( writer, generator.getFeatureCount(), std::numeric_limits<unsigned int>::max(), 1.0, 1, 1 );
+        trainer.train( points.begin(), points.end(), points.getColumnCount(), truth.begin() );
+    }
 
     // Classify the training data.
     Table<Label>                                                       labels( points.getRowCount(), 1 );
-    RandomForestClassifier<typename Table<FeatureType>::ConstIterator> classifier( modelFile.getName(), 1, 0 );
+    RandomForestClassifier<typename Table<FeatureType>::ConstIterator> classifier( modelFile, 1, 0 );
     classifier.classify( points.begin(), points.end(), points.getColumnCount(), labels.begin() );
 
     // Ensure the classification result matches the ground truth exactly.

@@ -7,6 +7,7 @@
 #include "datagenerator.h"
 #include "datatypes.h"
 #include "exceptions.h"
+#include "fileio.h"
 #include "table.h"
 
 using namespace balsa;
@@ -109,13 +110,16 @@ int main( int argc, char ** argv )
         gen->generate( options.pointCount, points, labels );
 
         // Write the output files.
-        std::ofstream out;
-        out.open( options.pointFile, std::ios::binary );
-        points.serialize( out );
-        out.close();
-        out.open( options.labelFile, std::ios::binary );
-        labels.serialize( out );
-        out.close();
+        {
+            BalsaFileWriter fileWriter( options.pointFile );
+            fileWriter.setCreatorName( "balsa_generate" );
+            fileWriter.writeTable( points );
+        }
+        {
+            BalsaFileWriter fileWriter( options.labelFile );
+            fileWriter.setCreatorName( "balsa_generate" );
+            fileWriter.writeTable( labels );
+        }
     }
     catch ( Exception & e )
     {

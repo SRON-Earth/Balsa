@@ -17,7 +17,7 @@ namespace balsa
 /**
  * A row-major MxN data matrix that can be loaded and stored efficiently.
  * N.B. the Table does not support linear algebra operations.
- * \tparam CellType The data typ of each (x,y) entry.
+ * \tparam CellType The data type of each (x,y) entry.
  */
 template <typename CellType>
 class Table
@@ -25,8 +25,15 @@ class Table
 
 public:
 
-    typedef typename std::vector<CellType>::iterator       Iterator;
-    typedef typename std::vector<CellType>::const_iterator ConstIterator;
+    typedef typename std::vector<CellType>::iterator        Iterator;
+    typedef typename std::vector<CellType>::const_iterator  ConstIterator;
+    typedef typename std::vector<CellType>::reference       Reference;
+    typedef typename std::vector<CellType>::const_reference ConstReference;
+
+    Table():
+    m_columnCount( 0 )
+    {
+    }
 
     /**
      * Constructs an empty table with the specified number of columns.
@@ -85,7 +92,7 @@ public:
     /**
      * Read-only access a element by row and column.
      */
-    const CellType & operator()( std::size_t row, std::size_t column ) const
+    ConstReference operator()( std::size_t row, std::size_t column ) const
     {
         return m_data[row * m_columnCount + column];
     }
@@ -93,7 +100,7 @@ public:
     /**
      * Read-write access an element by row and column.
      */
-    CellType & operator()( std::size_t row, std::size_t column )
+    Reference operator()( std::size_t row, std::size_t column )
     {
         return m_data[row * m_columnCount + column];
     }
@@ -164,7 +171,7 @@ public:
      */
     std::size_t getRowCount() const
     {
-        return m_data.size() / m_columnCount;
+        return ( m_columnCount == 0 ) ? 0 : ( m_data.size() / m_columnCount );
     }
 
     /**
@@ -214,110 +221,34 @@ public:
     /**
      * Read cell data into the table from a binary stream.
      */
-    void readCellData( std::istream & binIn )
+    void readCellData( std::istream & stream )
     {
         // Read the raw binary data from the stream.
-        if ( !binIn.good() ) throw ParseError( "The stream is not readable." );
-        binIn.read( reinterpret_cast<char *>( m_data.data() ), m_data.size() * sizeof( CellType ) );
+        if ( !stream.good() ) throw ParseError( "The stream is not readable." );
+        stream.read( reinterpret_cast<char *>( m_data.data() ), m_data.size() * sizeof( CellType ) );
     }
 
     /**
      * Read the cell data from a stream and convert it on the fly.
      */
     template <typename SourceType>
-    void readCellDataAs( std::istream & binIn )
+    void readCellDataAs( std::istream & stream )
     {
         for ( auto it( m_data.begin() ), end( m_data.end() ); it != end; ++it )
         {
-            *it = deserialize<SourceType>( binIn );
+            *it = balsa::deserialize<SourceType>( stream );
         }
-        if ( binIn.fail() ) throw ParseError( "Read failed." );
+        if ( stream.fail() ) throw ParseError( "Read failed." );
     }
 
     /**
-     * Read a Table<CellType> from a file with a potentially different cell type, and convert cells on the fly.
+     * Write cell data from the table into a binary stream.
      */
-    static Table<CellType> readFileAs( const std::string & filename )
+    void writeCellData( std::ostream & stream ) const
     {
-        // Read the type and geometry of the table in the file.
-        std::ifstream binIn;
-        binIn.open( filename, std::ios::binary );
-        std::size_t rows, cols;
-        std::string sourceType;
-        parseTableSpecification( binIn, rows, cols, sourceType );
-
-        // Allocate a result table
-        Table<CellType> result( rows, cols );
-
-        // Read the table, convert if necessary.
-        expect( binIn, "data", "Missing data marker." );
-        auto destinationType = getTypeName<CellType>();
-        if ( destinationType == sourceType )
-        {
-            // No conversion is necessary if source and destination types are the same.
-            result.readCellData( binIn );
-        }
-        else if ( sourceType == getTypeName<float>() )
-        {
-            // Read as floats, convert to target type.
-            result.readCellDataAs<float>( binIn );
-        }
-        else if ( sourceType == getTypeName<int32_t>() )
-        {
-            // Read as floats, convert to target type.
-            result.readCellDataAs<int32_t>( binIn );
-        }
-        else if ( sourceType == getTypeName<uint8_t>() )
-        {
-            // Read as floats, convert to target type.
-            result.readCellDataAs<uint8_t>( binIn );
-        }
-        else
-        {
-            throw ParseError( "Unsupported conversion from " + sourceType + " to " + destinationType );
-        }
-
-        return result;
-    }
-
-    /**
-     * Serialize the table to a binary output stream.
-     */
-    void serialize( std::ostream & binOut ) const
-    {
-        // Write the table header.
-        binOut.write( "tabl", 4 );
-        auto typeName = getTypeName<CellType>();
-        binOut.write( typeName.c_str(), typeName.size() );
-
-        // Write the dimensions.
-        binOut.write( "rows", 4 );
-        balsa::serialize( binOut, static_cast<uint32_t>( getRowCount() ) );
-        binOut.write( "cols", 4 );
-        balsa::serialize( binOut, static_cast<uint32_t>( getColumnCount() ) );
-
-        // Write the data
-        binOut.write( "data", 4 );
-        binOut.write( reinterpret_cast<const char *>( &*m_data.begin() ), m_data.size() * sizeof( CellType ) );
-    }
-
-    /**
-     * Parses the cell type name, row count, and column count from a binary stream.
-     * The stream is consumed until the start of the 'data' block. The 'data' label is not consumed.
-     */
-    static void parseTableSpecification( std::istream & binIn, std::size_t & rowCount, std::size_t & columnCount, std::string & typeName )
-    {
-        // Parse the table marker.
-        expect( binIn, "tabl", "Missing or malformed table header." );
-
-        // Parse the type name.
-        typeName = getFixedSizeToken( binIn, 4 );
-
-        // Parse the table dimensions.
-        expect( binIn, "rows", "Missing rows marker." );
-        rowCount = deserialize<std::uint32_t>( binIn );
-        expect( binIn, "cols", "Missing cols marker." );
-        columnCount = deserialize<std::uint32_t>( binIn );
+        // Read the raw binary data from the stream.
+        if ( !stream.good() ) throw ParseError( "The stream is not writable." );
+        stream.write( reinterpret_cast<const char *>( m_data.data() ), m_data.size() * sizeof( CellType ) );
     }
 
 private:
@@ -325,35 +256,24 @@ private:
     // Returns true iff the internal datastructure is consistent.
     bool invariant() const
     {
-        return ( m_data.size() % m_columnCount ) == 0;
+        return ( m_columnCount == 0 ) ? ( m_data.size() == 0 ) : ( ( m_data.size() % m_columnCount ) == 0 );
     }
 
     std::size_t           m_columnCount;
     std::vector<CellType> m_data;
 };
 
+
 /**
- * Reads a Table from a binary input stream.
- * \pre The stored table must be of the same cell type.
+ * Specialization for bool tables.
+ *
+ * Conversion is always necessary for type bool because std::vector<bool> can
+ * and does use space saving storage for booleans.
  */
-template <typename CellType>
-std::istream & operator>>( std::istream & binIn, Table<CellType> & table )
+template <>
+inline void Table<bool>::readCellData( std::istream & stream )
 {
-    // Read the type and geometry of the table.
-    std::size_t rows, cols;
-    std::string typeName;
-    Table<CellType>::parseTableSpecification( binIn, rows, cols, typeName );
-
-    // Check the type name.
-    if ( typeName != getTypeName<CellType>() ) throw ParseError( "Source/destination type mismatch." );
-
-    // Allocate a table and parse the data.
-    expect( binIn, "data", "Missing data marker." );
-    table = Table<CellType>( rows, cols );
-    table.readCellData( binIn );
-
-    // Return the stream.
-    return binIn;
+    readCellDataAs<bool>( stream );
 }
 
 /**
@@ -376,7 +296,7 @@ std::ostream & operator<<( std::ostream & out, const Table<CellType> & table )
 /**
  * Specialization for uint8_t tables.
  */
-std::ostream & operator<<( std::ostream & out, const Table<uint8_t> & table )
+inline std::ostream & operator<<( std::ostream & out, const Table<uint8_t> & table )
 {
     // Write the cell data and row numbers.
     for ( unsigned int row = 0; row < table.getRowCount(); ++row )

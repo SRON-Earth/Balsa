@@ -6,6 +6,7 @@
 #include "classifierstream.h"
 #include "decisiontreeclassifier.h"
 #include "exceptions.h"
+#include "fileio.h"
 
 namespace balsa
 {
@@ -35,25 +36,12 @@ public:
     typedef DecisionTreeClassifier<FeatureIterator, OutputIterator> DecisionTreeClassifierType;
 
     DecisionTreeClassifierStream( const std::string & filename, unsigned int maxPreload = 0 ):
-    m_filename( filename ),
+    m_fileParser( filename ),
     m_maxPreload( maxPreload ),
     m_cacheIndex( 0 )
     {
-        // Open the model file.
-        m_modelFile.open( m_filename );
-        if ( !m_modelFile.is_open() )
-        {
-            throw SupplierError( "Unable to open model file." );
-        }
-
-        // Parse the model header. This will advance the file stream to the
-        // first tree.
-        expect( m_modelFile, "frst", "Missing forest header." );
-        expect( m_modelFile, "ccnt", "Missing class count field." );
-        m_classCount = balsa::deserialize<uint32_t>( m_modelFile );
-
-        // Store the offset of the first decision tree.
-        m_treeOffset = m_modelFile.tellg();
+        ForestHeader header = m_fileParser.enterForest();
+        m_classCount = header.classCount;
     }
 
     DecisionTreeClassifierStream( const DecisionTreeClassifierStream & ) = delete;
@@ -82,7 +70,7 @@ public:
         m_cacheIndex = 0;
 
         // Seek to the offset of the first decision tree in the model file.
-        m_modelFile.seekg( m_treeOffset );
+        m_fileParser.reenterForest();
     }
 
     /**
@@ -122,7 +110,7 @@ private:
         m_cacheIndex = 0;
 
         // If the model file contains no more trees, do nothing.
-        if ( m_modelFile.eof() )
+        if ( !m_fileParser.atTree() )
         {
             return;
         }
@@ -131,27 +119,19 @@ private:
         // to preload.
         while ( m_maxPreload == 0 || m_cache.size() < m_maxPreload )
         {
-            if ( m_modelFile.peek() == std::ifstream::traits_type::eof() )
+            if ( !m_fileParser.atTree() )
             {
                 break;
             }
 
-            auto tree = DecisionTreeClassifierType::deserialize( m_modelFile );
+            auto tree = m_fileParser.parseTree<FeatureIterator, OutputIterator>();
             m_cache.push_back( tree );
-        }
-
-        // Raise an exception if an error occurred while reading.
-        if ( m_modelFile.fail() )
-        {
-            throw SupplierError( "Error reading model file." );
         }
     }
 
-    std::string                                         m_filename;
+    BalsaFileParser                                     m_fileParser;
     std::size_t                                         m_maxPreload;
-    std::ifstream                                       m_modelFile;
     unsigned int                                        m_classCount;
-    std::streampos                                      m_treeOffset;
     std::size_t                                         m_cacheIndex;
     std::vector<typename ClassifierType::SharedPointer> m_cache;
 };
