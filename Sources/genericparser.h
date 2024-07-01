@@ -4,6 +4,7 @@
 #include <cassert>
 #include <iostream>
 #include <string>
+#include <sstream>
 
 #include "exceptions.h"
 #include "serdes.h"

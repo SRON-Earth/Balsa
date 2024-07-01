@@ -227,12 +227,12 @@ public:
     {
         stream.write( DICTIONARY_START_MARKER.data(), DICTIONARY_START_MARKER.size() );
         balsa::serialize( stream, static_cast<uint8_t>( m_dictionary.size() ) );
-        for ( const auto & [key, value] : m_dictionary )
+        for ( const auto & keyValuePair : m_dictionary )
             std::visit( [&]( const auto & arg )
                 {
-                    serializeKVPair( stream, key, arg );
+                    serializeKVPair( stream, keyValuePair.first, arg );
                 },
-                value );
+                keyValuePair.second );
         stream.write( DICTIONARY_END_MARKER.data(), DICTIONARY_END_MARKER.size() );
     }
 
