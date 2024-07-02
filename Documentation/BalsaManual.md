@@ -5,7 +5,7 @@
 <a name="introduction"></a>
 ## Introduction
 
-Balsa is a fast and memory-efficient C++ implementation of the RandomForest classification algorithm. Balsa is optimized for low memory usage and high speed during both training and classification. It is particularly useful for training on larger datasets, and for near-real time classification.
+Balsa is a fast and memory-efficient C++ implementation of the RandomForest classification algorithm. Balsa is optimized for low memory usage and high speed during both training and classification. It is particularly useful for training on larger datasets, and for near real-time classification.
 
 <a name="tableofcontents"></a>
 ## Table of Contents
@@ -30,7 +30,9 @@ Balsa is a fast and memory-efficient C++ implementation of the RandomForest clas
 	1. [Training on the Command Line](#balsatrain)
 	1. [Classification on the Command Line](#balsaclassify)
 	1. [Measuring Classifier Performance](#balsameasure)
+	1. [Measuring Feature Performance](#balsafeatureimportance)
 	1. [Printing Balsa Files](#balsaprint)
+	1. [Merging Balsa Models](#balsamerge)
 1. [Using Balsa From C++](#usingbalsacpp)
 	1. [Including Balsa in a C++ Project](#cppincludingbalsa)
 	1. [Training in C++](#cpptraining)
@@ -71,6 +73,8 @@ The Balsa package provides the following command-line tools:
 * **balsa\_print** prints the contents of Balsa point files, label files, and models in human-readable form.
 * **balsa\_generate** generates random data sets for testing and experimentation.
 * **balsa\_measure** calculates metrics to assess the performance of a model.
+* **balsa\_featureimportance** performs feature importance analysis on a Balsa model.
+* **balsa\_merge** merges multiple trained Random Forest model files into a single model.
 
 These tools are built and installed as part of a standard [Balsa installation process](#installation).
 
@@ -137,7 +141,7 @@ A probability tells us how likely it is that a random event has a certain outcom
 
 A probability is a value between 0 and 1 (including the boundaries). Odds are often given as a ratio of to integers ("the odds are 3 to 10"), but they can take any non-negative real value, including Pi and the square root of 2.
 
-As an example, consider a football match between Team A and Team B. A bookmaker may say that the odds of Team A winning are 10 to 1 (also written '10:1'). This means that the probability that Team A wins is 10 times the probability that Team B wins. We can then calculate that the probability of Team A winning must be 10/11, versus 1/11 for Team B.
+As an example, consider a football match between Team A and Team B. A bookmaker may say that the odds of Team A winning are 10 to 1 (also written '10:1'). This means that the probability that Team A wins is 10 times the probability that Team B wins (we ignore draws). We can then calculate that the probability of Team A winning must be 10/11, versus 1/11 for Team B.
 
 By analogy, we will define *class odds* as the odds that a data point belongs to a certain class, versus the point not belonging to that class. If the class probability of a point is given as p and the class odds are q, probabilities are converted to odds as follows:
 
@@ -172,7 +176,7 @@ It is possible (and often useful) to control or limit the growth of a decision t
 <a name="randomforests"></a>
 ### Random Forests [(top)](#tableofcontents)
 
-Using a random number generator, we can randomly restrict the features that a decision tree trainer is allowed to scan while searching for an optimal split. This strategy creates a decision tree with a randomized topology: a *Random Decision Tree*. Random decision trees that are trained on the same data will have slightly different strengths and weaknesses compared to one another, when used to classify out-of-bag data.
+Using a random number generator, we can randomly restrict the features that a decision tree trainer is allowed to scan while it is searching for the optimal point to split a node. This strategy creates a decision tree with a randomized topology: a *Random Decision Tree*. Random decision trees that are trained on the same data will have slightly different strengths and weaknesses compared to one another, when used to classify out-of-bag data.
 
 An *Ensemble Classifier* is a strong classifier that is composed of a larger group of weaker classifiers. An ensemble classifier accumulates the opinions (votes) of the individual classifiers to arrive at a final label for a point p. It can be shown that an ensemble classifier gives better classifications than its component classifiers, under the assumption that the individual classifiers form a diverse enough group.
 
@@ -195,7 +199,6 @@ N.B. exact version requirements for both the C++ standard and the CMake build sy
 
 The following optional prerequisites apply:
 
-* To use the optional *classifiert* utility, **Python 3** is required.
 * For command-line builds on Windows (recommended), Microsoft's **NMake** utility is recommended.
 * A **Markdown** viewer or Markdown-to-HTML conversion tool is recommended for reading this manual.
 * Balsa's trainer can optionally write decision trees to the Graphviz 'dot' format. These files can be converted to PDFs for visual inspection using the **Graphviz** command line tools.
@@ -305,16 +308,18 @@ The balsa_train tool trains a Random Forest model on a set of labeled training d
 
 This command creates "fruit-model.balsa" from "fruit-points.balsa" and "fruit-labels.balsa". Various parameters of the training process can be controlled to make trade-offs between the disk usage of the generated model files, the processor/multi-core utilization, wall-clock time, predictive performance, etc.
 
-Running `balsa_train` without any arguments displays the full range of options. By default, balsa\_train creates a forest of 150 trees of unlimited depth, using one thread/core for training. This is fine for initial experimentation on small test sets, but it is almost never the best option for your application. In order to get the best results, both in terms of runtime/speed and in terms of classification power, you will need to tune the parameters of balsa_train. The chapters [Optimizing Resource Usage](#optimizingresourceusage) and [Optimizing Model Performance] (#optimizingmodelperformance) cover the tuning process in detail.
+Running `balsa_train` without any arguments displays the full range of options. By default, balsa\_train creates a forest of 150 trees of unlimited depth, using one thread/core for training. This is fine for initial experimentation on small test sets, but it is almost never the best option for real applications. In order to get the best results, both in terms of runtime/speed and in terms of classification power, you will need to tune the parameters of balsa_train. The chapters [Optimizing Resource Usage](#optimizingresourceusage) and [Optimizing Model Performance] (#optimizingmodelperformance) cover the tuning process in detail.
 
 <a name="balsaclassify"></a>
 ### Classification on the Command Line [(top)](#tableofcontents)
 
 A model can be used to classify a (known or unknown) data set. For experimentation purposes, you can generate a second test set called "fresh-fruit-data" using balsa_generate with a different seed. To classify the data set using a model, run:
 
-	balsa_classify fruit-model.balsa fresh-fruit-data.balsa fresh-fruit-labels-classified.balsa
+	balsa_classify fruit-model.balsa fresh-fruit-data.balsa
 
-The first two parameters are the trained model file and the unknown new data file. The last parameter is the name that will be used to store the classifier output. This file can be compared to actual labels (e.g. from balsa_generate) for evaluation of the model.
+The two parameters are the trained model file and the unknown new data file. The output labels will be written to a file called "fresh-fruit-data-predictions.balsa", i.e., its name will be the stem of the filename with "-predictions" appended to it. This output file can be compared to actual labels (e.g. from balsa_generate) for evaluation of the model. 
+
+Note that it is possible to pass multiple data files on the command-line for bulk-classification. Under most circumstances, passing multiple files in a single invocation is much more efficient than classifying files in separate runs.
 
 The resource usage of the command-line classifier can be tuned to achieve to achieve shorter wall-clock times at the expense of additional memory usage and CPU load. We note, however, that the command-line classifier is already extremely fast and memory-efficient in single-threaded mode. The chapters on [Optimizing Resource Usage](#optimizingresourceusage) and [Optimizing Model Performance] (#optimizingmodelperformance) cover the tuning process in detail.
 
@@ -326,6 +331,35 @@ The balsa\_measure utility measures how well a trained model performs. To do so,
 	balsa_measure ground-truth.balsa classifier-output.balsa
 
 The utilily takes two sets of label files as input. The first file is the ground truth of a test set (which was not available to the classifier), the second file is the set of labels that the classifier assigned to the test set. The measurement utility calculates a number of common [performance metrics](#performancemetrics) for the trained model.
+
+<a name="balsafeatureimportance"></a>
+### Measuring Feature Performance [(top)](#tableofcontents)
+
+In a classification problem, some features can carry more discriminatory information than others. It is often useful to know the relative importance of the features in a dataset. 
+
+The balsa\_featureimportance tool can determine how sensitive a trained model is to each feature by measuring how much the predictive quality of the model degrades when the values of that feature are randomly shuffled between points. This can be done by invoking the tool with a model and a set of test point with known labels:
+
+	balsa_featureimportance model.balsa testpoints.balsa ground-truth.balsa
+
+To determine the predictive strength of each feature, balsa\_featureimportance first calculates the same performance metrics as balsa\_measure on the dataset. This measurement is used as a baseline for reference. Next, to calculate the importance of a feature f, it randomly shuffles the values of feature k between all points in the dataset, effectively destroying any predictive value they may carry. The tool then calculates how well the model performs on the shuffled dataset. The tool can perform several shuffling iterations per feature to derive at an average value.
+
+An example output might look like this:
+
+	-----------------------------------
+	Feature #: Importance (ACC-based): 
+	-----------------------------------
+	0          0.2346
+	1          0.3405
+	2          0.0131
+	3          0.1863
+
+The output tells us that the average accuracy of the classifier (ACC) is 0.2346 higher when the classifier can use the feature 0 information, 0.3405 when it can use the feature 1 information, and so on. The higher the values in this table, the more important the feature is for this particular model.
+
+There are some important caveats when interpreting these results:
+
+* Feature imporance tells us how important a feature is _for this particular model_. It might be possible to train a different model on the same data that relies more heavily on different features.
+* The feature importance is calculated based on _accuracy_. Future versions of Balsa may perform the calculation based on other metrics. These metrics may give rise to different conclusions.
+* If two or more features are heavily correlated, this method of feature importance will mark all features in such a corrrelated group as unimportant. If all features in the group are removed however, the model performance would degrade heavily.
 
 <a name="balsaprint"></a>
 ### Printing Balsa Files [(top)](#tableofcontents)
@@ -379,6 +413,17 @@ Random forest model files consist of multiple individual trees. Each tree is sep
 	5    11   12   0    0.379905        0
 
 The FOREST marker is printed once. The TREE marker and header is printed before each tree. It includes the feature count of the tree. Trees are printed in tabular form. The columns are **N**ode identifier, **L**eft node, **R**ight node, the **F**eature on which the node is split, the feature **V**alue on which the node is split, and the **L**abel of the most prevalent class in the node. N.B. the left- and right- node IDs are nonzero  for internal tree nodes, and zero for leaf nodes. The node with ID 0 is always the root node of the tree.
+
+<a name="balsamerge"></a>
+### Merging Balsa Models [(top)](#tableofcontents)
+
+A Random Forest model consists of a set of individually trained randomized decision trees. Two or more forests that are trained on the same data sets (or different data sets from the same population) can be merged into a single forest model using the 'balsa\_merge' tool. This is particular useful for distributed computing environments, where multiple independent computers can run 'balsa\_train' concurrently on large datasets. Another useful application is to update a trained forest by adding more trees. The new trees can either be trained on the same data, or on a different, possibly new data set:
+
+The following invocation creates a merged Balsa model from two earlier models:
+
+	balsa_merge model1.balsa model2.balsa merged-model.balsa
+	
+N.B. balsa\_merge will only merge forests that are trained on data with the same number of features. The input models must also have the same feature data type (double or float) for the merge to succeed.
 
 <a name="usingbalsacpp"></a>
 ## Using Balsa from C++ [(top)](#tableofcontents)
