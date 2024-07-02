@@ -6,6 +6,7 @@
 #include <vector>
 #include <filesystem>
 
+#include "config.h"
 #include "datatypes.h"
 #include "exceptions.h"
 #include "fileio.h"
@@ -186,6 +187,9 @@ int main( int argc, char ** argv )
             watch.start();
             BalsaFileWriter fileWriter( createOutputFileName( dataFile ) );
             fileWriter.setCreatorName( "balsa_classify" );
+            fileWriter.setCreatorMajorVersion( balsa_VERSION_MAJOR );
+            fileWriter.setCreatorMinorVersion( balsa_VERSION_MINOR );
+            fileWriter.setCreatorPatchVersion( balsa_VERSION_PATCH );
             fileWriter.writeTable( labels );
             watch.stop();
             labelStoreTime += watch.getElapsedTime();

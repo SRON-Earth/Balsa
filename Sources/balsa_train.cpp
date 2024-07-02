@@ -4,6 +4,7 @@
 #include <sstream>
 #include <string>
 
+#include "config.h"
 #include "exceptions.h"
 #include "fileio.h"
 #include "randomforesttrainer.h"
@@ -162,6 +163,9 @@ int main( int argc, char ** argv )
         std::cout << "Training..." << std::endl;
         BalsaFileWriter fileWriter( options.outputFile );
         fileWriter.setCreatorName( "balsa_train" );
+        fileWriter.setCreatorMajorVersion( balsa_VERSION_MAJOR );
+        fileWriter.setCreatorMinorVersion( balsa_VERSION_MINOR );
+        fileWriter.setCreatorPatchVersion( balsa_VERSION_PATCH );
         RandomForestTrainer trainer( fileWriter, options.featuresToConsider, options.maxDepth, options.minPurity, options.treeCount, options.threadCount, options.writeDotty );
         watch.start();
         trainer.train( dataSet.begin(), dataSet.end(), dataSet.getColumnCount(), labels.begin() );

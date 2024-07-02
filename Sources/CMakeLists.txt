@@ -1,3 +1,5 @@
+configure_file( config.h.in config.h )
+
 add_library( balsa SHARED fileio.cpp modelevaluation.cpp serdes.cpp weightedcoin.cpp )
 target_include_directories( balsa PUBLIC ${CMAKE_CURRENT_LIST_DIR} )
 

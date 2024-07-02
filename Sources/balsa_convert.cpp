@@ -5,6 +5,7 @@
 #include <sstream>
 #include <string>
 
+#include "config.h"
 #include "datatypes.h"
 #include "exceptions.h"
 #include "fileio.h"
@@ -86,6 +87,9 @@ int main( int argc, char ** argv )
         // Write the output file.
         BalsaFileWriter fileWriter( options.outputFile );
         fileWriter.setCreatorName( "balsa_convert" );
+        fileWriter.setCreatorMajorVersion( balsa_VERSION_MAJOR );
+        fileWriter.setCreatorMinorVersion( balsa_VERSION_MINOR );
+        fileWriter.setCreatorPatchVersion( balsa_VERSION_PATCH );
         fileWriter.writeTable( table );
     }
     catch ( Exception & e )

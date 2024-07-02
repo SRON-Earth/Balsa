@@ -4,6 +4,7 @@
 #include <sstream>
 #include <string>
 
+#include "config.h"
 #include "datagenerator.h"
 #include "datatypes.h"
 #include "exceptions.h"
@@ -113,11 +114,18 @@ int main( int argc, char ** argv )
         {
             BalsaFileWriter fileWriter( options.pointFile );
             fileWriter.setCreatorName( "balsa_generate" );
+            fileWriter.setCreatorMajorVersion( balsa_VERSION_MAJOR );
+            fileWriter.setCreatorMinorVersion( balsa_VERSION_MINOR );
+            fileWriter.setCreatorPatchVersion( balsa_VERSION_PATCH );
             fileWriter.writeTable( points );
         }
         {
             BalsaFileWriter fileWriter( options.labelFile );
             fileWriter.setCreatorName( "balsa_generate" );
+            fileWriter.setCreatorMajorVersion( balsa_VERSION_MAJOR );
+            fileWriter.setCreatorMinorVersion( balsa_VERSION_MINOR );
+            fileWriter.setCreatorPatchVersion( balsa_VERSION_PATCH );
+
             fileWriter.writeTable( labels );
         }
     }

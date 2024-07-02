@@ -1,0 +1,8 @@
+#ifndef CONFIG_H
+#define CONFIG_H
+
+#define balsa_VERSION_MAJOR @balsa_VERSION_MAJOR@
+#define balsa_VERSION_MINOR @balsa_VERSION_MINOR@
+#define balsa_VERSION_PATCH @balsa_VERSION_PATCH@
+
+#endif // CONFIG_H
