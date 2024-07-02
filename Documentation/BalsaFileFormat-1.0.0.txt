@@ -114,7 +114,8 @@ The TREEHEADER dictionary must contain at least the following fields:
 - "feature_count" (uint8): the number of features in the dataset on which the
    tree was trained.
 - "feature_type_id" (string): the numeric type used for features values; must be
-   one of FEATURETYPEID.
+   one of FEATURETYPEID. This must be identical to the feature type of the
+   SPLITVALUES table.
 
 The following context-free grammar describes the structure of a forest:
 
@@ -142,13 +143,13 @@ The following entries must be present in the header:
 - "file_major_version" (uint8): Major version number of the file format.
 - "file_minor_version" (uint8): Minor version number of the file format.
 
+Semantic versioning applies to the file format version numbers: patches are for
+bug fixes, minor version bumps may add functionality in a backward compatible
+manner, major version updates may break backward compatibility.
+
 The following entries in the file header are optional:
 
 - "creator_name"          (string): The name of the tool that created the file.
 - "creator_major_version" (uint8) : Major version number of the creator.
 - "creator_minor_version" (uint8) : Minor version number of the creator.
 - "creator_patch_version" (uint8) : Patch number of the creator.
-
-Semantic versioning applies to the version numbers: patches are for bug fixes,
-minor version bumps may add functionality in a backward compatible manner,
-major version updates may break backward compatibility.
