@@ -13,6 +13,9 @@
 namespace balsa
 {
 
+/*
+ * An enumeration of supported scalar types.
+ */
 enum class ScalarTypeID
 {
     UINT8,
@@ -26,19 +29,28 @@ enum class ScalarTypeID
     BOOL
 };
 
+/*
+ * Returns the scalar type identifier for the specified type.
+ */
 template <typename Type>
 ScalarTypeID getScalarTypeID()
 {
-    static_assert( sizeof( Type ) != sizeof( Type ), "Unsupported feature type." );
+    static_assert( sizeof( Type ) != sizeof( Type ), "Unsupported scalar type." );
     return static_cast<ScalarTypeID>( 0 );
 }
 
+/*
+ * An enumeration of supported feature types.
+ */
 enum class FeatureTypeID
 {
     FLOAT,
     DOUBLE
 };
 
+/*
+ * Returns the feature type identifier for the specified type.
+ */
 template <typename Type>
 FeatureTypeID getFeatureTypeID()
 {
@@ -46,38 +58,42 @@ FeatureTypeID getFeatureTypeID()
     return static_cast<FeatureTypeID>( 0 );
 }
 
-class ForestHeader
+/*
+ * Description of a forest (an ensemble of decision trees).
+ */
+struct ForestHeader
 {
-public:
-
-    unsigned char classCount;
-    unsigned char featureCount;
-    FeatureTypeID featureTypeID;
+    unsigned char classCount;     // Number of classes distinguished by the forest.
+    unsigned char featureCount;   // Number of features the forest was trained on.
+    FeatureTypeID featureTypeID;  // Numeric type used for features.
 };
 
-class TreeHeader
+/*
+ * Description of a decision tree.
+ */
+struct TreeHeader
 {
-public:
-
-    unsigned char classCount;
-    unsigned char featureCount;
-    FeatureTypeID featureTypeID;
+    unsigned char classCount;     // Number of classes distinguished by the tree.
+    unsigned char featureCount;   // Number of features the tree was trained on.
+    FeatureTypeID featureTypeID;  // Numeric type used for features.
 };
 
-class TableHeader
+/*
+ * Description of a table.
+ */
+struct TableHeader
 {
-public:
-
-    unsigned int rowCount;
-    unsigned int columnCount;
-    ScalarTypeID scalarTypeID;
+    unsigned int rowCount;      // Number of rows.
+    unsigned int columnCount;   // Number of columns.
+    ScalarTypeID scalarTypeID;  // Numeric type of the elements of the table.
 };
 
+/*
+ * Internal representation of a decision tree.
+ */
 template <typename FeatureType>
-class TreeData
+struct TreeData
 {
-public:
-
     unsigned int       classCount;
     unsigned int       featureCount;
     Table<NodeID>      leftChildID;
@@ -87,48 +103,135 @@ public:
     Table<Label>       label;
 };
 
+/*
+ * A parser for files written in the balsa file format.
+ */
 class BalsaFileParser
 {
 public:
 
+	/*
+	 * Constructor; opens the specified file for parsing.
+	 */
     BalsaFileParser( const std::string & filename );
 
+    /*
+     * Returns the major version number of the balsa file format specification
+     * the file adheres to.
+     */
     unsigned int getFileMajorVersion() const;
+
+    /*
+     * Returns the minor version number of the balsa file format specification
+     * the file adheres to.
+     */
     unsigned int getFileMinorVersion() const;
 
+    /*
+     * Returns the name of the tool that created the file (if available).
+     */
     std::optional<std::string>  getCreatorName() const;
+
+    /*
+     * Returns the major version number of the tool that created the file
+     * (if available).
+     */
     std::optional<unsigned int> getCreatorMajorVersion() const;
+
+    /*
+     * Returns the minor version number of the tool that created the file
+     * (if available).
+     */
     std::optional<unsigned int> getCreatorMinorVersion() const;
+
+    /*
+     * Returns the patch version number of the tool that created the file
+     * (if available).
+     */
     std::optional<unsigned int> getCreatorPatchVersion() const;
 
+    /*
+     * Returns true iff the reader is positioned at the end of the file.
+     */
     bool atEOF();
 
+    /*
+     * Returns true iff the reader is positioned at the start of a forest.
+     */
     bool atForest();
 
+    /*
+     * Returns true iff the reader is positioned at end of a forest.
+     */
     bool atEndOfForest();
 
+    /*
+     * Returns true iff the reader is positioned at a decision tree.
+     */
     bool atTree();
 
+    /*
+     * Returns true iff the reader is positioned at a table.
+     */
     bool atTable();
 
+    /*
+     * Returns true iff the reader is positioned at a decision tree using
+     * features of the specified type.
+     */
     template <typename FeatureType>
     bool atTreeOfType()
     {
         return atTreeOfType( getFeatureTypeID<FeatureType>() );
     }
 
-    template <typename CellType>
+    /*
+     * Returns true iff the reader is positioned at a table that contains
+     * elements of the specified type.
+     */
+    template <typename ScalarType>
     bool atTableOfType()
     {
-        return atTableOfType( getScalarTypeID<CellType>() );
+        return atTableOfType( getScalarTypeID<ScalarType>() );
     }
 
+    /*
+     * Parses a forest start marker and description.
+     *
+     * \pre The parser is positioned at a forest.
+     * \post The parser will be positioned at the first decision tree in the
+     *  forest.
+     * \post The \c reenterForest() member function can be used to reposition
+     *  the parser at the first decision tree in the forest.
+     * \returns Forest description.
+     */
     ForestHeader enterForest();
 
+    /*
+     * Parses and discards a forest end marker.
+     *
+     * \pre The parser is positioned at the end of a forest.
+     * \post The parser will be positioned at the next object in the file, or at
+     *  the end of the file if it contains no more objects.
+     */
     void leaveForest();
 
+    /*
+     * Reposition the parser at the first decision tree of the last forest
+     * entered using \c enterForest().
+     *
+     * \pre A forest was entered using \c enterForest().
+     */
     void reenterForest();
 
+    /*
+     * Parses a decision tree and returns its internal representation.
+     *
+     * \pre The parser is positioned at a decision tree of the specified feature
+     *  type.
+     * \post The parser will be positioned at the next object in the file, or at
+     *  the end of the file if it contains no more objects.
+     */
     template <typename FeatureType>
     TreeData<FeatureType> parseTreeData()
     {
@@ -159,6 +262,15 @@ public:
         return result;
     }
 
+    /*
+     * Parses a decision tree.
+     *
+     * \pre The parser is positioned at a decision tree. The feature type of the
+     *  decision tree should match the value type of the specified \c
+     *  FeatureIterator type.
+     * \post The parser will be positioned at the next object in the file, or at
+     *  the end of the file if it contains no more objects.
+     */
     template <typename FeatureIterator, typename OutputIterator>
     typename DecisionTreeClassifier<FeatureIterator, OutputIterator>::SharedPointer parseTree()
     {
@@ -183,8 +295,15 @@ public:
         return result;
     }
 
-    template <typename CellType>
-    Table<CellType> parseTable()
+    /*
+     * Parses a table containing elements of the specified scalar type.
+     *
+     * \pre The parser is positioned at a table of the specified scalar type.
+     * \post The parser will be positioned at the next object in the file, or at
+     *  the end of the file if it contains no more objects.
+     */
+    template <typename ScalarType>
+    Table<ScalarType> parseTable()
     {
         // Parse the table start marker.
         parseTableStartMarker();
@@ -193,11 +312,11 @@ public:
         TableHeader header = parseTableHeader();
 
         // Check the scalar type.
-        if ( header.scalarTypeID != getScalarTypeID<CellType>() )
+        if ( header.scalarTypeID != getScalarTypeID<ScalarType>() )
             throw ParseError( "Table has incompatible scalar type." );
 
         // Allocate a table and parse the data.
-        Table<CellType> result( header.rowCount, header.columnCount );
+        Table<ScalarType> result( header.rowCount, header.columnCount );
         result.readCellData( m_stream );
 
         // Parse the table end marker.
@@ -207,8 +326,18 @@ public:
         return result;
     }
 
-    template <typename CellType>
-    Table<CellType> parseTableAs()
+    /*
+     * Parses a table containing elements of the specified scalar type. If the
+     * table stored in the file contains elements of a different scalar type,
+     * the elements will be converted to the requested type if possible.
+     *
+     * \pre The parser is positioned at a table that contains elements of a
+     *  scalar type that can be converted to the requested type.
+     * \post The parser will be positioned at the next object in the file, or at
+     *  the end of the file if it contains no more objects.
+     */
+    template <typename ScalarType>
+    Table<ScalarType> parseTableAs()
     {
         // Parse the table start marker.
         parseTableStartMarker();
@@ -217,11 +346,11 @@ public:
         TableHeader header = parseTableHeader();
 
         // Allocate a table.
-        Table<CellType> result( header.rowCount, header.columnCount );
+        Table<ScalarType> result( header.rowCount, header.columnCount );
 
         // Read the table, convert if necessary.
         auto sourceType      = header.scalarTypeID;
-        auto destinationType = getScalarTypeID<CellType>();
+        auto destinationType = getScalarTypeID<ScalarType>();
         if ( destinationType == sourceType )
         {
             // No conversion is necessary if source and destination types are the same.
@@ -257,7 +386,6 @@ public:
 private:
 
     void parseFileSignature();
-
     void parseForestStartMarker();
     void parseForestEndMarker();
     void parseTreeStartMarker();
@@ -282,39 +410,113 @@ private:
     std::optional<unsigned int> m_creatorPatchVersion;
 };
 
-template <typename CellType>
-Table<CellType> readTable( const std::string & filename )
+/*
+ * Read a table containing elements of the specified scalar type from a file.
+ */
+template <typename ScalarType>
+Table<ScalarType> readTable( const std::string & filename )
 {
     BalsaFileParser parser( filename );
-    return parser.parseTable<CellType>();
+    return parser.parseTable<ScalarType>();
 }
 
-template <typename CellType>
-Table<CellType> readTableAs( const std::string & filename )
+/*
+ * Read a table containing elements of the specified scalar type from a file. If
+ * the table stored in the file contains elements of a different scalar type,
+ * the elements will be converted to the requested type if possible.
+ */
+template <typename ScalarType>
+Table<ScalarType> readTableAs( const std::string & filename )
 {
     BalsaFileParser parser( filename );
-    return parser.parseTableAs<CellType>();
+    return parser.parseTableAs<ScalarType>();
 }
 
+/*
+ * A writer for files that adhere to the balsa file format.
+ */
 class BalsaFileWriter
 {
 public:
 
+	/*
+	 * Constructor; opens the specified file for writing. The file will be
+	 * truncated if it exists.
+	 */
     BalsaFileWriter( const std::string & filename );
 
+    /*
+     * Set the name of the tool that created this file.
+     *
+     * This information will be stored in the file header. The creator name is
+     * optional; if this function has not been called before writing the first
+     * object to the file, no creator name will be written to the file header.
+     */
     void setCreatorName( const std::string & value );
+
+    /*
+     * Set the major version number of the tool that created this file.
+     *
+     * This information will be stored in the file header. The creator major
+     * version number is optional; if this function has not been called before
+     * writing the first object to the file, no creator major version number
+     * will be written to the file header.
+     */
     void setCreatorMajorVersion( unsigned char value );
+
+    /*
+     * Set the minor version number of the tool that created this file.
+     *
+     * This information will be stored in the file header. The creator major
+     * version number is optional; if this function has not been called before
+     * writing the first object to the file, no creator minor version number
+     * will be written to the file header.
+     */
     void setCreatorMinorVersion( unsigned char value );
+
+    /*
+     * Set the patch version number of the tool that created this file.
+     *
+     * This information will be stored in the file header. The creator patch
+     * version number is optional; if this function has not been called before
+     * writing the first object to the file, no creator patch version number
+     * will be written to the file header.
+     */
     void setCreatorPatchVersion( unsigned char value );
 
+    /*
+     * Write a forest start marker and forest description.
+     *
+     * After calling this function, the decision trees that compose the forest
+     * can be written using the \c writeTree() function. Once all decision
+     * trees have been written, the forest should be finalized using a call to
+     * the \c leaveForest() function.
+     *
+     * \pre The writer is not positioned inside a forest (forests cannot be
+     *  nested).
+     */
     template <typename FeatureType>
     void enterForest( unsigned char classCount, unsigned char featureCount )
     {
         enterForest( classCount, featureCount, getFeatureTypeID<FeatureType>() );
     }
 
+    /*
+     * Write a forest end marker.
+     *
+     * This function should be called after all decision trees that compose the
+     * forest have been written.
+     *
+     * \pre The writer is positioned inside a forest.
+     */
     void leaveForest();
 
+    /*
+     * Write a decision tree to the file.
+     *
+     * Decision trees can be written as part of a forest, or as top-level
+     * objects.
+     */
     template <typename FeatureIterator, typename OutputIterator>
     void writeTree( const DecisionTreeClassifier<FeatureIterator, OutputIterator> & tree )
     {
@@ -331,17 +533,28 @@ public:
         writeTreeEndMarker();
     }
 
-    template <typename CellType>
-    void writeTable( const Table<CellType> & table )
+    /*
+     * Write a table to the file.
+     *
+     * \pre The writer is not positioned inside a forest.
+     */
+    template <typename ScalarType>
+    void writeTable( const Table<ScalarType> & table )
     {
         writeFileHeaderOnce();
         writeTableStartMarker();
-        writeTableHeader( table.getRowCount(), table.getColumnCount(), getScalarTypeID<CellType>() );
+        writeTableHeader( table.getRowCount(), table.getColumnCount(), getScalarTypeID<ScalarType>() );
         table.writeCellData( m_stream );
         writeTableEndMarker();
     }
 
 private:
+
+    void enterForest( unsigned char classCount, unsigned char featureCount, FeatureTypeID featureType );
+
+    void writeForestHeader( unsigned char classCount, unsigned char featureCount, FeatureTypeID featureType );
+    void writeTreeHeader( unsigned char classCount, unsigned char featureCount, FeatureTypeID featureType );
+    void writeTableHeader( unsigned int rowCount, unsigned int columnCount, ScalarTypeID scalarType );
 
     void writeFileHeaderOnce();
     void writeFileSignature();
@@ -350,10 +563,6 @@ private:
     void writeTreeEndMarker();
     void writeTableStartMarker();
     void writeTableEndMarker();
-    void enterForest( unsigned char classCount, unsigned char featureCount, FeatureTypeID featureType );
-    void writeForestHeader( unsigned char classCount, unsigned char featureCount, FeatureTypeID featureType );
-    void writeTreeHeader( unsigned char classCount, unsigned char featureCount, FeatureTypeID featureType );
-    void writeTableHeader( unsigned int rowCount, unsigned int columnCount, ScalarTypeID scalarType );
 
     std::ofstream                m_stream;
     bool                         m_insideForest;
@@ -364,6 +573,7 @@ private:
     std::optional<unsigned char> m_creatorPatchVersion;
 };
 
+// Template specialization for all supported scalar types.
 template <>
 ScalarTypeID getScalarTypeID<uint8_t>();
 template <>
@@ -383,6 +593,7 @@ ScalarTypeID getScalarTypeID<double>();
 template <>
 ScalarTypeID getScalarTypeID<bool>();
 
+// Template specializations for all supported feature types.
 template <>
 FeatureTypeID getFeatureTypeID<float>();
 template <>
