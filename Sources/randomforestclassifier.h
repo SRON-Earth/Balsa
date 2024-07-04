@@ -62,8 +62,8 @@ public:
 
 private:
 
-    DecisionTreeClassifierStream<FeatureIterator, OutputIterator> m_classifierStream;
-    EnsembleClassifier<FeatureIterator, OutputIterator>           m_classifier;
+    DecisionTreeClassifierInputStream<FeatureIterator, OutputIterator> m_classifierStream;
+    EnsembleClassifier<FeatureIterator, OutputIterator>                m_classifier;
 };
 
 } // namespace balsa

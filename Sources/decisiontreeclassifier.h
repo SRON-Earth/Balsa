@@ -26,21 +26,15 @@ class IndexedDecisionTree;
 /**
  * A Classifier based on an internal decision tree.
  */
-template <typename FeatureIterator, typename OutputIterator>
-class DecisionTreeClassifier: public Classifier<FeatureIterator, OutputIterator>
+template <typename FeatureType>
+class DecisionTreeClassifier: public Classifier
 {
 public:
-
-    using typename Classifier<FeatureIterator, OutputIterator>::VoteTable;
 
     typedef std::shared_ptr<DecisionTreeClassifier>       SharedPointer;
     typedef std::shared_ptr<const DecisionTreeClassifier> ConstSharedPointer;
 
-    typedef std::remove_cv_t<typename iterator_value_type<FeatureIterator>::type> FeatureType;
-    typedef std::remove_cv_t<typename iterator_value_type<OutputIterator>::type>  LabelType;
-
     static_assert( std::is_arithmetic<FeatureType>::value, "Feature type should be an integral or floating point type." );
-    static_assert( std::is_same<LabelType, Label>::value, "Label type should an unsigned, 8 bits wide, integral type." );
 
     /**
      * Returns the number of classes distinguished by the classifier.
@@ -53,26 +47,33 @@ public:
     /**
      * Bulk-classifies a sequence of data points.
      */
-    void classify( FeatureIterator pointsStart, FeatureIterator pointsEnd, unsigned int featureCount, OutputIterator labelsStart ) const
+    template<typename FeatureIterator, typename LabelOutputIterator>
+    void classify( FeatureIterator pointsStart, FeatureIterator pointsEnd, LabelOutputIterator labelsStart ) const
     {
+        // Statically check that the label output iterator points to Labels.
+        typedef std::remove_cv_t<typename iterator_value_type<LabelOutputIterator>::type>  LabelType;
+        static_assert( std::is_same<LabelType, Label>::value, "The labelStart iterator must point to instances of type Label." );
+
+        // Statically check that the FeatureIterator points to an arithmetical type.
+        typedef std::remove_cv_t<typename iterator_value_type<FeatureIterator>::type> FeatureIteratedType;
+        static_assert( std::is_arithmetic<FeatureIteratedType>::value, "Features must be of an integral or floating point type." );
+
         // Check the dimensions of the input data.
-        if ( featureCount == 0 ) throw ClientError( "Data points must have at least one feature." );
         auto entryCount = std::distance( pointsStart, pointsEnd );
-        if ( entryCount % featureCount ) throw ClientError( "Malformed dataset." );
-        if ( featureCount < m_featureCount ) throw ClientError( "Dataset contains too few features." );
+        if ( entryCount % m_featureCount ) throw ClientError( "Malformed dataset." );
 
         // Determine the number of points in the input data.
-        auto pointCount = entryCount / featureCount;
+        auto pointCount = entryCount / m_featureCount;
 
         // Create a table for the label votes.
         VoteTable voteCounts( pointCount, m_classCount );
 
         // Bulk-classify all points.
-        classifyAndVote( pointsStart, pointsEnd, featureCount, voteCounts );
+        classifyAndVote( pointsStart, pointsEnd, voteCounts );
 
         // Generate the labels.
         for ( unsigned int point = 0; point < pointCount; ++point )
-            *labelsStart++ = static_cast<LabelType>( voteCounts.getColumnOfRowMaximum( point ) );
+            *labelsStart++ = static_cast<Label>( voteCounts.getColumnOfRowMaximum( point ) );
     }
 
     /**
@@ -82,28 +83,30 @@ public:
      *  the first point.
      * \param pointsEnd An itetartor that points to the end of the block of
      *  point data.
-     * \param featureCount The number of features for each data point.
      * \param table A table for counting votes.
      * \pre The column count of the vote table must match the number of
      *  features, the row count must match the number of points.
      */
-    unsigned int classifyAndVote( FeatureIterator pointsStart, FeatureIterator pointsEnd, unsigned int featureCount, VoteTable & table ) const
+    template<typename FeatureIterator>
+    unsigned int classifyAndVote( FeatureIterator pointsStart, FeatureIterator pointsEnd, VoteTable & table ) const
     {
+        // Statically check that the FeatureIterator points to an arithmetical type.
+        typedef std::remove_cv_t<typename iterator_value_type<FeatureIterator>::type> FeatureIteratedType;
+        static_assert( std::is_arithmetic<FeatureIteratedType>::value, "Features must be of an integral or floating point type." );
+
         // Check the dimensions of the input data.
-        if ( featureCount == 0 ) throw ClientError( "Data points must have at least one feature." );
         auto entryCount = std::distance( pointsStart, pointsEnd );
-        if ( entryCount % featureCount ) throw ClientError( "Malformed dataset." );
-        if ( featureCount < m_featureCount ) throw ClientError( "Dataset contains too few features." );
+        if ( entryCount % m_featureCount ) throw ClientError( "Malformed dataset." );
 
         // Determine the number of points in the input data.
-        auto pointCount = entryCount / featureCount;
+        auto pointCount = entryCount / m_featureCount;
 
         // Create a list containing all datapoint IDs (0, 1, 2, etc.).
         std::vector<DataPointID> pointIDs( pointCount );
         std::iota( pointIDs.begin(), pointIDs.end(), 0 );
 
         // Recursively partition the list of point IDs according to the interior node criteria, and classify them by the leaf node labels.
-        recursiveClassifyVote( pointIDs.begin(), pointIDs.end(), pointsStart, featureCount, table, NodeID( 0 ) );
+        recursiveClassifyVote( pointIDs.begin(), pointIDs.end(), pointsStart, table, NodeID( 0 ) );
 
         // Return the number of classifiers that voted.
         return 1;
@@ -111,14 +114,14 @@ public:
 
 private:
 
-    DecisionTreeClassifier(unsigned int classCount, unsigned int featureCount):
-    Classifier<FeatureIterator, OutputIterator>(),
+    DecisionTreeClassifier( unsigned int classCount, unsigned int featureCount ):
     m_classCount( classCount ),
     m_featureCount( featureCount )
     {
     }
 
-    void recursiveClassifyVote( std::vector<DataPointID>::iterator pointIDsStart, std::vector<DataPointID>::iterator pointIDsEnd, FeatureIterator pointsStart, unsigned int featureCount, VoteTable & voteTable, NodeID currentNodeID ) const
+    template<typename FeatureIterator>
+    void recursiveClassifyVote( std::vector<DataPointID>::iterator pointIDsStart, std::vector<DataPointID>::iterator pointIDsEnd, FeatureIterator pointsStart, VoteTable & voteTable, NodeID currentNodeID ) const
     {
         // If the current node is an interior node, split the points along the split value, and classify both halves.
         if ( m_leftChildID( currentNodeID, 0 ) > 0 )
@@ -128,6 +131,7 @@ private:
             auto featureID  = m_splitFeatureID( currentNodeID, 0 );
 
             // Split the point IDs in two halves: points that lie below the split value, and points that lie on or above the feature split value.
+            auto featureCount = m_featureCount;
             auto pointIsBelowLimit = [&pointsStart, featureCount, splitValue, featureID]( const unsigned int & pointID )
             {
                 return pointsStart[featureCount * pointID + featureID] < splitValue;
@@ -135,8 +139,8 @@ private:
             auto secondHalf = std::partition( pointIDsStart, pointIDsEnd, pointIsBelowLimit );
 
             // Recursively classify-vote both halves.
-            recursiveClassifyVote( pointIDsStart, secondHalf, pointsStart, featureCount, voteTable, m_leftChildID( currentNodeID, 0 ) );
-            recursiveClassifyVote( secondHalf, pointIDsEnd, pointsStart, featureCount, voteTable, m_rightChildID( currentNodeID, 0 ) );
+            recursiveClassifyVote( pointIDsStart, secondHalf, pointsStart, voteTable, m_leftChildID( currentNodeID, 0 ) );
+            recursiveClassifyVote( secondHalf, pointIDsEnd, pointsStart, voteTable, m_rightChildID( currentNodeID, 0 ) );
         }
 
         // If the current node is a leaf node, cast a vote for the node-label for each point.

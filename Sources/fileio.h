@@ -272,7 +272,7 @@ public:
      *  the end of the file if it contains no more objects.
      */
     template <typename FeatureIterator, typename OutputIterator>
-    typename DecisionTreeClassifier<FeatureIterator, OutputIterator>::SharedPointer parseTree()
+    typename DecisionTreeClassifier<FeatureIterator>::SharedPointer parseTree()
     {
         // Define the type of the classifier to parse.
         typedef DecisionTreeClassifier<FeatureIterator, OutputIterator> ClassifierType;

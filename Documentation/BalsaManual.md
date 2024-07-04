@@ -21,7 +21,7 @@ Balsa is a fast and memory-efficient C++ implementation of the RandomForest clas
 	1. [Decision Trees](#decisiontrees)
 	1. [Training Decision Trees](#trainingtrees)
 	1. [Random Forests](#randomforests)
-1. [Installation](#usingbalsa)
+1. [Installation](#installation)
 	1. [Prerequisites](#prerequisites)
 	1. [Building and Installing Balsa](#buildandinstall)
 1. [Using Balsa from the Command Line](#balsacommandline)
@@ -384,7 +384,7 @@ Point files consist of tables of floating point data (single or double precision
 
 Label files are printed in a similar manner:
 
-	balsa fruit-labels.balsa
+	balsa_print fruit-labels.balsa
 
 Label files are printed with a row number. Each row is one point. There is only one column, which contains the label. Labels are integers between 0 and 255:
 
@@ -454,8 +454,8 @@ The following complete example shows how a Balsa data model can be loaded and tr
 	int main( int, char ** )
 	{
 		// Load data and labels.
-		auto dataSet = Table<double>::readFileAs( "fruit-data.balsa" );
-		auto labels  = Table<Label>::readFileAs( "fruit-labels.balsa" );
+		auto dataSet = readTableAs<double>( "fruit-data.balsa" );
+		auto labels  = readTableAs<Label>( "fruit-labels.balsa" );
 		auto featureCount = dataSet.getColumnCount();
 
 		// Train a random forest on the data, write the model to a file.

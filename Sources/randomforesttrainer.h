@@ -58,6 +58,8 @@ class RandomForestTrainer
 
 public:
 
+    typedef typename IndexedDecisionTree<FeatureIterator, LabelIterator>::FeatureType FeatureType;
+
     /**
      * Constructor.
      * \param outputFile Name of the model file that will be written.
@@ -86,7 +88,7 @@ public:
      *  reduces the amount of memory used during training, at the expense of
      *  precision.
      */
-    RandomForestTrainer( BalsaFileWriter & fileWriter, unsigned int featuresToConsider = 0, unsigned maxDepth = std::numeric_limits<unsigned int>::max(), double minPurity = 1.0, unsigned int treeCount = 10, unsigned int concurrentTrainers = 10, bool writeGraphviz = false ):
+    RandomForestTrainer( ClassifierOutputStream & fileWriter, unsigned int featuresToConsider = 0, unsigned maxDepth = std::numeric_limits<unsigned int>::max(), double minPurity = 1.0, unsigned int treeCount = 10, unsigned int concurrentTrainers = 10, bool writeGraphviz = false ):
     m_fileWriter( fileWriter ),
     m_featuresToConsider( featuresToConsider ),
     m_maxDepth( maxDepth ),
@@ -152,11 +154,6 @@ public:
         // Create 'stop' messages for all threads, to be picked up after all the work is done.
         for ( unsigned int i = 0; i < workers.size(); ++i ) jobOutbox.send( TrainingJob( dataset, sapling, 0, 0, true ) );
 
-        // Create a forest model file and write the forest start marker and
-        // header.
-        typedef typename IndexedDecisionTree<FeatureIterator, LabelIterator>::FeatureType FeatureType;
-        m_fileWriter.enterForest<FeatureType>( classCount, featureCount );
-
         // Wait for all the trees to come in, and write each tree to a forest file.
         for ( unsigned int i = 0; i < m_treeCount; ++i )
         {
@@ -167,7 +164,7 @@ public:
             // after training.
             typedef typename IndexedDecisionTree<FeatureIterator, LabelIterator>::LabelType LabelType;
             auto strippedTree = tree->template getDecisionTree<FeatureType *, LabelType *>();
-            m_fileWriter.writeTree( *strippedTree );
+            m_fileWriter.write( *strippedTree );
 
             // Write a Graphviz file for the tree, if necessary.
             if ( m_writeGraphviz )
@@ -177,9 +174,6 @@ public:
                 tree->writeGraphviz( ss.str() );
             }
         }
-
-        // Write the forest end marker.
-        m_fileWriter.leaveForest();
 
         // Wait for all the threads to join.
         for ( auto & worker : workers ) worker.join();
@@ -206,13 +200,13 @@ private:
         }
     }
 
-    BalsaFileWriter & m_fileWriter;
-    unsigned int m_featuresToConsider;
-    unsigned int m_maxDepth;
-    double       m_minPurity;
-    unsigned int m_treeCount;
-    unsigned int m_trainerCount;
-    bool         m_writeGraphviz;
+    ClassifierOutputStream<> & m_fileWriter;
+    unsigned int               m_featuresToConsider;
+    unsigned int               m_maxDepth;
+    double                     m_minPurity;
+    unsigned int               m_treeCount;
+    unsigned int               m_trainerCount;
+    bool                       m_writeGraphviz;
 };
 
 } // namespace balsa

@@ -12,7 +12,7 @@ namespace balsa
 {
 
 /**
- * A classifier stream implementation for random forests that loads decision
+ * A classifier input stream implementation for random forests that loads decision
  * trees on demand.
  *
  * Loading classifiers on demand enables ensemble classification using a minimal
@@ -27,15 +27,15 @@ namespace balsa
  * memory once.
  */
 template <typename FeatureIterator, typename OutputIterator>
-class DecisionTreeClassifierStream: public ClassifierStream<FeatureIterator, OutputIterator>
+class DecisionTreeClassifierInputStream: public ClassifierInputStream
 {
 public:
 
-    using typename ClassifierStream<FeatureIterator, OutputIterator>::ClassifierType;
+    using typename ClassifierInputStream<FeatureIterator, OutputIterator>::ClassifierType;
 
     typedef DecisionTreeClassifier<FeatureIterator, OutputIterator> DecisionTreeClassifierType;
 
-    DecisionTreeClassifierStream( const std::string & filename, unsigned int maxPreload = 0 ):
+    DecisionTreeClassifierInputStream( const std::string & filename, unsigned int maxPreload = 0 ):
     m_fileParser( filename ),
     m_maxPreload( maxPreload ),
     m_cacheIndex( 0 )
@@ -44,7 +44,7 @@ public:
         m_classCount = header.classCount;
     }
 
-    DecisionTreeClassifierStream( const DecisionTreeClassifierStream & ) = delete;
+    DecisionTreeClassifierInputStream( const DecisionTreeClassifierInputStream & ) = delete;
 
     /**
      * Return the number of classes distinguished by the classifiers in this
