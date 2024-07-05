@@ -19,6 +19,8 @@ class Options
 public:
 
     Options():
+    threadCount( 1 ),
+    maxPreload( 1 ),
     repeatCount( 5 )
     {
     }
@@ -32,7 +34,9 @@ public:
            << std::endl
            << " Options:" << std::endl
            << std::endl
-           << "   -r <repeats>     : Number of repeats used to determine feature importance (default: 5)." << std::endl;
+           << "   -t <thread count> : Number of threads (default: 1)." << std::endl
+           << "   -p <preload count>: Number of trees to preload (default: 1)." << std::endl
+           << "   -r <repeats>      : Number of repeats used to determine feature importance (default: 5)." << std::endl;
         return ss.str();
     }
 
@@ -55,6 +59,14 @@ public:
             assert( token.size() );
             if ( token[0] != '-' ) break;
 
+            if ( token == "-t" )
+            {
+                if ( !( args >> options.threadCount ) ) throw ParseError( "Missing parameter to -t option." );
+            }
+            else if ( token == "-p" )
+            {
+                if ( !( args >> options.maxPreload ) ) throw ParseError( "Missing parameter to -p option." );
+            }
             if ( token == "-r" )
             {
                 if ( !( args >> options.repeatCount ) ) throw ParseError( "Missing parameter to -r option." );
@@ -75,6 +87,8 @@ public:
     std::string  modelFile;
     std::string  dataFile;
     std::string  labelFile;
+    unsigned int threadCount;
+    unsigned int maxPreload;
     unsigned int repeatCount;
 };
 } // namespace
@@ -91,7 +105,7 @@ int main( int argc, char ** argv )
         auto labels  = readTableAs<Label>( options.labelFile );
 
         // Create a classifier for the model.
-        RandomForestClassifier< decltype( dataSet )::ConstIterator, decltype( labels )::Iterator > classifier( options.modelFile  );
+        RandomForestClassifier< decltype( dataSet )::ConstIterator, decltype( labels )::Iterator > classifier( options.modelFile, options.threadCount, options.maxPreload );
 
         // Calculate the feature importance and print them.
         std::cout << "Analyzing feature importance..." << std::endl;
