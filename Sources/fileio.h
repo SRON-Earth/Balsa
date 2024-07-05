@@ -5,8 +5,9 @@
 #include <optional>
 #include <string>
 
+#include "classifier.h"
+#include "classifiervisitor.h"
 #include "datatypes.h"
-#include "decisiontreeclassifier.h"
 #include "exceptions.h"
 #include "table.h"
 
@@ -65,7 +66,6 @@ struct ForestHeader
 {
     unsigned char classCount;     // Number of classes distinguished by the forest.
     unsigned char featureCount;   // Number of features the forest was trained on.
-    FeatureTypeID featureTypeID;  // Numeric type used for features.
 };
 
 /*
@@ -86,21 +86,6 @@ struct TableHeader
     unsigned int rowCount;      // Number of rows.
     unsigned int columnCount;   // Number of columns.
     ScalarTypeID scalarTypeID;  // Numeric type of the elements of the table.
-};
-
-/*
- * Internal representation of a decision tree.
- */
-template <typename FeatureType>
-struct TreeData
-{
-    unsigned int       classCount;
-    unsigned int       featureCount;
-    Table<NodeID>      leftChildID;
-    Table<NodeID>      rightChildID;
-    Table<FeatureID>   splitFeatureID;
-    Table<FeatureType> splitValue;
-    Table<Label>       label;
 };
 
 /*
@@ -225,75 +210,13 @@ public:
     void reenterForest();
 
     /*
-     * Parses a decision tree and returns its internal representation.
+     * Parses a classifier.
      *
-     * \pre The parser is positioned at a decision tree of the specified feature
-     *  type.
+     * \pre The parser is positioned at a classifier.
      * \post The parser will be positioned at the next object in the file, or at
      *  the end of the file if it contains no more objects.
      */
-    template <typename FeatureType>
-    TreeData<FeatureType> parseTreeData()
-    {
-        // Parse the tree start marker.
-        parseTreeStartMarker();
-
-        // Parse the header.
-        TreeHeader header = parseTreeHeader();
-
-        // Check the feature type.
-        if ( header.featureTypeID != getFeatureTypeID<FeatureType>() )
-            throw ParseError( "Tree has incompatible feature type." );
-
-        // Deserialize the rest of the tree.
-        TreeData<FeatureType> result;
-        result.classCount     = header.classCount;
-        result.featureCount   = header.featureCount;
-        result.leftChildID    = parseTable<NodeID>();
-        result.rightChildID   = parseTable<NodeID>();
-        result.splitFeatureID = parseTable<FeatureID>();
-        result.splitValue     = parseTable<FeatureType>();
-        result.label          = parseTable<Label>();
-
-        // Parse the tree end marker.
-        parseTreeEndMarker();
-
-        // Return the result.
-        return result;
-    }
-
-    /*
-     * Parses a decision tree.
-     *
-     * \pre The parser is positioned at a decision tree. The feature type of the
-     *  decision tree should match the value type of the specified \c
-     *  FeatureIterator type.
-     * \post The parser will be positioned at the next object in the file, or at
-     *  the end of the file if it contains no more objects.
-     */
-    template <typename FeatureIterator, typename OutputIterator>
-    typename DecisionTreeClassifier<FeatureIterator>::SharedPointer parseTree()
-    {
-        // Define the type of the classifier to parse.
-        typedef DecisionTreeClassifier<FeatureIterator, OutputIterator> ClassifierType;
-
-        // Parse the internal tree data structures.
-        typedef typename ClassifierType::FeatureType FeatureType;
-        TreeData<FeatureType>                        data = parseTreeData<FeatureType>();
-
-        // Create an empty classifier.
-        typename ClassifierType::SharedPointer result( new ClassifierType( data.classCount, data.featureCount ) );
-
-        // Move assign the internal tables.
-        result->m_leftChildID    = std::move( data.leftChildID );
-        result->m_rightChildID   = std::move( data.rightChildID );
-        result->m_splitFeatureID = std::move( data.splitFeatureID );
-        result->m_splitValue     = std::move( data.splitValue );
-        result->m_label          = std::move( data.label );
-
-        // Return the result.
-        return result;
-    }
+    Classifier::SharedPointer parseClassifier();
 
     /*
      * Parses a table containing elements of the specified scalar type.
@@ -495,11 +418,7 @@ public:
      * \pre The writer is not positioned inside a forest (forests cannot be
      *  nested).
      */
-    template <typename FeatureType>
-    void enterForest( unsigned char classCount, unsigned char featureCount )
-    {
-        enterForest( classCount, featureCount, getFeatureTypeID<FeatureType>() );
-    }
+    void enterForest( unsigned char classCount, unsigned char featureCount );
 
     /*
      * Write a forest end marker.
@@ -517,21 +436,7 @@ public:
      * Decision trees can be written as part of a forest, or as top-level
      * objects.
      */
-    template <typename FeatureIterator, typename OutputIterator>
-    void writeTree( const DecisionTreeClassifier<FeatureIterator, OutputIterator> & tree )
-    {
-        typedef typename DecisionTreeClassifier<FeatureIterator, OutputIterator>::FeatureType FeatureType;
-
-        writeFileHeaderOnce();
-        writeTreeStartMarker();
-        writeTreeHeader( tree.m_classCount, tree.m_featureCount, getFeatureTypeID<FeatureType>() );
-        writeTable( tree.m_leftChildID );
-        writeTable( tree.m_rightChildID );
-        writeTable( tree.m_splitFeatureID );
-        writeTable( tree.m_splitValue );
-        writeTable( tree.m_label );
-        writeTreeEndMarker();
-    }
+    void writeClassifier( const Classifier & classifier );
 
     /*
      * Write a table to the file.
@@ -550,11 +455,24 @@ public:
 
 private:
 
-    void enterForest( unsigned char classCount, unsigned char featureCount, FeatureTypeID featureType );
+    class ClassifierWriteDispatcher: public ClassifierVisitor
+    {
+    public:
 
-    void writeForestHeader( unsigned char classCount, unsigned char featureCount, FeatureTypeID featureType );
-    void writeTreeHeader( unsigned char classCount, unsigned char featureCount, FeatureTypeID featureType );
-    void writeTableHeader( unsigned int rowCount, unsigned int columnCount, ScalarTypeID scalarType );
+      ClassifierWriteDispatcher( BalsaFileWriter & writer ):
+      m_writer( writer )
+      {
+      }
+
+      void visit( const EnsembleClassifier &classifier );
+      void visit( const DecisionTreeClassifier<float> &classifier );
+      void visit( const DecisionTreeClassifier<double> &classifier );
+
+    private:
+
+        BalsaFileWriter & m_writer;
+
+    };
 
     void writeFileHeaderOnce();
     void writeFileSignature();
@@ -563,6 +481,9 @@ private:
     void writeTreeEndMarker();
     void writeTableStartMarker();
     void writeTableEndMarker();
+    void writeForestHeader( unsigned char classCount, unsigned char featureCount );
+    void writeTreeHeader( unsigned char classCount, unsigned char featureCount, FeatureTypeID featureType );
+    void writeTableHeader( unsigned int rowCount, unsigned int columnCount, ScalarTypeID scalarType );
 
     std::ofstream                m_stream;
     bool                         m_insideForest;

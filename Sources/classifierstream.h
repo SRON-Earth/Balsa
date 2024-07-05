@@ -1,6 +1,8 @@
 #ifndef CLASSIFIERSTREAM_H
 #define CLASSIFIERSTREAM_H
 
+#include <cassert>
+
 #include "classifier.h"
 
 namespace balsa
@@ -28,6 +30,12 @@ public:
     virtual unsigned int getClassCount() const = 0;
 
     /**
+     * Return the number of features expected by the classifiers in this
+     * stream.
+     */
+    virtual unsigned int getFeatureCount() const = 0;
+
+    /**
      * Rewind the stream to the beginning.
      */
     virtual void rewind() = 0;
@@ -46,8 +54,6 @@ class ClassifierOutputStream
 {
 public:
 
-  typedef Classifier<FeatureIterator, LabelOutputIterator> ClassifierType;
-
   /**
    * Constructs an open stream.
    */
@@ -58,6 +64,7 @@ public:
 
   virtual ~ClassifierOutputStream()
   {
+      // TODO: Shouldn't call virtual function from the destructor!
       close();
   }
 
@@ -68,6 +75,7 @@ public:
   void write( const Classifier &classifier )
   {
       assert( isOpen() );
+      onWrite( classifier );
   }
 
   void close()
@@ -75,6 +83,7 @@ public:
       // Close the stream and let the subclass perform closing actions.
       if ( m_isClosed ) return;
       onClose();
+      m_isClosed = true;
   }
 
   bool isOpen() const
@@ -95,7 +104,7 @@ private:
    * Perform the actual write in a subclass-specific way.
    * This is guaranteed to be called only when the stream is still open.
    */
-  virtual void onWrite( const ClassifierType &classifier ) = 0;
+  virtual void onWrite( const Classifier &classifier ) = 0;
 
   bool m_isClosed;
 

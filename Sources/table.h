@@ -263,7 +263,6 @@ private:
     std::vector<CellType> m_data;
 };
 
-
 /**
  * Specialization for bool tables.
  *

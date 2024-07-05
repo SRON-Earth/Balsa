@@ -3,38 +3,23 @@
 
 #include <memory>
 
-#include "table.h"
-
 namespace balsa
 {
 
-
-// Forward declarations of all supported classifiers.
-class EnsembleClassifier;
-template<typename FeatureType> class DecisionTreeClassifier;
-
-/**
- * Base class for visiting Classifiers.
- */
-class ClassifierVisitor
-{
-public:
-
-  virtual ~ClassifierVisitor();
-  virtual void visit( const EnsembleClassifier             &classifier );
-  virtual void visit( const DecisionTreeClassifier<float>  &classifier );
-  virtual void visit( const DecisionTreeClassifier<double> &classifier );
-
-};
+// Forward declaration.
+class ClassifierVisitor;
 
 /**
  * Abstract interface of a class that can classify data points.
- * N.B. by convention, subclasses must provide template methods for classification:
+ *
+ * N.B. by convention, subclasses must provide the following template methods
+ * for classification:
  *
  * template<typename FeatureIterator, typename LabelOutputIterator>
  * void classify( FeatureIterator pointsStart, FeatureIterator pointsEnd, LabelOutputIterator labelsStart ) const;
- * unsigned int classifyAndVote( FeatureIterator pointsStart, FeatureIterator pointsEnd, VoteTable & table ) const;
  *
+ * template<typename FeatureIterator>
+ * unsigned int classifyAndVote( FeatureIterator pointsStart, FeatureIterator pointsEnd, VoteTable & table ) const;
  */
 class Classifier
 {
@@ -56,9 +41,14 @@ public:
     virtual unsigned int getClassCount() const = 0;
 
     /**
+     * Returns the number of features the classifier expects.
+     */
+    virtual unsigned int getFeatureCount() const = 0;
+
+    /**
      * Accept a visitor.
      */
-    virtual void visit( ClassifierVisitor & visitor ) = 0;
+    virtual void visit( ClassifierVisitor & visitor ) const = 0;
 };
 
 } // namespace balsa

@@ -5,7 +5,9 @@
 #include <sstream>
 #include <string>
 
+#include "classifier.h"
 #include "datatypes.h"
+#include "decisiontreeclassifier.h"
 #include "exceptions.h"
 #include "fileio.h"
 #include "table.h"
@@ -93,25 +95,26 @@ void parseAndPrintTable( BalsaFileParser & parser )
     std::cout << table;
 }
 
-template <typename Type>
-void parseAndPrintTree( BalsaFileParser & parser )
+class PrintDispatcher: public ClassifierVisitor
 {
-    // Parse the tree.
-    auto data = parser.parseTreeData<Type>();
+public:
 
-    // Print the header.
-    std::cout << "TREE " << data.classCount << " classes, " << data.featureCount << " features." << std::endl;
-
-    // Print the values.
-    std::cout << "N:   L:   R:   F:   V:              L:" << std::endl;
-    for ( unsigned int row = 0; row < data.leftChildID.getRowCount(); ++row )
+    void visit( const EnsembleClassifier &classifier )
     {
-        std::cout << std::left << std::setw( 4 ) << row << " "
-                  << std::left << std::setw( 4 ) << data.leftChildID( row, 0 ) << " " << std::setw( 4 ) << data.rightChildID( row, 0 ) << " "
-                  << std::left << std::setw( 4 ) << static_cast<int>( data.splitFeatureID( row, 0 ) ) << " " << std::setw( 4 ) << std::setw( 16 ) << data.splitValue( row, 0 )
-                  << std::left << std::setw( 4 ) << int( data.label( row, 0 ) ) << std::endl;
+        (void) classifier;
+        assert( false );
     }
-}
+
+    void visit( const DecisionTreeClassifier<float> &classifier )
+    {
+        std::cout << classifier;
+    }
+
+    void visit( const DecisionTreeClassifier<double> &classifier )
+    {
+        std::cout << classifier;
+    }
+};
 
 } // namespace
 
@@ -151,7 +154,8 @@ int main( int argc, char ** argv )
             {
                 // A forest is just a list of trees. Consume the marker and continue.
                 ForestHeader header = parser.enterForest();
-                std::cout << "FOREST " << header.classCount << " classes." << std::endl;
+                std::cout << "FOREST " << static_cast<unsigned int>( header.classCount ) << " classes, "
+                          << static_cast<unsigned int>( header.featureCount ) << " features." << std::endl;
             }
             else if ( parser.atEndOfForest() )
             {
@@ -160,10 +164,9 @@ int main( int argc, char ** argv )
             }
             else if ( parser.atTree() )
             {
-                // Parse and print the tree.
-                if      ( parser.atTreeOfType<float >() ) parseAndPrintTree<float >( parser );
-                else if ( parser.atTreeOfType<double>() ) parseAndPrintTree<double>( parser );
-                else assert( false );
+                PrintDispatcher printer;
+                auto classifier = parser.parseClassifier();
+                classifier->visit( printer );
             }
             else if ( parser.atTable() )
             {

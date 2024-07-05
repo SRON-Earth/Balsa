@@ -4,9 +4,9 @@
 #include <sstream>
 #include <string>
 
-#include "randomforestclassifier.h"
+#include "classifierfilestream.h"
+#include "ensembleclassifier.h"
 #include "exceptions.h"
-#include "fileio.h"
 #include "table.h"
 #include "modelevaluation.h"
 
@@ -105,7 +105,8 @@ int main( int argc, char ** argv )
         auto labels  = readTableAs<Label>( options.labelFile );
 
         // Create a classifier for the model.
-        RandomForestClassifier< decltype( dataSet )::ConstIterator, decltype( labels )::Iterator > classifier( options.modelFile, options.threadCount, options.maxPreload );
+        ClassifierFileInputStream inputStream( options.modelFile, options.maxPreload );
+        EnsembleClassifier classifier( inputStream, options.threadCount - 1 );
 
         // Calculate the feature importance and print them.
         std::cout << "Analyzing feature importance..." << std::endl;

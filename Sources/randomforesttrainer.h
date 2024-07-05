@@ -13,6 +13,7 @@
 #include <thread>
 #include <vector>
 
+#include "classifierstream.h"
 #include "datatypes.h"
 #include "fileio.h"
 #include "indexeddecisiontree.h"
@@ -88,8 +89,8 @@ public:
      *  reduces the amount of memory used during training, at the expense of
      *  precision.
      */
-    RandomForestTrainer( ClassifierOutputStream & fileWriter, unsigned int featuresToConsider = 0, unsigned maxDepth = std::numeric_limits<unsigned int>::max(), double minPurity = 1.0, unsigned int treeCount = 10, unsigned int concurrentTrainers = 10, bool writeGraphviz = false ):
-    m_fileWriter( fileWriter ),
+    RandomForestTrainer( ClassifierOutputStream & stream, unsigned int featuresToConsider = 0, unsigned maxDepth = std::numeric_limits<unsigned int>::max(), double minPurity = 1.0, unsigned int treeCount = 10, unsigned int concurrentTrainers = 10, bool writeGraphviz = false ):
+    m_stream( stream ),
     m_featuresToConsider( featuresToConsider ),
     m_maxDepth( maxDepth ),
     m_minPurity( minPurity ),
@@ -133,9 +134,6 @@ public:
         // Create an indexed tree with only one node. This is expensive to build, so it is shared for copying between threads.
         IndexedDecisionTree<FeatureIterator, LabelIterator> sapling( dataset, labels, featureCount, pointCount, featuresToConsider, m_maxDepth, impurityTreshold );
 
-        // Record the number of classes.
-        unsigned int classCount = sapling.getClassCount();
-
         // Create message queues for communicating with the worker threads.
         JobQueue       jobOutbox;
         JobResultQueue treeInbox;
@@ -162,9 +160,8 @@ public:
 
             // Write the tree without the bulky index, which is no longer needed
             // after training.
-            typedef typename IndexedDecisionTree<FeatureIterator, LabelIterator>::LabelType LabelType;
-            auto strippedTree = tree->template getDecisionTree<FeatureType *, LabelType *>();
-            m_fileWriter.write( *strippedTree );
+            auto strippedTree = tree->getDecisionTree();
+            m_stream.write( *strippedTree );
 
             // Write a Graphviz file for the tree, if necessary.
             if ( m_writeGraphviz )
@@ -200,13 +197,13 @@ private:
         }
     }
 
-    ClassifierOutputStream<> & m_fileWriter;
-    unsigned int               m_featuresToConsider;
-    unsigned int               m_maxDepth;
-    double                     m_minPurity;
-    unsigned int               m_treeCount;
-    unsigned int               m_trainerCount;
-    bool                       m_writeGraphviz;
+    ClassifierOutputStream & m_stream;
+    unsigned int             m_featuresToConsider;
+    unsigned int             m_maxDepth;
+    double                   m_minPurity;
+    unsigned int             m_treeCount;
+    unsigned int             m_trainerCount;
+    bool                     m_writeGraphviz;
 };
 
 } // namespace balsa

@@ -1,13 +1,16 @@
 #ifndef ENSEMBLECLASSIFIER_H
 #define ENSEMBLECLASSIFIER_H
 
+#include <iostream>
 #include <cassert>
 #include <thread>
 
 #include "classifier.h"
 #include "classifierstream.h"
 #include "datatypes.h"
+#include "decisiontreeclassifier.h"
 #include "exceptions.h"
+#include "iteratortools.h"
 #include "messagequeue.h"
 
 namespace balsa
@@ -47,33 +50,22 @@ class ClassifyAndVoteDispatcher: public ClassifierVisitor
 {
 public:
 
-    ClassifyDispatcher( FeatureIterator featureStart, FeatureIterator featureEnd, VoteTable & voteTable ):
+    ClassifyAndVoteDispatcher( FeatureIterator featureStart, FeatureIterator featureEnd, VoteTable & voteTable ):
     m_featureStart( featureStart ),
     m_featureEnd( featureEnd ),
     m_voteTable( voteTable )
     {
     }
 
-    void visit( const EnsembleClassifier & classifier )
-    {
-        classifier.classifyAndVote( m_featureStart, m_featureEnd, m_voteTable );
-    }
-
-    void visit( const DecisionTreeClassifier<float> & classifier )
-    {
-        classifier.classifyAndVote( m_featureStart, m_featureEnd, m_voteTable );
-    }
-
-    void visit( const DecisionTreeClassifier<double> & classifier )
-    {
-        classifier.classifyAndVote( m_featureStart, m_featureEnd, m_voteTable );
-    }
+    void visit( const EnsembleClassifier & classifier );
+    void visit( const DecisionTreeClassifier<float> & classifier );
+    void visit( const DecisionTreeClassifier<double> & classifier );
 
 private:
 
-    FeatureIterator     m_featureStart;
-    FeatureIterator     m_featureEnd;
-    VoteTable           m_voteTable;
+    FeatureIterator   m_featureStart;
+    FeatureIterator   m_featureEnd;
+    VoteTable       & m_voteTable;
 };
 
 
@@ -84,19 +76,40 @@ class EnsembleClassifier: public Classifier
 {
 public:
 
-    using typename Classifier<FeatureIterator, OutputIterator>::VoteTable;
-
     /**
      * Creates an ensemble classifier.
      * \param classifiers A resettable stream of classifiers to apply.
      * \param maxWorkerThreads The maximum number of threads that may be created in addition to the main thread.
      */
     EnsembleClassifier( ClassifierInputStream & classifiers, unsigned int maxWorkerThreads = 0 ):
-    Classifier<FeatureIterator, OutputIterator>(),
-    m_maxWorkerThreads( maxWorkerThreads ),
     m_classifierStream( classifiers ),
+    m_maxWorkerThreads( maxWorkerThreads ),
     m_classWeights( m_classifierStream.getClassCount(), 1.0 )
     {
+    }
+
+    /**
+     * Returns the number of classes distinguished by this classifier.
+     */
+    unsigned int getClassCount() const
+    {
+        return m_classifierStream.getClassCount();
+    }
+
+    /**
+     * Returns the number of features the classifier expects.
+     */
+    unsigned int getFeatureCount() const
+    {
+        return m_classifierStream.getFeatureCount();
+    }
+
+    /**
+     * Accept a visitor.
+     */
+    void visit( ClassifierVisitor & visitor ) const
+    {
+        visitor.visit( *this );
     }
 
     /**
@@ -113,21 +126,13 @@ public:
     }
 
     /**
-     * Returns the number of classes distinguished by this classifier.
-     */
-    unsigned int getClassCount() const
-    {
-        return m_classifierStream.getClassCount();
-    }
-
-    /**
      * Bulk-classifies a sequence of data points.
      */
     template <typename FeatureIterator, typename LabelOutputIterator>
     void classify( FeatureIterator pointsStart, FeatureIterator pointsEnd, LabelOutputIterator labelsStart ) const
     {
         // Statically check that the label output iterator points to Labels.
-        typedef std::remove_cv_t<typename iterator_value_type<OutputIterator>::type> LabelType;
+        typedef std::remove_cv_t<typename iterator_value_type<LabelOutputIterator>::type> LabelType;
         static_assert( std::is_same<LabelType, Label>::value, "The labelStart iterator must point to instances of type Label." );
 
         // Statically check that the FeatureIterator points to an arithmetical type.
@@ -135,6 +140,7 @@ public:
         static_assert( std::is_arithmetic<FeatureIteratedType>::value, "Features must be of an integral or floating point type." );
 
         // Check the dimensions of the input data.
+        unsigned int featureCount = m_classifierStream.getFeatureCount();
         if ( featureCount == 0 ) throw ClientError( "Data points must have at least one feature." );
         auto entryCount = std::distance( pointsStart, pointsEnd );
         if ( entryCount % featureCount ) throw ClientError( "Malformed dataset." );
@@ -146,7 +152,7 @@ public:
         VoteTable voteCounts( pointCount, m_classifierStream.getClassCount() );
 
         // Let all classifiers vote on the point labels.
-        classifyAndVote( pointsStart, pointsEnd, featureCount, voteCounts );
+        classifyAndVote( pointsStart, pointsEnd, voteCounts );
 
         // Generate the labels.
         for ( unsigned int point = 0; point < pointCount; ++point )
@@ -173,6 +179,7 @@ public:
         static_assert( std::is_arithmetic<FeatureIteratedType>::value, "Features must be of an integral or floating point type." );
 
         // Dispatch to single- or multithreaded implementation.
+        unsigned int featureCount = m_classifierStream.getFeatureCount();
         if ( m_maxWorkerThreads > 0 )
             return classifyAndVoteMultiThreaded( pointsStart, pointsEnd, featureCount, table );
         else
@@ -188,18 +195,19 @@ private:
     {
     public:
 
-        WorkerJob( typename Classifier<FeatureIterator, OutputIterator>::ConstSharedPointer classifier ):
+        WorkerJob( Classifier::ConstSharedPointer classifier ):
         m_classifier( classifier )
         {
         }
 
         // Pointer to the tree that must be applied. Null indicates the end of processing, causing the worker to finish.
-        typename Classifier<FeatureIterator, OutputIterator>::ConstSharedPointer m_classifier;
+        Classifier::ConstSharedPointer m_classifier;
     };
 
     /**
      * A thread that runs classifyAndVote on a thread-local vote table.
      */
+    template<typename FeatureIterator>
     class WorkerThread
     {
     public:
@@ -231,7 +239,7 @@ private:
             // Launch a thread to process incoming jobs from the job queue.
             assert( !m_running );
             m_running = true;
-            m_thread  = std::thread( &EnsembleClassifier::WorkerThread::processJobs, this );
+            m_thread  = std::thread( &EnsembleClassifier::WorkerThread<FeatureIterator>::processJobs, this );
         }
 
         void join()
@@ -255,7 +263,8 @@ private:
             for ( WorkerJob job( m_jobQueue.receive() ); job.m_classifier; job = m_jobQueue.receive() )
             {
                 // Let the classifier vote on the data. Accumulate votes in the thread-private vote table.
-                job.m_classifier->classifyAndVote( m_pointsStart, m_pointsEnd, m_featureCount, m_voteCounts );
+                ClassifyAndVoteDispatcher voter( m_pointsStart, m_pointsEnd, m_voteCounts );
+                job.m_classifier->visit( voter );
             }
         }
 
@@ -268,18 +277,25 @@ private:
         std::thread               m_thread;
     };
 
+    template<typename FeatureIterator>
     unsigned int classifyAndVoteSingleThreaded( FeatureIterator pointsStart, FeatureIterator pointsEnd, unsigned int featureCount, VoteTable & table ) const
     {
+        (void) featureCount;
+
         // Reset the stream of classifiers, and apply each classifier that comes out of it.
         m_classifierStream.rewind();
         unsigned int voterCount = 0;
         for ( auto classifier = m_classifierStream.next(); classifier; classifier = m_classifierStream.next(), ++voterCount )
-            classifier->classifyAndVote( pointsStart, pointsEnd, featureCount, table );
+        {
+            ClassifyAndVoteDispatcher voter( pointsStart, pointsEnd, table );
+            classifier->visit( voter );
+        }
 
         // Return the number of classifiers that have voted.
         return voterCount;
     }
 
+    template<typename FeatureIterator>
     unsigned int classifyAndVoteMultiThreaded( FeatureIterator pointsStart, FeatureIterator pointsEnd, unsigned int featureCount, VoteTable & table ) const
     {
         // Reset the stream of classifiers.
@@ -293,9 +309,9 @@ private:
         unsigned int classCount = m_classifierStream.getClassCount();
 
         // Create the workers.
-        std::vector<typename WorkerThread::SharedPointer> workers;
+        std::vector<typename WorkerThread<FeatureIterator>::SharedPointer> workers;
         for ( unsigned int i = 0; i < m_maxWorkerThreads; ++i )
-            workers.push_back( typename WorkerThread::SharedPointer( new WorkerThread( jobQueue, classCount, pointsStart, pointsEnd, featureCount ) ) );
+            workers.push_back( typename WorkerThread<FeatureIterator>::SharedPointer( new WorkerThread<FeatureIterator>( jobQueue, classCount, pointsStart, pointsEnd, featureCount ) ) );
 
         // Start all the workers.
         for ( auto & worker : workers ) worker->start();
@@ -316,47 +332,50 @@ private:
         return voterCount;
     }
 
-    unsigned int            m_maxWorkerThreads;
     ClassifierInputStream & m_classifierStream;
+    unsigned int            m_maxWorkerThreads;
     std::vector<float>      m_classWeights;
 };
 
 template<typename FeatureIterator, typename LabelOutputIterator>
-ClassifyDispatcher::visit( const EnsembleClassifier &classifier )
+void ClassifyDispatcher<FeatureIterator, LabelOutputIterator>::visit( const EnsembleClassifier &classifier )
+{
+    (void) classifier;
+    assert( false );
+    // classifier.classify( m_featureStart, m_featureEnd, m_labelStart );
+}
+
+template<typename FeatureIterator, typename LabelOutputIterator>
+void ClassifyDispatcher<FeatureIterator, LabelOutputIterator>::visit( const DecisionTreeClassifier<float> &classifier )
 {
     classifier.classify( m_featureStart, m_featureEnd, m_labelStart );
 }
 
 template<typename FeatureIterator, typename LabelOutputIterator>
-ClassifyDispatcher::visit( const DecisionTreeClassifier<float> &classifier )
-{
-    classifier.classify( m_featureStart, m_featureEnd, m_labelStart );
-}
-
-template<typename FeatureIterator, typename LabelOutputIterator>
-ClassifyDispatcher::visit( const DecisionTreeClassifier<double> &classifier )
+void ClassifyDispatcher<FeatureIterator, LabelOutputIterator>::visit( const DecisionTreeClassifier<double> &classifier )
 {
     classifier.classify( m_featureStart, m_featureEnd, m_labelStart );
 }
 
 template <typename FeatureIterator>
-void ClassifyAndVoteDispatcher::visit( const EnsembleClassifier & classifier )
+void ClassifyAndVoteDispatcher<FeatureIterator>::visit( const EnsembleClassifier & classifier )
+{
+    (void) classifier;
+    assert( false );
+    // classifier.classifyAndVote( m_featureStart, m_featureEnd, m_voteTable );
+}
+
+template <typename FeatureIterator>
+void ClassifyAndVoteDispatcher<FeatureIterator>::visit( const DecisionTreeClassifier<float> & classifier )
 {
     classifier.classifyAndVote( m_featureStart, m_featureEnd, m_voteTable );
 }
 
 template <typename FeatureIterator>
-void ClassifyAndVoteDispatcher::visit( const DecisionTreeClassifier<float> & classifier )
+void ClassifyAndVoteDispatcher<FeatureIterator>::visit( const DecisionTreeClassifier<double> & classifier )
 {
     classifier.classifyAndVote( m_featureStart, m_featureEnd, m_voteTable );
 }
-
-template <typename FeatureIterator>
-void ClassifyAndVoteDispatcher::visit( const DecisionTreeClassifier<double> & classifier )
-{
-    classifier.classifyAndVote( m_featureStart, m_featureEnd, m_voteTable );
-}
-
 
 } // namespace balsa
 

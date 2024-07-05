@@ -7,10 +7,10 @@
 #include <filesystem>
 
 #include "config.h"
+#include "classifierfilestream.h"
 #include "datatypes.h"
+#include "ensembleclassifier.h"
 #include "exceptions.h"
-#include "fileio.h"
-#include "randomforestclassifier.h"
 #include "table.h"
 #include "timing.h"
 
@@ -148,7 +148,8 @@ int main( int argc, char ** argv )
         assert( options.threadCount > 0 );
 
         // Create a random forest classifier.
-        RandomForestClassifier< Table<double>::ConstIterator, Table<Label>::Iterator> classifier( options.modelFile, options.threadCount - 1, options.maxPreload );
+        ClassifierFileInputStream inputStream( options.modelFile, options.maxPreload );
+        EnsembleClassifier classifier( inputStream, options.threadCount - 1 );
 
         // Override the class weights.
         std::vector<float> weights( classifier.getClassCount(), 1.0 );
@@ -179,7 +180,7 @@ int main( int argc, char ** argv )
             // Classify the data.
             watch.start();
             Table<Label> labels( dataSet.getRowCount(), 1 );
-            classifier.classify( dataSet.begin(), dataSet.end(), dataSet.getColumnCount(), labels.begin() );
+            classifier.classify( dataSet.begin(), dataSet.end(), labels.begin() );
             watch.stop();
             classificationTime += watch.getElapsedTime();
 

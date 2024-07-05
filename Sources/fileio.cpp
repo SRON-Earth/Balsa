@@ -1,6 +1,7 @@
 #include <map>
 #include <variant>
 
+#include "decisiontreeclassifier.h"
 #include "fileio.h"
 #include "serdes.h"
 
@@ -39,10 +40,9 @@ const std::string FILE_HEADER_CREATOR_MAJOR_VERSION_KEY = "creator_minor_version
 const std::string FILE_HEADER_CREATOR_PATCH_VERSION_KEY = "creator_patch_version";
 const std::string FOREST_HEADER_CLASS_COUNT_KEY         = "class_count";
 const std::string FOREST_HEADER_FEATURE_COUNT_KEY       = "feature_count";
-const std::string FOREST_HEADER_FEATURE_TYPE_ID_KEY     = "feature_type_id";
 const std::string TREE_HEADER_CLASS_COUNT_KEY           = FOREST_HEADER_CLASS_COUNT_KEY;
 const std::string TREE_HEADER_FEATURE_COUNT_KEY         = FOREST_HEADER_FEATURE_COUNT_KEY;
-const std::string TREE_HEADER_FEATURE_TYPE_ID_KEY       = FOREST_HEADER_FEATURE_TYPE_ID_KEY;
+const std::string TREE_HEADER_FEATURE_TYPE_ID_KEY       = "feature_type_id";
 const std::string TABLE_HEADER_ROW_COUNT_KEY            = "row_count";
 const std::string TABLE_HEADER_COLUMN_COUNT_KEY         = "column_count";
 const std::string TABLE_HEADER_SCALAR_TYPE_ID_KEY       = "scalar_type_id";
@@ -479,6 +479,59 @@ void BalsaFileParser::reenterForest()
     m_stream.seekg( m_treeOffset );
 }
 
+Classifier::SharedPointer BalsaFileParser::parseClassifier()
+{
+    // Parse the tree start marker.
+    parseTreeStartMarker();
+
+    // Parse the header.
+    TreeHeader header = parseTreeHeader();
+
+    // Check the feature type.
+    Classifier::SharedPointer result;
+    switch ( header.featureTypeID )
+    {
+    case FeatureTypeID::FLOAT:
+        {
+            // Create an empty classifier.
+            DecisionTreeClassifier<float>::SharedPointer classifier( new DecisionTreeClassifier<float>( header.classCount, header.featureCount ) );
+
+            // Move assign the internal tables.
+            classifier->m_leftChildID    = std::move( parseTable<NodeID>() );
+            classifier->m_rightChildID   = std::move( parseTable<NodeID>() );
+            classifier->m_splitFeatureID = std::move( parseTable<FeatureID>() );
+            classifier->m_splitValue     = std::move( parseTable<float>() );
+            classifier->m_label          = std::move( parseTable<Label>() );
+
+            result = classifier;
+        }
+        break;
+    case FeatureTypeID::DOUBLE:
+        {
+            // Create an empty classifier.
+            DecisionTreeClassifier<double>::SharedPointer classifier( new DecisionTreeClassifier<double>( header.classCount, header.featureCount ) );
+
+            // Move assign the internal tables.
+            classifier->m_leftChildID    = std::move( parseTable<NodeID>() );
+            classifier->m_rightChildID   = std::move( parseTable<NodeID>() );
+            classifier->m_splitFeatureID = std::move( parseTable<FeatureID>() );
+            classifier->m_splitValue     = std::move( parseTable<double>() );
+            classifier->m_label          = std::move( parseTable<Label>() );
+
+            result = classifier;
+        }
+        break;
+    default:
+        assert( false );
+    }
+
+    // Parse the tree end marker.
+    parseTreeEndMarker();
+
+    // Return the result.
+    return result;
+}
+
 void BalsaFileParser::parseFileSignature()
 {
     expect( m_stream, FILE_SIGNATURE, "Invalid file signature." );
@@ -510,7 +563,6 @@ ForestHeader BalsaFileParser::parseForestHeader()
     Dictionary   dictionary = Dictionary::deserialize( m_stream );
     result.classCount       = dictionary.get<uint8_t>( FOREST_HEADER_CLASS_COUNT_KEY );
     result.featureCount     = dictionary.get<uint8_t>( FOREST_HEADER_FEATURE_COUNT_KEY );
-    result.featureTypeID    = getFeatureTypeID( dictionary.get<std::string>( FOREST_HEADER_FEATURE_TYPE_ID_KEY ) );
     return result;
 }
 
@@ -565,12 +617,12 @@ void BalsaFileWriter::setCreatorPatchVersion( unsigned char value )
     m_creatorPatchVersion = value;
 }
 
-void BalsaFileWriter::enterForest( unsigned char classCount, unsigned char featureCount, FeatureTypeID featureType )
+void BalsaFileWriter::enterForest( unsigned char classCount, unsigned char featureCount )
 {
     assert( !m_insideForest );
     writeFileHeaderOnce();
     m_stream.write( FOREST_START_MARKER.data(), FOREST_START_MARKER.size() );
-    writeForestHeader( classCount, featureCount, featureType );
+    writeForestHeader( classCount, featureCount );
     m_insideForest = true;
 }
 
@@ -581,12 +633,49 @@ void BalsaFileWriter::leaveForest()
     m_insideForest = false;
 }
 
-void BalsaFileWriter::writeForestHeader( unsigned char classCount, unsigned char featureCount, FeatureTypeID featureType )
+void BalsaFileWriter::writeClassifier( const Classifier & classifier )
+{
+    ClassifierWriteDispatcher writer( *this );
+    classifier.visit( writer );
+}
+
+void BalsaFileWriter::ClassifierWriteDispatcher::visit( const EnsembleClassifier &classifier )
+{
+    (void) classifier;
+    assert( false );
+}
+
+void BalsaFileWriter::ClassifierWriteDispatcher::visit( const DecisionTreeClassifier<float> &classifier )
+{
+    m_writer.writeFileHeaderOnce();
+    m_writer.writeTreeStartMarker();
+    m_writer.writeTreeHeader( classifier.m_classCount, classifier.m_featureCount, getFeatureTypeID<float>() );
+    m_writer.writeTable( classifier.m_leftChildID );
+    m_writer.writeTable( classifier.m_rightChildID );
+    m_writer.writeTable( classifier.m_splitFeatureID );
+    m_writer.writeTable( classifier.m_splitValue );
+    m_writer.writeTable( classifier.m_label );
+    m_writer.writeTreeEndMarker();
+}
+
+void BalsaFileWriter::ClassifierWriteDispatcher::visit( const DecisionTreeClassifier<double> &classifier )
+{
+    m_writer.writeFileHeaderOnce();
+    m_writer.writeTreeStartMarker();
+    m_writer.writeTreeHeader( classifier.m_classCount, classifier.m_featureCount, getFeatureTypeID<double>() );
+    m_writer.writeTable( classifier.m_leftChildID );
+    m_writer.writeTable( classifier.m_rightChildID );
+    m_writer.writeTable( classifier.m_splitFeatureID );
+    m_writer.writeTable( classifier.m_splitValue );
+    m_writer.writeTable( classifier.m_label );
+    m_writer.writeTreeEndMarker();
+}
+
+void BalsaFileWriter::writeForestHeader( unsigned char classCount, unsigned char featureCount )
 {
     Dictionary header;
     header.set<uint8_t>( FOREST_HEADER_CLASS_COUNT_KEY, classCount );
     header.set<uint8_t>( FOREST_HEADER_FEATURE_COUNT_KEY, featureCount );
-    header.set<std::string>( FOREST_HEADER_FEATURE_TYPE_ID_KEY, getTypeName( featureType ) );
     header.serialize( m_stream );
 }
 

@@ -6,6 +6,7 @@
 #include <numeric>
 
 #include "classifier.h"
+#include "classifiervisitor.h"
 #include "datatypes.h"
 #include "exceptions.h"
 #include "iteratortools.h"
@@ -42,6 +43,22 @@ public:
     unsigned int getClassCount() const
     {
         return m_classCount;
+    }
+
+    /**
+     * Returns the number of features the classifier expects.
+     */
+    unsigned int getFeatureCount() const
+    {
+        return m_featureCount;
+    }
+
+    /**
+     * Accept a visitor.
+     */
+    void visit( ClassifierVisitor & visitor ) const
+    {
+        visitor.visit( *this );
     }
 
     /**
@@ -161,6 +178,9 @@ private:
     template <typename T, typename U>
     friend class IndexedDecisionTree;
 
+    template <typename T>
+    friend std::ostream & operator<<( std::ostream & out, const DecisionTreeClassifier<T> & tree );
+
     unsigned int       m_classCount;
     unsigned int       m_featureCount;
     Table<NodeID>      m_leftChildID;
@@ -169,6 +189,28 @@ private:
     Table<FeatureType> m_splitValue;
     Table<Label>       m_label;
 };
+
+/**
+ * Writes a decision tree classifier to a text stream in human-readable form.
+ */
+template <typename FeatureType>
+std::ostream & operator<<( std::ostream & out, const DecisionTreeClassifier<FeatureType> & tree )
+{
+    // Print the header.
+    out << "TREE " << tree.m_classCount << " classes, " << tree.m_featureCount << " features." << std::endl;
+
+    // Print the values.
+    std::cout << "N:   L:   R:   F:   V:              L:" << std::endl;
+    for ( unsigned int row = 0; row < tree.m_leftChildID.getRowCount(); ++row )
+    {
+        std::cout << std::left << std::setw( 4 ) << row << " "
+                  << std::left << std::setw( 4 ) << tree.m_leftChildID( row, 0 ) << " " << std::setw( 4 ) << tree.m_rightChildID( row, 0 ) << " "
+                  << std::left << std::setw( 4 ) << static_cast<int>( tree.m_splitFeatureID( row, 0 ) ) << " " << std::setw( 4 ) << std::setw( 16 ) << tree.m_splitValue( row, 0 )
+                  << std::left << std::setw( 4 ) << int( tree.m_label( row, 0 ) ) << std::endl;
+    }
+
+    return out;
+}
 
 } // namespace balsa
 

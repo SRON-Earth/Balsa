@@ -182,11 +182,10 @@ public:
     /**
      * Convert this indexed decision tree to a plain, un-indexed decision tree classifier.
      */
-    template <typename ClassifierFeatureIterator, typename ClassifierOutputIterator>
-    typename DecisionTreeClassifier<ClassifierFeatureIterator, ClassifierOutputIterator>::SharedPointer getDecisionTree()
+    typename DecisionTreeClassifier<FeatureType>::SharedPointer getDecisionTree()
     {
         // Create an empty classifier.
-        typedef DecisionTreeClassifier<ClassifierFeatureIterator, ClassifierOutputIterator> ClassifierType;
+        typedef DecisionTreeClassifier<FeatureType> ClassifierType;
         typename ClassifierType::SharedPointer classifier( new ClassifierType( getClassCount(), m_featureCount ) );
 
         // Create data structures that directly mirror the internal table-representation used by the classifier.

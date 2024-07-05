@@ -204,7 +204,7 @@ public:
 
         // Calculate a reference score on the original data.
         Table<Label> predictions( pointCount, 1 );
-        classifier.classify( pointsBegin, pointsEnd, featureCount, predictions.begin() );
+        classifier.classify( pointsBegin, pointsEnd, predictions.begin() );
         ModelStatistics referenceStats( labelBegin, labelBegin + pointCount, predictions.begin(), classifier.getClassCount() );
 
         // Test the predictive performance when the shuffling is applied separately to each feature.
@@ -227,7 +227,7 @@ public:
 
                 // Apply the classifier to the shuffled data.
                 Table<Label> shuffledPredictions( pointCount, 1 );
-                classifier.classify( shuffledPoints.begin(), shuffledPoints.end(), featureCount, shuffledPredictions.begin() );
+                classifier.classify( shuffledPoints.begin(), shuffledPoints.end(), shuffledPredictions.begin() );
 
                 // Calculate the performance statistics of the model on the shuffled data.
                 ModelStatistics shuffledStats( labelBegin, labelBegin + pointCount, shuffledPredictions.begin(), classifier.getClassCount() );
