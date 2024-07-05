@@ -5,6 +5,7 @@
 
 #include "table.h"
 #include "datatypes.h"
+#include "iteratortools.h"
 
 namespace balsa
 {
@@ -185,6 +186,10 @@ public:
     FeatureImportances( const Classifier & classifier, PointIterator pointsBegin, PointIterator pointsEnd, LabelIterator labelBegin, unsigned int featureCount, unsigned int repetitions = 5 ):
     m_accImportance( featureCount, 0 )
     {
+        // Determine the feature type from the point iterator type.
+        typedef std::remove_cv_t<typename iterator_value_type<PointIterator>::type> FeatureType;
+        static_assert( std::is_arithmetic<FeatureType>::value, "Feature type should be an integral or floating point type." );
+
         // Check preconditions.
         assert( repetitions > 0 );
 
@@ -212,7 +217,7 @@ public:
                 std::shuffle( shuffling.begin(), shuffling.end(), noise );
 
                 // Create a copy of the data and apply the shuffling to the feature under consideration.
-                Table<double> shuffledPoints( 0, featureCount );
+                Table<FeatureType> shuffledPoints( 0, featureCount );
                 shuffledPoints.reserveRows( pointCount );
                 shuffledPoints.append( pointsBegin, pointsEnd );
                 for ( std::size_t pointID = 0; pointID < pointCount; ++pointID )
