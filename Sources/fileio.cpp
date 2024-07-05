@@ -345,7 +345,7 @@ Endianness parseFileEndianness( std::istream & stream )
 BalsaFileParser::BalsaFileParser( const std::string & filename )
 {
     // Configure the file input stream to throw an exception on error.
-    m_stream.exceptions( std::ifstream::eofbit | std::ifstream::failbit | std::ifstream::badbit );
+    m_stream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
 
     // Open the model file.
     m_stream.open( filename, std::ios::binary );
@@ -539,7 +539,7 @@ m_insideForest( false ),
 m_fileHeaderWritten( false )
 {
     // Configure the file input stream to throw an exception on error.
-    m_stream.exceptions( std::ofstream::eofbit | std::ofstream::failbit | std::ofstream::badbit );
+    m_stream.exceptions( std::ofstream::failbit | std::ofstream::badbit );
 
     // Open the file to write and truncate it if it exists.
     m_stream.open( filename, std::ios::binary );
