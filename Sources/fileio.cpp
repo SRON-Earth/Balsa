@@ -497,11 +497,11 @@ Classifier::SharedPointer BalsaFileParser::parseClassifier()
             DecisionTreeClassifier<float>::SharedPointer classifier( new DecisionTreeClassifier<float>( header.classCount, header.featureCount ) );
 
             // Move assign the internal tables.
-            classifier->m_leftChildID    = std::move( parseTable<NodeID>() );
-            classifier->m_rightChildID   = std::move( parseTable<NodeID>() );
-            classifier->m_splitFeatureID = std::move( parseTable<FeatureID>() );
-            classifier->m_splitValue     = std::move( parseTable<float>() );
-            classifier->m_label          = std::move( parseTable<Label>() );
+            classifier->m_leftChildID    = parseTable<NodeID>();
+            classifier->m_rightChildID   = parseTable<NodeID>();
+            classifier->m_splitFeatureID = parseTable<FeatureID>();
+            classifier->m_splitValue     = parseTable<float>();
+            classifier->m_label          = parseTable<Label>();
 
             result = classifier;
         }
@@ -512,11 +512,11 @@ Classifier::SharedPointer BalsaFileParser::parseClassifier()
             DecisionTreeClassifier<double>::SharedPointer classifier( new DecisionTreeClassifier<double>( header.classCount, header.featureCount ) );
 
             // Move assign the internal tables.
-            classifier->m_leftChildID    = std::move( parseTable<NodeID>() );
-            classifier->m_rightChildID   = std::move( parseTable<NodeID>() );
-            classifier->m_splitFeatureID = std::move( parseTable<FeatureID>() );
-            classifier->m_splitValue     = std::move( parseTable<double>() );
-            classifier->m_label          = std::move( parseTable<Label>() );
+            classifier->m_leftChildID    = parseTable<NodeID>();
+            classifier->m_rightChildID   = parseTable<NodeID>();
+            classifier->m_splitFeatureID = parseTable<FeatureID>();
+            classifier->m_splitValue     = parseTable<double>();
+            classifier->m_label          = parseTable<Label>();
 
             result = classifier;
         }
