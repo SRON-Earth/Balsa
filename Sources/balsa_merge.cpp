@@ -10,6 +10,7 @@
 #include "fileio.h"
 #include "table.h"
 #include "modelevaluation.h"
+#include "classifierfilestream.h"
 
 using namespace balsa;
 
@@ -36,7 +37,10 @@ public:
     {
         // Put all arguments in a stringstream.
         std::stringstream args;
-        for ( int i = 0; i < argc; ++i ) args << ' ' << argv[i];
+        for ( int i = 0; i < argc; ++i )
+        {
+            args << ' ' << argv[i];
+        }
 
         // Discard the executable name.
         std::string token;
@@ -45,6 +49,7 @@ public:
 
         // Parse all flags.
         Options options;
+        token = "";
         while ( args >> token )
         {
             // Stop if the token is not a flag.
@@ -54,11 +59,15 @@ public:
         }
 
         // Parse the output file name,
-        if ( !(args >> token) ) throw ParseError( getUsage() );
+        if ( token.size() == 0 ) throw ParseError( getUsage() );
         options.outputFile = token;
 
         // Parse the input filenames.
-        while ( args >> token ) options.modelFiles.pusb_back( token );
+        while ( args >> token )
+        {
+            options.modelFiles.push_back( token );
+        }
+        if ( options.modelFiles.size() < 1 ) throw ParseError( "No input files specified." );
 
         // Return results.
         return options;
@@ -77,6 +86,25 @@ int main( int argc, char ** argv )
         // Parse the command-line options.
         auto options = Options::parseOptions( argc, argv );
 
+        // Create the output file.
+        EnsembleFileOutputStream out( options.outputFile );
+
+        // Append all input models to the merged file.
+        unsigned int featureCount = 0;
+        for ( auto &modelFile: options.modelFiles )
+        {
+            // Open the input file and make sure the model is compatible with what was merged earlier.
+            ClassifierFileInputStream in( modelFile );
+            if ( featureCount != 0 && in.getFeatureCount() != featureCount ) throw ClientError( "The feature count of the model '" + modelFile + "' differs from the earlier input files." );
+            featureCount = in.getFeatureCount();
+
+            // Append all submodels to the output file.
+            in.rewind();
+            while ( auto submodel = in.next() ) out.write( *submodel );
+        }
+
+        // Close the merged file.
+        out.close();
 
     }
     catch ( Exception & e )

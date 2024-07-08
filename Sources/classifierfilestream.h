@@ -150,6 +150,7 @@ public:
     m_classCount( 0 ),
     m_featureCount( 0 )
     {
+
     }
 
     // TODO: Why is this necessary??

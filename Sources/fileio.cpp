@@ -475,7 +475,7 @@ void BalsaFileParser::leaveForest()
 
 void BalsaFileParser::reenterForest()
 {
-    if ( m_treeOffset == 0 ) throw ClientError( "No forrest was entered yet." );
+    if ( m_treeOffset == 0 ) throw ClientError( "No forest was entered yet." );
     m_stream.seekg( m_treeOffset );
 }
 

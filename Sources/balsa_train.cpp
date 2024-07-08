@@ -162,10 +162,6 @@ int main( int argc, char ** argv )
         // Train a random forest on the data.
         std::cout << "Training..." << std::endl;
         EnsembleFileOutputStream outputStream( options.outputFile );
-        // fileWriter.setCreatorName( "balsa_train" );
-        // fileWriter.setCreatorMajorVersion( balsa_VERSION_MAJOR );
-        // fileWriter.setCreatorMinorVersion( balsa_VERSION_MINOR );
-        // fileWriter.setCreatorPatchVersion( balsa_VERSION_PATCH );
         RandomForestTrainer trainer( outputStream, options.featuresToConsider, options.maxDepth, options.minPurity, options.treeCount, options.threadCount, options.writeDotty );
         watch.start();
         trainer.train( dataSet.begin(), dataSet.end(), dataSet.getColumnCount(), labels.begin() );
