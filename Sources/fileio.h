@@ -60,12 +60,12 @@ FeatureTypeID getFeatureTypeID()
 }
 
 /*
- * Description of a forest (an ensemble of decision trees).
+ * Description of an ensemble of classification models.
  */
-struct ForestHeader
+struct EnsembleHeader
 {
-    unsigned char classCount;     // Number of classes distinguished by the forest.
-    unsigned char featureCount;   // Number of features the forest was trained on.
+    unsigned char classCount;     // Number of classes distinguished by the ensemble.
+    unsigned char featureCount;   // Number of features the ensemble was trained on.
 };
 
 /*
@@ -141,14 +141,14 @@ public:
     bool atEOF();
 
     /*
-     * Returns true iff the reader is positioned at the start of a forest.
+     * Returns true iff the reader is positioned at the start of an ensemble.
      */
-    bool atForest();
+    bool atEnsemble();
 
     /*
-     * Returns true iff the reader is positioned at end of a forest.
+     * Returns true iff the reader is positioned at end of an ensemble.
      */
-    bool atEndOfForest();
+    bool atEndOfEnsemble();
 
     /*
      * Returns true iff the reader is positioned at a decision tree.
@@ -181,33 +181,33 @@ public:
     }
 
     /*
-     * Parses a forest start marker and description.
+     * Parses a ensemble start marker and description.
      *
-     * \pre The parser is positioned at a forest.
-     * \post The parser will be positioned at the first decision tree in the
-     *  forest.
-     * \post The \c reenterForest() member function can be used to reposition
-     *  the parser at the first decision tree in the forest.
-     * \returns Forest description.
+     * \pre The parser is positioned at a ensemble.
+     * \post The parser will be positioned at the first submodel in the
+     *  ensemble.
+     * \post The \c reenterEnsemble() member function can be used to reposition
+     *  the parser at the first submodel in the ensemble.
+     * \returns Ensemble description.
      */
-    ForestHeader enterForest();
+    EnsembleHeader enterEnsemble();
 
     /*
-     * Parses and discards a forest end marker.
+     * Parses and discards a ensemble end marker.
      *
-     * \pre The parser is positioned at the end of a forest.
+     * \pre The parser is positioned at the end of a ensemble.
      * \post The parser will be positioned at the next object in the file, or at
      *  the end of the file if it contains no more objects.
      */
-    void leaveForest();
+    void leaveEnsemble();
 
     /*
-     * Reposition the parser at the first decision tree of the last forest
-     * entered using \c enterForest().
+     * Reposition the parser at the first submodel of the last ensemble
+     * entered using \c enterEnsemble().
      *
-     * \pre A forest was entered using \c enterForest().
+     * \pre A ensemble was entered using \c enterEnsemble().
      */
-    void reenterForest();
+    void reenterEnsemble();
 
     /*
      * Parses a classifier.
@@ -309,8 +309,8 @@ public:
 private:
 
     void parseFileSignature();
-    void parseForestStartMarker();
-    void parseForestEndMarker();
+    void parseEnsembleStartMarker();
+    void parseEnsembleEndMarker();
     void parseTreeStartMarker();
     void parseTreeEndMarker();
     void parseTableStartMarker();
@@ -319,7 +319,7 @@ private:
     bool atTableOfType( ScalarTypeID typeID );
     bool atTreeOfType( FeatureTypeID typeID );
 
-    ForestHeader parseForestHeader();
+    EnsembleHeader parseEnsembleHeader();
     TreeHeader   parseTreeHeader();
     TableHeader  parseTableHeader();
 
@@ -408,32 +408,31 @@ public:
     void setCreatorPatchVersion( unsigned char value );
 
     /*
-     * Write a forest start marker and forest description.
+     * Write a ensemble start marker and ensemble description.
      *
-     * After calling this function, the decision trees that compose the forest
-     * can be written using the \c writeTree() function. Once all decision
-     * trees have been written, the forest should be finalized using a call to
-     * the \c leaveForest() function.
+     * After calling this function, the submodels that compose the ensemble
+     * can be written using the \c writeTree() function. Once all submodels have been written, the ensemble should be finalized using a call to
+     * the \c leaveEnsemble() function.
      *
-     * \pre The writer is not positioned inside a forest (forests cannot be
+     * \pre The writer is not positioned inside a ensemble (ensembles cannot be
      *  nested).
      */
-    void enterForest( unsigned char classCount, unsigned char featureCount );
+    void enterEnsemble( unsigned char classCount, unsigned char featureCount );
 
     /*
-     * Write a forest end marker.
+     * Write a ensemble end marker.
      *
-     * This function should be called after all decision trees that compose the
-     * forest have been written.
+     * This function should be called after all submodels that compose the
+     * ensemble have been written.
      *
-     * \pre The writer is positioned inside a forest.
+     * \pre The writer is positioned inside a ensemble.
      */
-    void leaveForest();
+    void leaveEnsemble();
 
     /*
-     * Write a decision tree to the file.
+     * Write a model to the file.
      *
-     * Decision trees can be written as part of a forest, or as top-level
+     * Decision trees can be written as part of a ensemble, or as top-level
      * objects.
      */
     void writeClassifier( const Classifier & classifier );
@@ -441,7 +440,7 @@ public:
     /*
      * Write a table to the file.
      *
-     * \pre The writer is not positioned inside a forest.
+     * \pre The writer is not positioned inside a ensemble.
      */
     template <typename ScalarType>
     void writeTable( const Table<ScalarType> & table )
@@ -481,12 +480,12 @@ private:
     void writeTreeEndMarker();
     void writeTableStartMarker();
     void writeTableEndMarker();
-    void writeForestHeader( unsigned char classCount, unsigned char featureCount );
+    void writeEnsembleHeader( unsigned char classCount, unsigned char featureCount );
     void writeTreeHeader( unsigned char classCount, unsigned char featureCount, FeatureTypeID featureType );
     void writeTableHeader( unsigned int rowCount, unsigned int columnCount, ScalarTypeID scalarType );
 
     std::ofstream                m_stream;
-    bool                         m_insideForest;
+    bool                         m_insideEnsemble;
     bool                         m_fileHeaderWritten;
     std::optional<std::string>   m_creatorName;
     std::optional<unsigned char> m_creatorMajorVersion;

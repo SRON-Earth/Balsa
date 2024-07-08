@@ -150,17 +150,17 @@ int main( int argc, char ** argv )
             std::cout << std::endl;
 
             // Print the object at the current position in the file.
-            if ( parser.atForest() )
+            if ( parser.atEnsemble() )
             {
-                // A forest is just a list of trees. Consume the marker and continue.
-                ForestHeader header = parser.enterForest();
-                std::cout << "FOREST " << static_cast<unsigned int>( header.classCount ) << " classes, "
+                // An ensemble is just a list of classifiers. Consume the marker and continue.
+                EnsembleHeader header = parser.enterEnsemble();
+                std::cout << "ENSEMBLE " << static_cast<unsigned int>( header.classCount ) << " classes, "
                           << static_cast<unsigned int>( header.featureCount ) << " features." << std::endl;
             }
-            else if ( parser.atEndOfForest() )
+            else if ( parser.atEndOfEnsemble() )
             {
-                std::cout << "END OF FOREST" << std::endl;
-                parser.leaveForest();
+                std::cout << "END OF ENSEMBLE" << std::endl;
+                parser.leaveEnsemble();
             }
             else if ( parser.atTree() )
             {

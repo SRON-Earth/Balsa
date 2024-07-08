@@ -20,8 +20,8 @@ constexpr const unsigned char FILE_FORMAT_MINOR_VERSION = 0;
 const std::string FILE_SIGNATURE          = "blsa";
 const std::string BIG_ENDIAN_MARKER       = "bend";
 const std::string LITTLE_ENDIAN_MARKER    = "lend";
-const std::string FOREST_START_MARKER     = "frst";
-const std::string FOREST_END_MARKER       = "tsrf";
+const std::string ENSEMBLE_START_MARKER   = "ensl";
+const std::string ENSEMBLE_END_MARKER     = "lsne";
 const std::string TREE_START_MARKER       = "tree";
 const std::string TREE_END_MARKER         = "eert";
 const std::string TABLE_START_MARKER      = "tabl";
@@ -38,10 +38,10 @@ const std::string FILE_HEADER_CREATOR_NAME_KEY          = "creator_name";
 const std::string FILE_HEADER_CREATOR_MINOR_VERSION_KEY = "creator_major_version";
 const std::string FILE_HEADER_CREATOR_MAJOR_VERSION_KEY = "creator_minor_version";
 const std::string FILE_HEADER_CREATOR_PATCH_VERSION_KEY = "creator_patch_version";
-const std::string FOREST_HEADER_CLASS_COUNT_KEY         = "class_count";
-const std::string FOREST_HEADER_FEATURE_COUNT_KEY       = "feature_count";
-const std::string TREE_HEADER_CLASS_COUNT_KEY           = FOREST_HEADER_CLASS_COUNT_KEY;
-const std::string TREE_HEADER_FEATURE_COUNT_KEY         = FOREST_HEADER_FEATURE_COUNT_KEY;
+const std::string ENSEMBLE_HEADER_CLASS_COUNT_KEY       = "class_count";
+const std::string ENSEMBLE_HEADER_FEATURE_COUNT_KEY     = "feature_count";
+const std::string TREE_HEADER_CLASS_COUNT_KEY           = ENSEMBLE_HEADER_CLASS_COUNT_KEY;
+const std::string TREE_HEADER_FEATURE_COUNT_KEY         = ENSEMBLE_HEADER_FEATURE_COUNT_KEY;
 const std::string TREE_HEADER_FEATURE_TYPE_ID_KEY       = "feature_type_id";
 const std::string TABLE_HEADER_ROW_COUNT_KEY            = "row_count";
 const std::string TABLE_HEADER_COLUMN_COUNT_KEY         = "column_count";
@@ -445,14 +445,14 @@ bool BalsaFileParser::atTreeOfType( FeatureTypeID typeID )
     return result;
 }
 
-bool BalsaFileParser::atForest()
+bool BalsaFileParser::atEnsemble()
 {
-    return ( peekFixedSizeToken( m_stream, FOREST_START_MARKER.size() ) == FOREST_START_MARKER );
+    return ( peekFixedSizeToken( m_stream, ENSEMBLE_START_MARKER.size() ) == ENSEMBLE_START_MARKER );
 }
 
-bool BalsaFileParser::atEndOfForest()
+bool BalsaFileParser::atEndOfEnsemble()
 {
-    return ( peekFixedSizeToken( m_stream, FOREST_END_MARKER.size() ) == FOREST_END_MARKER );
+    return ( peekFixedSizeToken( m_stream, ENSEMBLE_END_MARKER.size() ) == ENSEMBLE_END_MARKER );
 }
 
 bool BalsaFileParser::atEOF()
@@ -460,22 +460,22 @@ bool BalsaFileParser::atEOF()
     return m_stream.peek() == EOF;
 }
 
-ForestHeader BalsaFileParser::enterForest()
+EnsembleHeader BalsaFileParser::enterEnsemble()
 {
-    expect( m_stream, FOREST_START_MARKER, "Missing forest start marker." );
-    ForestHeader result = parseForestHeader();
+    expect( m_stream, ENSEMBLE_START_MARKER, "Missing ensemble start marker." );
+    EnsembleHeader result = parseEnsembleHeader();
     m_treeOffset        = m_stream.tellg();
     return result;
 }
 
-void BalsaFileParser::leaveForest()
+void BalsaFileParser::leaveEnsemble()
 {
-    expect( m_stream, FOREST_END_MARKER, "Missing forest end marker." );
+    expect( m_stream, ENSEMBLE_END_MARKER, "Missing ensemble end marker." );
 }
 
-void BalsaFileParser::reenterForest()
+void BalsaFileParser::reenterEnsemble()
 {
-    if ( m_treeOffset == 0 ) throw ClientError( "No forest was entered yet." );
+    if ( m_treeOffset == 0 ) throw ClientError( "No ensemble was entered yet." );
     m_stream.seekg( m_treeOffset );
 }
 
@@ -557,12 +557,12 @@ void BalsaFileParser::parseTableEndMarker()
     expect( m_stream, TABLE_END_MARKER, "Invalid table end marker." );
 }
 
-ForestHeader BalsaFileParser::parseForestHeader()
+EnsembleHeader BalsaFileParser::parseEnsembleHeader()
 {
-    ForestHeader result;
+    EnsembleHeader result;
     Dictionary   dictionary = Dictionary::deserialize( m_stream );
-    result.classCount       = dictionary.get<uint8_t>( FOREST_HEADER_CLASS_COUNT_KEY );
-    result.featureCount     = dictionary.get<uint8_t>( FOREST_HEADER_FEATURE_COUNT_KEY );
+    result.classCount       = dictionary.get<uint8_t>( ENSEMBLE_HEADER_CLASS_COUNT_KEY );
+    result.featureCount     = dictionary.get<uint8_t>( ENSEMBLE_HEADER_FEATURE_COUNT_KEY );
     return result;
 }
 
@@ -587,7 +587,7 @@ TableHeader BalsaFileParser::parseTableHeader()
 }
 
 BalsaFileWriter::BalsaFileWriter( const std::string & filename ):
-m_insideForest( false ),
+m_insideEnsemble( false ),
 m_fileHeaderWritten( false )
 {
     // Configure the file input stream to throw an exception on error.
@@ -617,20 +617,20 @@ void BalsaFileWriter::setCreatorPatchVersion( unsigned char value )
     m_creatorPatchVersion = value;
 }
 
-void BalsaFileWriter::enterForest( unsigned char classCount, unsigned char featureCount )
+void BalsaFileWriter::enterEnsemble( unsigned char classCount, unsigned char featureCount )
 {
-    assert( !m_insideForest );
+    assert( !m_insideEnsemble );
     writeFileHeaderOnce();
-    m_stream.write( FOREST_START_MARKER.data(), FOREST_START_MARKER.size() );
-    writeForestHeader( classCount, featureCount );
-    m_insideForest = true;
+    m_stream.write( ENSEMBLE_START_MARKER.data(), ENSEMBLE_START_MARKER.size() );
+    writeEnsembleHeader( classCount, featureCount );
+    m_insideEnsemble = true;
 }
 
-void BalsaFileWriter::leaveForest()
+void BalsaFileWriter::leaveEnsemble()
 {
-    assert( m_insideForest );
-    m_stream.write( FOREST_END_MARKER.data(), FOREST_END_MARKER.size() );
-    m_insideForest = false;
+    assert( m_insideEnsemble );
+    m_stream.write( ENSEMBLE_END_MARKER.data(), ENSEMBLE_END_MARKER.size() );
+    m_insideEnsemble = false;
 }
 
 void BalsaFileWriter::writeClassifier( const Classifier & classifier )
@@ -671,11 +671,11 @@ void BalsaFileWriter::ClassifierWriteDispatcher::visit( const DecisionTreeClassi
     m_writer.writeTreeEndMarker();
 }
 
-void BalsaFileWriter::writeForestHeader( unsigned char classCount, unsigned char featureCount )
+void BalsaFileWriter::writeEnsembleHeader( unsigned char classCount, unsigned char featureCount )
 {
     Dictionary header;
-    header.set<uint8_t>( FOREST_HEADER_CLASS_COUNT_KEY, classCount );
-    header.set<uint8_t>( FOREST_HEADER_FEATURE_COUNT_KEY, featureCount );
+    header.set<uint8_t>( ENSEMBLE_HEADER_CLASS_COUNT_KEY, classCount );
+    header.set<uint8_t>( ENSEMBLE_HEADER_FEATURE_COUNT_KEY, featureCount );
     header.serialize( m_stream );
 }
 

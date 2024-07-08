@@ -8,8 +8,7 @@ namespace balsa
 {
 
 /**
- * A classifier input stream implementation for random forests that loads
- * classifiers on demand.
+ * A classifier input stream implementation for that loads classifiers on demand.
  *
  * Loading classifiers on demand enables ensemble classification using a minimal
  * amount of memory. Only the classifiers from the ensemble that are being
@@ -31,7 +30,7 @@ public:
     m_maxPreload( maxPreload ),
     m_cacheIndex( 0 )
     {
-        ForestHeader header = m_fileParser.enterForest();
+        EnsembleHeader header = m_fileParser.enterEnsemble();
         m_classCount = header.classCount;
         m_featureCount = header.featureCount;
     }
@@ -70,7 +69,7 @@ public:
         m_cacheIndex = 0;
 
         // Seek to the offset of the first classifier in the model file.
-        m_fileParser.reenterForest();
+        m_fileParser.reenterEnsemble();
     }
 
     /**
@@ -166,7 +165,7 @@ private:
     */
     void onClose()
     {
-        m_fileWriter.leaveForest();
+        if ( m_classCount != 0 ) m_fileWriter.leaveEnsemble();
     }
 
     /**
@@ -179,7 +178,7 @@ private:
         {
             m_classCount = classifier.getClassCount();
             m_featureCount = classifier.getFeatureCount();
-            m_fileWriter.enterForest( m_classCount, m_featureCount );
+            m_fileWriter.enterEnsemble( m_classCount, m_featureCount );
         }
 
         assert( classifier.getClassCount() == m_classCount );
