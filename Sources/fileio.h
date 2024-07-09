@@ -5,8 +5,9 @@
 #include <optional>
 #include <string>
 
+#include "classifier.h"
+#include "classifiervisitor.h"
 #include "datatypes.h"
-#include "decisiontreeclassifier.h"
 #include "exceptions.h"
 #include "table.h"
 
@@ -59,13 +60,12 @@ FeatureTypeID getFeatureTypeID()
 }
 
 /*
- * Description of a forest (an ensemble of decision trees).
+ * Description of an ensemble of classification models.
  */
-struct ForestHeader
+struct EnsembleHeader
 {
-    unsigned char classCount;     // Number of classes distinguished by the forest.
-    unsigned char featureCount;   // Number of features the forest was trained on.
-    FeatureTypeID featureTypeID;  // Numeric type used for features.
+    unsigned char classCount;   // Number of classes distinguished by the ensemble.
+    unsigned char featureCount; // Number of features the ensemble was trained on.
 };
 
 /*
@@ -73,9 +73,9 @@ struct ForestHeader
  */
 struct TreeHeader
 {
-    unsigned char classCount;     // Number of classes distinguished by the tree.
-    unsigned char featureCount;   // Number of features the tree was trained on.
-    FeatureTypeID featureTypeID;  // Numeric type used for features.
+    unsigned char classCount;    // Number of classes distinguished by the tree.
+    unsigned char featureCount;  // Number of features the tree was trained on.
+    FeatureTypeID featureTypeID; // Numeric type used for features.
 };
 
 /*
@@ -83,24 +83,9 @@ struct TreeHeader
  */
 struct TableHeader
 {
-    unsigned int rowCount;      // Number of rows.
-    unsigned int columnCount;   // Number of columns.
-    ScalarTypeID scalarTypeID;  // Numeric type of the elements of the table.
-};
-
-/*
- * Internal representation of a decision tree.
- */
-template <typename FeatureType>
-struct TreeData
-{
-    unsigned int       classCount;
-    unsigned int       featureCount;
-    Table<NodeID>      leftChildID;
-    Table<NodeID>      rightChildID;
-    Table<FeatureID>   splitFeatureID;
-    Table<FeatureType> splitValue;
-    Table<Label>       label;
+    unsigned int rowCount;     // Number of rows.
+    unsigned int columnCount;  // Number of columns.
+    ScalarTypeID scalarTypeID; // Numeric type of the elements of the table.
 };
 
 /*
@@ -110,9 +95,9 @@ class BalsaFileParser
 {
 public:
 
-	/*
-	 * Constructor; opens the specified file for parsing.
-	 */
+    /*
+     * Constructor; opens the specified file for parsing.
+     */
     BalsaFileParser( const std::string & filename );
 
     /*
@@ -130,7 +115,7 @@ public:
     /*
      * Returns the name of the tool that created the file (if available).
      */
-    std::optional<std::string>  getCreatorName() const;
+    std::optional<std::string> getCreatorName() const;
 
     /*
      * Returns the major version number of the tool that created the file
@@ -156,14 +141,14 @@ public:
     bool atEOF();
 
     /*
-     * Returns true iff the reader is positioned at the start of a forest.
+     * Returns true iff the reader is positioned at the start of an ensemble.
      */
-    bool atForest();
+    bool atEnsemble();
 
     /*
-     * Returns true iff the reader is positioned at end of a forest.
+     * Returns true iff the reader is positioned at end of an ensemble.
      */
-    bool atEndOfForest();
+    bool atEndOfEnsemble();
 
     /*
      * Returns true iff the reader is positioned at a decision tree.
@@ -196,104 +181,42 @@ public:
     }
 
     /*
-     * Parses a forest start marker and description.
+     * Parses an ensemble start marker and description.
      *
-     * \pre The parser is positioned at a forest.
-     * \post The parser will be positioned at the first decision tree in the
-     *  forest.
-     * \post The \c reenterForest() member function can be used to reposition
-     *  the parser at the first decision tree in the forest.
-     * \returns Forest description.
+     * \pre The parser is positioned at an ensemble.
+     * \post The parser will be positioned at the first submodel in the
+     *  ensemble.
+     * \post The \c reenterEnsemble() member function can be used to reposition
+     *  the parser at the first submodel in the ensemble.
+     * \returns Ensemble description.
      */
-    ForestHeader enterForest();
+    EnsembleHeader enterEnsemble();
 
     /*
-     * Parses and discards a forest end marker.
+     * Parses and discards an ensemble end marker.
      *
-     * \pre The parser is positioned at the end of a forest.
+     * \pre The parser is positioned at the end of an ensemble.
      * \post The parser will be positioned at the next object in the file, or at
      *  the end of the file if it contains no more objects.
      */
-    void leaveForest();
+    void leaveEnsemble();
 
     /*
-     * Reposition the parser at the first decision tree of the last forest
-     * entered using \c enterForest().
+     * Reposition the parser at the first submodel of the last ensemble
+     * entered using \c enterEnsemble().
      *
-     * \pre A forest was entered using \c enterForest().
+     * \pre An ensemble was entered using \c enterEnsemble().
      */
-    void reenterForest();
+    void reenterEnsemble();
 
     /*
-     * Parses a decision tree and returns its internal representation.
+     * Parses a classifier.
      *
-     * \pre The parser is positioned at a decision tree of the specified feature
-     *  type.
+     * \pre The parser is positioned at a classifier.
      * \post The parser will be positioned at the next object in the file, or at
      *  the end of the file if it contains no more objects.
      */
-    template <typename FeatureType>
-    TreeData<FeatureType> parseTreeData()
-    {
-        // Parse the tree start marker.
-        parseTreeStartMarker();
-
-        // Parse the header.
-        TreeHeader header = parseTreeHeader();
-
-        // Check the feature type.
-        if ( header.featureTypeID != getFeatureTypeID<FeatureType>() )
-            throw ParseError( "Tree has incompatible feature type." );
-
-        // Deserialize the rest of the tree.
-        TreeData<FeatureType> result;
-        result.classCount     = header.classCount;
-        result.featureCount   = header.featureCount;
-        result.leftChildID    = parseTable<NodeID>();
-        result.rightChildID   = parseTable<NodeID>();
-        result.splitFeatureID = parseTable<FeatureID>();
-        result.splitValue     = parseTable<FeatureType>();
-        result.label          = parseTable<Label>();
-
-        // Parse the tree end marker.
-        parseTreeEndMarker();
-
-        // Return the result.
-        return result;
-    }
-
-    /*
-     * Parses a decision tree.
-     *
-     * \pre The parser is positioned at a decision tree. The feature type of the
-     *  decision tree should match the value type of the specified \c
-     *  FeatureIterator type.
-     * \post The parser will be positioned at the next object in the file, or at
-     *  the end of the file if it contains no more objects.
-     */
-    template <typename FeatureIterator, typename OutputIterator>
-    typename DecisionTreeClassifier<FeatureIterator, OutputIterator>::SharedPointer parseTree()
-    {
-        // Define the type of the classifier to parse.
-        typedef DecisionTreeClassifier<FeatureIterator, OutputIterator> ClassifierType;
-
-        // Parse the internal tree data structures.
-        typedef typename ClassifierType::FeatureType FeatureType;
-        TreeData<FeatureType>                        data = parseTreeData<FeatureType>();
-
-        // Create an empty classifier.
-        typename ClassifierType::SharedPointer result( new ClassifierType( data.classCount, data.featureCount ) );
-
-        // Move assign the internal tables.
-        result->m_leftChildID    = std::move( data.leftChildID );
-        result->m_rightChildID   = std::move( data.rightChildID );
-        result->m_splitFeatureID = std::move( data.splitFeatureID );
-        result->m_splitValue     = std::move( data.splitValue );
-        result->m_label          = std::move( data.label );
-
-        // Return the result.
-        return result;
-    }
+    Classifier::SharedPointer parseClassifier();
 
     /*
      * Parses a table containing elements of the specified scalar type.
@@ -386,8 +309,8 @@ public:
 private:
 
     void parseFileSignature();
-    void parseForestStartMarker();
-    void parseForestEndMarker();
+    void parseEnsembleStartMarker();
+    void parseEnsembleEndMarker();
     void parseTreeStartMarker();
     void parseTreeEndMarker();
     void parseTableStartMarker();
@@ -396,9 +319,9 @@ private:
     bool atTableOfType( ScalarTypeID typeID );
     bool atTreeOfType( FeatureTypeID typeID );
 
-    ForestHeader parseForestHeader();
-    TreeHeader   parseTreeHeader();
-    TableHeader  parseTableHeader();
+    EnsembleHeader parseEnsembleHeader();
+    TreeHeader     parseTreeHeader();
+    TableHeader    parseTableHeader();
 
     std::ifstream               m_stream;
     std::streampos              m_treeOffset;
@@ -439,109 +362,65 @@ class BalsaFileWriter
 {
 public:
 
-	/*
-	 * Constructor; opens the specified file for writing. The file will be
-	 * truncated if it exists.
-	 */
-    BalsaFileWriter( const std::string & filename );
-
     /*
-     * Set the name of the tool that created this file.
+     * Constructor; opens the specified file for writing. The file will be
+     * truncated if it exists.
      *
-     * This information will be stored in the file header. The creator name is
-     * optional; if this function has not been called before writing the first
-     * object to the file, no creator name will be written to the file header.
+     * \param filename Name of the file to write.
+     * \param creatorName Name of the tool that created the file (optional).
+     *  This information will be stored in the file header.
+     * \param creatorMajorVersion Major version number of the tool that created
+     *  the file (optional). This information will be stored in the file header.
+     * \param creatorMinorVersion Minor version number of the tool that created
+     *  the file (optional). This information will be stored in the file header.
+     * \param creatorPatchVersion Patch version number of the tool that created
+     *  the file (optional). This information will be stored in the file header.
      */
-    void setCreatorName( const std::string & value );
+    BalsaFileWriter( const std::string & filename,
+        std::optional<std::string>       creatorName         = std::nullopt,
+        std::optional<unsigned char>     creatorMajorVersion = std::nullopt,
+        std::optional<unsigned char>     creatorMinorVersion = std::nullopt,
+        std::optional<unsigned char>     creatorPatchVersion = std::nullopt );
 
     /*
-     * Set the major version number of the tool that created this file.
+     * Write an ensemble start marker and ensemble description.
      *
-     * This information will be stored in the file header. The creator major
-     * version number is optional; if this function has not been called before
-     * writing the first object to the file, no creator major version number
-     * will be written to the file header.
-     */
-    void setCreatorMajorVersion( unsigned char value );
-
-    /*
-     * Set the minor version number of the tool that created this file.
+     * After calling this function, the submodels that compose the ensemble can
+     * be written using the \c writeTree() function. Once all submodels have
+     * been written, the ensemble should be finalized using a call to the \c
+     * leaveEnsemble() function.
      *
-     * This information will be stored in the file header. The creator major
-     * version number is optional; if this function has not been called before
-     * writing the first object to the file, no creator minor version number
-     * will be written to the file header.
-     */
-    void setCreatorMinorVersion( unsigned char value );
-
-    /*
-     * Set the patch version number of the tool that created this file.
-     *
-     * This information will be stored in the file header. The creator patch
-     * version number is optional; if this function has not been called before
-     * writing the first object to the file, no creator patch version number
-     * will be written to the file header.
-     */
-    void setCreatorPatchVersion( unsigned char value );
-
-    /*
-     * Write a forest start marker and forest description.
-     *
-     * After calling this function, the decision trees that compose the forest
-     * can be written using the \c writeTree() function. Once all decision
-     * trees have been written, the forest should be finalized using a call to
-     * the \c leaveForest() function.
-     *
-     * \pre The writer is not positioned inside a forest (forests cannot be
+     * \pre The writer is not positioned inside an ensemble (ensembles cannot be
      *  nested).
      */
-    template <typename FeatureType>
-    void enterForest( unsigned char classCount, unsigned char featureCount )
-    {
-        enterForest( classCount, featureCount, getFeatureTypeID<FeatureType>() );
-    }
+    void enterEnsemble( unsigned char classCount, unsigned char featureCount );
 
     /*
-     * Write a forest end marker.
+     * Write an ensemble end marker.
      *
-     * This function should be called after all decision trees that compose the
-     * forest have been written.
+     * This function should be called after all submodels that compose the
+     * ensemble have been written.
      *
-     * \pre The writer is positioned inside a forest.
+     * \pre The writer is positioned inside an ensemble.
      */
-    void leaveForest();
+    void leaveEnsemble();
 
     /*
-     * Write a decision tree to the file.
+     * Write a model to the file.
      *
-     * Decision trees can be written as part of a forest, or as top-level
+     * Decision trees can be written as part of an ensemble, or as top-level
      * objects.
      */
-    template <typename FeatureIterator, typename OutputIterator>
-    void writeTree( const DecisionTreeClassifier<FeatureIterator, OutputIterator> & tree )
-    {
-        typedef typename DecisionTreeClassifier<FeatureIterator, OutputIterator>::FeatureType FeatureType;
-
-        writeFileHeaderOnce();
-        writeTreeStartMarker();
-        writeTreeHeader( tree.m_classCount, tree.m_featureCount, getFeatureTypeID<FeatureType>() );
-        writeTable( tree.m_leftChildID );
-        writeTable( tree.m_rightChildID );
-        writeTable( tree.m_splitFeatureID );
-        writeTable( tree.m_splitValue );
-        writeTable( tree.m_label );
-        writeTreeEndMarker();
-    }
+    void writeClassifier( const Classifier & classifier );
 
     /*
      * Write a table to the file.
      *
-     * \pre The writer is not positioned inside a forest.
+     * \pre The writer is not positioned inside an ensemble.
      */
     template <typename ScalarType>
     void writeTable( const Table<ScalarType> & table )
     {
-        writeFileHeaderOnce();
         writeTableStartMarker();
         writeTableHeader( table.getRowCount(), table.getColumnCount(), getScalarTypeID<ScalarType>() );
         table.writeCellData( m_stream );
@@ -550,27 +429,36 @@ public:
 
 private:
 
-    void enterForest( unsigned char classCount, unsigned char featureCount, FeatureTypeID featureType );
+    class ClassifierWriteDispatcher: public ClassifierVisitor
+    {
+    public:
 
-    void writeForestHeader( unsigned char classCount, unsigned char featureCount, FeatureTypeID featureType );
-    void writeTreeHeader( unsigned char classCount, unsigned char featureCount, FeatureTypeID featureType );
-    void writeTableHeader( unsigned int rowCount, unsigned int columnCount, ScalarTypeID scalarType );
+        ClassifierWriteDispatcher( BalsaFileWriter & writer ):
+        m_writer( writer )
+        {
+        }
 
-    void writeFileHeaderOnce();
+        void visit( const EnsembleClassifier & classifier );
+        void visit( const DecisionTreeClassifier<float> & classifier );
+        void visit( const DecisionTreeClassifier<double> & classifier );
+
+    private:
+
+        BalsaFileWriter & m_writer;
+    };
+
     void writeFileSignature();
     void writeEndiannessMarker();
     void writeTreeStartMarker();
     void writeTreeEndMarker();
     void writeTableStartMarker();
     void writeTableEndMarker();
+    void writeEnsembleHeader( unsigned char classCount, unsigned char featureCount );
+    void writeTreeHeader( unsigned char classCount, unsigned char featureCount, FeatureTypeID featureType );
+    void writeTableHeader( unsigned int rowCount, unsigned int columnCount, ScalarTypeID scalarType );
 
-    std::ofstream                m_stream;
-    bool                         m_insideForest;
-    bool                         m_fileHeaderWritten;
-    std::optional<std::string>   m_creatorName;
-    std::optional<unsigned char> m_creatorMajorVersion;
-    std::optional<unsigned char> m_creatorMinorVersion;
-    std::optional<unsigned char> m_creatorPatchVersion;
+    std::ofstream m_stream;
+    bool          m_insideEnsemble;
 };
 
 // Template specialization for all supported scalar types.

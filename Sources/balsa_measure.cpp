@@ -8,8 +8,8 @@
 #include "datatypes.h"
 #include "exceptions.h"
 #include "fileio.h"
-#include "table.h"
 #include "modelevaluation.h"
+#include "table.h"
 
 using namespace balsa;
 

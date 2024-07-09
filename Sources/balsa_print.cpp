@@ -5,7 +5,9 @@
 #include <sstream>
 #include <string>
 
+#include "classifier.h"
 #include "datatypes.h"
+#include "decisiontreeclassifier.h"
 #include "exceptions.h"
 #include "fileio.h"
 #include "table.h"
@@ -70,15 +72,59 @@ std::string getCommonTypeName()
     return "";
 }
 
-template <> std::string getCommonTypeName<uint8_t>() { return "unsigned 8-bit integers"; }
-template <> std::string getCommonTypeName<uint16_t>() { return "unsigned 16-bit integers"; }
-template <> std::string getCommonTypeName<uint32_t>() { return "unsigned 32-bit integers"; }
-template <> std::string getCommonTypeName<int8_t>() { return "signed 8-bit integers"; }
-template <> std::string getCommonTypeName<int16_t>() { return "signed 16-bit integers"; }
-template <> std::string getCommonTypeName<int32_t>() { return "signed 32-bit integers"; }
-template <> std::string getCommonTypeName<bool>() { return "booleans"; }
-template <> std::string getCommonTypeName<float>() { return "single precision floating point numbers"; }
-template <> std::string getCommonTypeName<double>() { return "double precision floating point numbers"; }
+template <>
+std::string getCommonTypeName<uint8_t>()
+{
+    return "unsigned 8-bit integers";
+}
+
+template <>
+std::string getCommonTypeName<uint16_t>()
+{
+    return "unsigned 16-bit integers";
+}
+
+template <>
+std::string getCommonTypeName<uint32_t>()
+{
+    return "unsigned 32-bit integers";
+}
+
+template <>
+std::string getCommonTypeName<int8_t>()
+{
+    return "signed 8-bit integers";
+}
+
+template <>
+std::string getCommonTypeName<int16_t>()
+{
+    return "signed 16-bit integers";
+}
+
+template <>
+std::string getCommonTypeName<int32_t>()
+{
+    return "signed 32-bit integers";
+}
+
+template <>
+std::string getCommonTypeName<bool>()
+{
+    return "booleans";
+}
+
+template <>
+std::string getCommonTypeName<float>()
+{
+    return "single precision floating point numbers";
+}
+
+template <>
+std::string getCommonTypeName<double>()
+{
+    return "double precision floating point numbers";
+}
 
 template <typename Type>
 void parseAndPrintTable( BalsaFileParser & parser )
@@ -93,25 +139,26 @@ void parseAndPrintTable( BalsaFileParser & parser )
     std::cout << table;
 }
 
-template <typename Type>
-void parseAndPrintTree( BalsaFileParser & parser )
+class PrintDispatcher: public ClassifierVisitor
 {
-    // Parse the tree.
-    auto data = parser.parseTreeData<Type>();
+public:
 
-    // Print the header.
-    std::cout << "TREE " << data.classCount << " classes, " << data.featureCount << " features." << std::endl;
-
-    // Print the values.
-    std::cout << "N:   L:   R:   F:   V:              L:" << std::endl;
-    for ( unsigned int row = 0; row < data.leftChildID.getRowCount(); ++row )
+    void visit( const EnsembleClassifier & classifier )
     {
-        std::cout << std::left << std::setw( 4 ) << row << " "
-                  << std::left << std::setw( 4 ) << data.leftChildID( row, 0 ) << " " << std::setw( 4 ) << data.rightChildID( row, 0 ) << " "
-                  << std::left << std::setw( 4 ) << static_cast<int>( data.splitFeatureID( row, 0 ) ) << " " << std::setw( 4 ) << std::setw( 16 ) << data.splitValue( row, 0 )
-                  << std::left << std::setw( 4 ) << int( data.label( row, 0 ) ) << std::endl;
+        (void) classifier;
+        assert( false );
     }
-}
+
+    void visit( const DecisionTreeClassifier<float> & classifier )
+    {
+        std::cout << classifier;
+    }
+
+    void visit( const DecisionTreeClassifier<double> & classifier )
+    {
+        std::cout << classifier;
+    }
+};
 
 } // namespace
 
@@ -129,16 +176,16 @@ int main( int argc, char ** argv )
         std::cout << "File version   : " << parser.getFileMajorVersion() << "." << parser.getFileMinorVersion() << std::endl;
 
         // Print information about the tool that created the file.
-        auto creatorName = parser.getCreatorName();
+        auto creatorName         = parser.getCreatorName();
         auto creatorMajorVersion = parser.getCreatorMajorVersion();
         auto creatorMinorVersion = parser.getCreatorMinorVersion();
         auto creatorPatchVersion = parser.getCreatorPatchVersion();
         std::cout << "Creator name   : "
-            << (creatorName ? *creatorName : "*** UNKNOWN ***") << std::endl;
+                  << ( creatorName ? *creatorName : "*** UNKNOWN ***" ) << std::endl;
         std::cout << "Creator version: "
-            << (creatorMajorVersion ? std::to_string(*creatorMajorVersion) : "?") << "."
-            << (creatorMinorVersion ? std::to_string(*creatorMinorVersion) : "?") << "."
-            << (creatorPatchVersion ? std::to_string(*creatorPatchVersion) : "?") << std::endl;
+                  << ( creatorMajorVersion ? std::to_string( *creatorMajorVersion ) : "?" ) << "."
+                  << ( creatorMinorVersion ? std::to_string( *creatorMinorVersion ) : "?" ) << "."
+                  << ( creatorPatchVersion ? std::to_string( *creatorPatchVersion ) : "?" ) << std::endl;
 
         // Read and print data objects until the end of the file.
         while ( !parser.atEOF() )
@@ -147,37 +194,47 @@ int main( int argc, char ** argv )
             std::cout << std::endl;
 
             // Print the object at the current position in the file.
-            if ( parser.atForest() )
+            if ( parser.atEnsemble() )
             {
-                // A forest is just a list of trees. Consume the marker and continue.
-                ForestHeader header = parser.enterForest();
-                std::cout << "FOREST " << header.classCount << " classes." << std::endl;
+                // An ensemble is just a list of classifiers. Consume the marker and continue.
+                EnsembleHeader header = parser.enterEnsemble();
+                std::cout << "ENSEMBLE " << static_cast<unsigned int>( header.classCount ) << " classes, "
+                          << static_cast<unsigned int>( header.featureCount ) << " features." << std::endl;
             }
-            else if ( parser.atEndOfForest() )
+            else if ( parser.atEndOfEnsemble() )
             {
-                std::cout << "END OF FOREST" << std::endl;
-                parser.leaveForest();
+                std::cout << "END OF ENSEMBLE" << std::endl;
+                parser.leaveEnsemble();
             }
             else if ( parser.atTree() )
             {
-                // Parse and print the tree.
-                if      ( parser.atTreeOfType<float >() ) parseAndPrintTree<float >( parser );
-                else if ( parser.atTreeOfType<double>() ) parseAndPrintTree<double>( parser );
-                else assert( false );
+                PrintDispatcher printer;
+                auto            classifier = parser.parseClassifier();
+                classifier->visit( printer );
             }
             else if ( parser.atTable() )
             {
                 // Parse and print the table.
-                if      ( parser.atTableOfType<uint8_t >() ) parseAndPrintTable<uint8_t >( parser );
-                else if ( parser.atTableOfType<uint16_t>() ) parseAndPrintTable<uint16_t>( parser );
-                else if ( parser.atTableOfType<uint32_t>() ) parseAndPrintTable<uint32_t>( parser );
-                else if ( parser.atTableOfType<int8_t  >() ) parseAndPrintTable<int8_t  >( parser );
-                else if ( parser.atTableOfType<int16_t >() ) parseAndPrintTable<int16_t >( parser );
-                else if ( parser.atTableOfType<int32_t >() ) parseAndPrintTable<int32_t >( parser );
-                else if ( parser.atTableOfType<float   >() ) parseAndPrintTable<float   >( parser );
-                else if ( parser.atTableOfType<double  >() ) parseAndPrintTable<double  >( parser );
-                else if ( parser.atTableOfType<bool    >() ) parseAndPrintTable<bool    >( parser );
-                else assert( false );
+                if ( parser.atTableOfType<uint8_t>() )
+                    parseAndPrintTable<uint8_t>( parser );
+                else if ( parser.atTableOfType<uint16_t>() )
+                    parseAndPrintTable<uint16_t>( parser );
+                else if ( parser.atTableOfType<uint32_t>() )
+                    parseAndPrintTable<uint32_t>( parser );
+                else if ( parser.atTableOfType<int8_t>() )
+                    parseAndPrintTable<int8_t>( parser );
+                else if ( parser.atTableOfType<int16_t>() )
+                    parseAndPrintTable<int16_t>( parser );
+                else if ( parser.atTableOfType<int32_t>() )
+                    parseAndPrintTable<int32_t>( parser );
+                else if ( parser.atTableOfType<float>() )
+                    parseAndPrintTable<float>( parser );
+                else if ( parser.atTableOfType<double>() )
+                    parseAndPrintTable<double>( parser );
+                else if ( parser.atTableOfType<bool>() )
+                    parseAndPrintTable<bool>( parser );
+                else
+                    assert( false );
             }
         }
     }

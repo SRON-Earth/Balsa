@@ -3,8 +3,8 @@
 
 #include <cassert>
 #include <iostream>
-#include <string>
 #include <sstream>
+#include <string>
 
 #include "exceptions.h"
 #include "serdes.h"
@@ -19,7 +19,7 @@ class GenericParser
 {
 public:
 
-    GenericParser( std::istream & in, const std::string &whitespace = std::string( " \t\r\n" ) ):
+    GenericParser( std::istream & in, const std::string & whitespace = std::string( " \t\r\n" ) ):
     m_whitespace( whitespace ),
     m_in( in )
     {

@@ -1,11 +1,11 @@
 #ifndef INDEXEDDECISIONTREE_H
 #define INDEXEDDECISIONTREE_H
 
+#include <cmath>
 #include <deque>
 #include <fstream>
 #include <valarray>
 #include <vector>
-#include <cmath>
 
 #include "datatools.h"
 #include "datatypes.h"
@@ -182,15 +182,14 @@ public:
     /**
      * Convert this indexed decision tree to a plain, un-indexed decision tree classifier.
      */
-    template <typename ClassifierFeatureIterator, typename ClassifierOutputIterator>
-    typename DecisionTreeClassifier<ClassifierFeatureIterator, ClassifierOutputIterator>::SharedPointer getDecisionTree()
+    typename DecisionTreeClassifier<FeatureType>::SharedPointer getDecisionTree()
     {
         // Create an empty classifier.
-        typedef DecisionTreeClassifier<ClassifierFeatureIterator, ClassifierOutputIterator> ClassifierType;
-        typename ClassifierType::SharedPointer classifier( new ClassifierType( getClassCount(), m_featureCount ) );
+        typedef DecisionTreeClassifier<FeatureType> ClassifierType;
+        typename ClassifierType::SharedPointer      classifier( new ClassifierType( getClassCount(), m_featureCount ) );
 
         // Create data structures that directly mirror the internal table-representation used by the classifier.
-        NodeID nodeCount = m_nodes.size();
+        NodeID nodeCount             = m_nodes.size();
         classifier->m_leftChildID    = Table<NodeID>( nodeCount, 1, 0 );
         classifier->m_rightChildID   = Table<NodeID>( nodeCount, 1, 0 );
         classifier->m_splitFeatureID = Table<FeatureID>( nodeCount, 1, 0 );

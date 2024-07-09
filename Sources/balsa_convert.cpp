@@ -85,11 +85,7 @@ int main( int argc, char ** argv )
         auto table = parseCSV<double>( in );
 
         // Write the output file.
-        BalsaFileWriter fileWriter( options.outputFile );
-        fileWriter.setCreatorName( "balsa_convert" );
-        fileWriter.setCreatorMajorVersion( balsa_VERSION_MAJOR );
-        fileWriter.setCreatorMinorVersion( balsa_VERSION_MINOR );
-        fileWriter.setCreatorPatchVersion( balsa_VERSION_PATCH );
+        BalsaFileWriter fileWriter( options.outputFile, "balsa_convert", balsa_VERSION_MAJOR, balsa_VERSION_MINOR, balsa_VERSION_PATCH );
         fileWriter.writeTable( table );
     }
     catch ( Exception & e )

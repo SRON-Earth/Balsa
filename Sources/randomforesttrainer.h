@@ -13,6 +13,7 @@
 #include <thread>
 #include <vector>
 
+#include "classifierstream.h"
 #include "datatypes.h"
 #include "fileio.h"
 #include "indexeddecisiontree.h"
@@ -58,6 +59,8 @@ class RandomForestTrainer
 
 public:
 
+    typedef typename IndexedDecisionTree<FeatureIterator, LabelIterator>::FeatureType FeatureType;
+
     /**
      * Constructor.
      * \param outputFile Name of the model file that will be written.
@@ -86,8 +89,8 @@ public:
      *  reduces the amount of memory used during training, at the expense of
      *  precision.
      */
-    RandomForestTrainer( BalsaFileWriter & fileWriter, unsigned int featuresToConsider = 0, unsigned maxDepth = std::numeric_limits<unsigned int>::max(), double minPurity = 1.0, unsigned int treeCount = 10, unsigned int concurrentTrainers = 10, bool writeGraphviz = false ):
-    m_fileWriter( fileWriter ),
+    RandomForestTrainer( ClassifierOutputStream & stream, unsigned int featuresToConsider = 0, unsigned maxDepth = std::numeric_limits<unsigned int>::max(), double minPurity = 1.0, unsigned int treeCount = 10, unsigned int concurrentTrainers = 10, bool writeGraphviz = false ):
+    m_stream( stream ),
     m_featuresToConsider( featuresToConsider ),
     m_maxDepth( maxDepth ),
     m_minPurity( minPurity ),
@@ -131,9 +134,6 @@ public:
         // Create an indexed tree with only one node. This is expensive to build, so it is shared for copying between threads.
         IndexedDecisionTree<FeatureIterator, LabelIterator> sapling( dataset, labels, featureCount, pointCount, featuresToConsider, m_maxDepth, impurityTreshold );
 
-        // Record the number of classes.
-        unsigned int classCount = sapling.getClassCount();
-
         // Create message queues for communicating with the worker threads.
         JobQueue       jobOutbox;
         JobResultQueue treeInbox;
@@ -152,11 +152,6 @@ public:
         // Create 'stop' messages for all threads, to be picked up after all the work is done.
         for ( unsigned int i = 0; i < workers.size(); ++i ) jobOutbox.send( TrainingJob( dataset, sapling, 0, 0, true ) );
 
-        // Create a forest model file and write the forest start marker and
-        // header.
-        typedef typename IndexedDecisionTree<FeatureIterator, LabelIterator>::FeatureType FeatureType;
-        m_fileWriter.enterForest<FeatureType>( classCount, featureCount );
-
         // Wait for all the trees to come in, and write each tree to a forest file.
         for ( unsigned int i = 0; i < m_treeCount; ++i )
         {
@@ -165,9 +160,8 @@ public:
 
             // Write the tree without the bulky index, which is no longer needed
             // after training.
-            typedef typename IndexedDecisionTree<FeatureIterator, LabelIterator>::LabelType LabelType;
-            auto strippedTree = tree->template getDecisionTree<FeatureType *, LabelType *>();
-            m_fileWriter.writeTree( *strippedTree );
+            auto strippedTree = tree->getDecisionTree();
+            m_stream.write( *strippedTree );
 
             // Write a Graphviz file for the tree, if necessary.
             if ( m_writeGraphviz )
@@ -177,9 +171,6 @@ public:
                 tree->writeGraphviz( ss.str() );
             }
         }
-
-        // Write the forest end marker.
-        m_fileWriter.leaveForest();
 
         // Wait for all the threads to join.
         for ( auto & worker : workers ) worker.join();
@@ -206,13 +197,13 @@ private:
         }
     }
 
-    BalsaFileWriter & m_fileWriter;
-    unsigned int m_featuresToConsider;
-    unsigned int m_maxDepth;
-    double       m_minPurity;
-    unsigned int m_treeCount;
-    unsigned int m_trainerCount;
-    bool         m_writeGraphviz;
+    ClassifierOutputStream & m_stream;
+    unsigned int             m_featuresToConsider;
+    unsigned int             m_maxDepth;
+    double                   m_minPurity;
+    unsigned int             m_treeCount;
+    unsigned int             m_trainerCount;
+    bool                     m_writeGraphviz;
 };
 
 } // namespace balsa

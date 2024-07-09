@@ -3,40 +3,40 @@
 
 #include <random>
 
-#include "table.h"
 #include "datatypes.h"
 #include "iteratortools.h"
+#include "table.h"
 
 namespace balsa
 {
 
 class ModelStatistics
 {
-  public:
+public:
 
-    template<typename GroundTruthLabelIterator, typename ClassifierLabelIterator>
+    template <typename GroundTruthLabelIterator, typename ClassifierLabelIterator>
     ModelStatistics( GroundTruthLabelIterator groundTruthBegin, GroundTruthLabelIterator groundTruthEnd, ClassifierLabelIterator classifierLabels, std::size_t numberOfClasses ):
-    CM ( numberOfClasses, numberOfClasses ),
-    P  ( numberOfClasses, 1 ),
-    N  ( numberOfClasses, 1 ),
-    TP ( numberOfClasses, 1 ),
-    TN ( numberOfClasses, 1 ),
-    FP ( numberOfClasses, 1 ),
-    FN ( numberOfClasses, 1 ),
-    PP ( numberOfClasses, 1 ),
-    PN ( numberOfClasses, 1 ),
+    CM( numberOfClasses, numberOfClasses ),
+    P( numberOfClasses, 1 ),
+    N( numberOfClasses, 1 ),
+    TP( numberOfClasses, 1 ),
+    TN( numberOfClasses, 1 ),
+    FP( numberOfClasses, 1 ),
+    FN( numberOfClasses, 1 ),
+    PP( numberOfClasses, 1 ),
+    PN( numberOfClasses, 1 ),
     TPR( numberOfClasses, 1 ),
     TNR( numberOfClasses, 1 ),
     FPR( numberOfClasses, 1 ),
     FNR( numberOfClasses, 1 ),
     PPV( numberOfClasses, 1 ),
     NPV( numberOfClasses, 1 ),
-    F1 ( numberOfClasses, 1 ),
+    F1( numberOfClasses, 1 ),
     LRP( numberOfClasses, 1 ),
     LRN( numberOfClasses, 1 ),
     DOR( numberOfClasses, 1 ),
-    P4 ( numberOfClasses, 1 ),
-    ACC( 0                  )
+    P4( numberOfClasses, 1 ),
+    ACC( 0 )
     {
         // Calculate the confusion matrix.
         for ( auto groundTruthIt( groundTruthBegin ); groundTruthIt != groundTruthEnd; ++groundTruthIt )
@@ -46,7 +46,7 @@ class ModelStatistics
         }
 
         // Calculate the basic counts.
-        auto nc = numberOfClasses;
+        auto         nc                 = numberOfClasses;
         unsigned int totalTruePositives = 0;
         for ( Label c = 0; c < nc; ++c )
         {
@@ -64,7 +64,7 @@ class ModelStatistics
                     // True Postives.
                     if ( row == c && col == c )
                     {
-                        TP( c, 0 ) = CM( c, c );
+                        TP( c, 0 )          = CM( c, c );
                         totalTruePositives += CM( c, c );
                     }
 
@@ -85,7 +85,7 @@ class ModelStatistics
 
         // Calculate the overall accuracy.
         unsigned int totalPoints = std::distance( groundTruthBegin, groundTruthEnd );
-        ACC = static_cast<double>( totalTruePositives ) / totalPoints;
+        ACC                      = static_cast<double>( totalTruePositives ) / totalPoints;
 
         // Calculate per-class metrics.
         for ( Label l = 0; l < numberOfClasses; ++l )
@@ -108,68 +108,68 @@ class ModelStatistics
 
     // N.B. Variable names for the metrics follow the naming conventions of the Balsa documentation.
 
-  /** Confusion Matrix. */
-  Table<unsigned int> CM ;
+    /** Confusion Matrix. */
+    Table<unsigned int> CM;
 
-  /** Positives (ground truth) per class. */
-  Table<unsigned int> P  ;
+    /** Positives (ground truth) per class. */
+    Table<unsigned int> P;
 
-  /** Negatives (ground truth) per class. */
-  Table<unsigned int> N  ;
+    /** Negatives (ground truth) per class. */
+    Table<unsigned int> N;
 
-  /** True Positives (correct positive predictions) per class. */
-   Table<unsigned int> TP ;
+    /** True Positives (correct positive predictions) per class. */
+    Table<unsigned int> TP;
 
-  /** True Negatives (correct negative predictions) per class. */
-   Table<unsigned int> TN ;
+    /** True Negatives (correct negative predictions) per class. */
+    Table<unsigned int> TN;
 
-  /** False Positives (incorrect positive predictions) per class. */
-   Table<unsigned int> FP ;
+    /** False Positives (incorrect positive predictions) per class. */
+    Table<unsigned int> FP;
 
-  /** False Negatives (incorrect positive predictions) per class. */
-   Table<unsigned int> FN ;
+    /** False Negatives (incorrect positive predictions) per class. */
+    Table<unsigned int> FN;
 
-  /** Predicted Positives per class. */
-   Table<unsigned int> PP ;
+    /** Predicted Positives per class. */
+    Table<unsigned int> PP;
 
-  /** Predicted Negatives per class. */
-   Table<unsigned int> PN ;
+    /** Predicted Negatives per class. */
+    Table<unsigned int> PN;
 
-  /** True Positive Rate per class. */
-   Table<double>       TPR;
+    /** True Positive Rate per class. */
+    Table<double> TPR;
 
-  /** True Negative Rate per class. */
-   Table<double>       TNR;
+    /** True Negative Rate per class. */
+    Table<double> TNR;
 
-  /** False Positive Rate per class. */
-   Table<double>       FPR;
+    /** False Positive Rate per class. */
+    Table<double> FPR;
 
-  /** True Negative Rate per class. */
-   Table<double>       FNR;
+    /** True Negative Rate per class. */
+    Table<double> FNR;
 
-  /** Positive Predictive value per class. */
-   Table<double>       PPV;
+    /** Positive Predictive value per class. */
+    Table<double> PPV;
 
-  /** Negative Predictive value per class. */
-   Table<double>       NPV;
+    /** Negative Predictive value per class. */
+    Table<double> NPV;
 
-  /** F1 score per class. */
-   Table<double>       F1 ;
+    /** F1 score per class. */
+    Table<double> F1;
 
-  /** Positive Likelihood Ratio (LR+) per clsas. */
-   Table<double>       LRP;
+    /** Positive Likelihood Ratio (LR+) per clsas. */
+    Table<double> LRP;
 
-  /** Negative Likelihood Ratio (LR-) per clsas. */
-   Table<double>       LRN;
+    /** Negative Likelihood Ratio (LR-) per clsas. */
+    Table<double> LRN;
 
-  /** Diagnostic Odds Ratio per class. */
-   Table<double>       DOR;
+    /** Diagnostic Odds Ratio per class. */
+    Table<double> DOR;
 
-  /** P4 Metric per class. */
-   Table<double>       P4 ;
+    /** P4 Metric per class. */
+    Table<double> P4;
 
-  /** Accuracy (overall). */
-  double                    ACC;
+    /** Accuracy (overall). */
+    double ACC;
 };
 
 /**
@@ -204,7 +204,7 @@ public:
 
         // Calculate a reference score on the original data.
         Table<Label> predictions( pointCount, 1 );
-        classifier.classify( pointsBegin, pointsEnd, featureCount, predictions.begin() );
+        classifier.classify( pointsBegin, pointsEnd, predictions.begin() );
         ModelStatistics referenceStats( labelBegin, labelBegin + pointCount, predictions.begin(), classifier.getClassCount() );
 
         // Test the predictive performance when the shuffling is applied separately to each feature.
@@ -227,7 +227,7 @@ public:
 
                 // Apply the classifier to the shuffled data.
                 Table<Label> shuffledPredictions( pointCount, 1 );
-                classifier.classify( shuffledPoints.begin(), shuffledPoints.end(), featureCount, shuffledPredictions.begin() );
+                classifier.classify( shuffledPoints.begin(), shuffledPoints.end(), shuffledPredictions.begin() );
 
                 // Calculate the performance statistics of the model on the shuffled data.
                 ModelStatistics shuffledStats( labelBegin, labelBegin + pointCount, shuffledPredictions.begin(), classifier.getClassCount() );
@@ -241,32 +241,32 @@ public:
         }
     }
 
-  double getAccuracyImportance( unsigned int featureID ) const
-  {
-      assert( featureID < m_accImportance.size() );
-      return m_accImportance[featureID];
-  }
+    double getAccuracyImportance( unsigned int featureID ) const
+    {
+        assert( featureID < m_accImportance.size() );
+        return m_accImportance[featureID];
+    }
 
-  std::size_t getFeatureCount() const
-  {
-      return m_accImportance.size();
-  }
+    std::size_t getFeatureCount() const
+    {
+        return m_accImportance.size();
+    }
 
 private:
 
-  std::vector<double> m_accImportance;
+    std::vector<double> m_accImportance;
 };
 
-} // Namespace 'balsa'.
+} // namespace balsa
 
 /**
  * Print the statistics to a stream in human-readable form.
  */
-std::ostream &operator<<( std::ostream &out, const balsa::ModelStatistics &stats );
+std::ostream & operator<<( std::ostream & out, const balsa::ModelStatistics & stats );
 
 /**
  * Print the feature importances to a stream in human-readable form.
  */
-std::ostream &operator<<( std::ostream &out, const balsa::FeatureImportances  &stats );
+std::ostream & operator<<( std::ostream & out, const balsa::FeatureImportances & stats );
 
 #endif // MODELEVALUATION_H

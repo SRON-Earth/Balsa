@@ -70,7 +70,7 @@ The following grammar rules describe basic building blocks of Balsa files:
 ## Balsa Objects
 
 Balsa files currently support three types of objects that can be stored: tables,
-trees, and forests. The production rules for tables are as follows:
+trees, and ensembles. The production rules for tables are as follows:
 
     TABLEHEADER := DICTIONARY
     TABLE       := "tabl" TABLEHEADER SCALAR* "lbat"
@@ -117,16 +117,15 @@ The TREEHEADER dictionary must contain at least the following fields:
    one of FEATURETYPEID. This must be identical to the feature type of the
    SPLITVALUES table.
 
-The following context-free grammar describes the structure of a forest:
+The following context-free grammar describes the structure of an ensemble:
 
-    FORESTHEADER := DICTIONARY
-    FOREST       := "frst" FORESTHEADER TREE+ "tsrf"
+    ENSEMBLEHEADER := DICTIONARY
+    ENSEMBLE       := "ensl" ENSEMBLEHEADER TREE+ "lsne"
 
 The following contextual restrictions apply:
 
-- The FORESTHEADER must contain a "class_count", "feature_count", and
-  "feature_type_id" entry, identical to those in the TREEHEADERs of the
-  individual trees in the forest.
+- The ENSEMBLEHEADER must contain a "class_count" and a "feature_count" entry,
+  identical to those in the TREEHEADERs of the individual trees in the ensemble.
 
 ## File Structure
 

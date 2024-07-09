@@ -1,6 +1,7 @@
 #include <map>
 #include <variant>
 
+#include "decisiontreeclassifier.h"
 #include "fileio.h"
 #include "serdes.h"
 
@@ -19,8 +20,8 @@ constexpr const unsigned char FILE_FORMAT_MINOR_VERSION = 0;
 const std::string FILE_SIGNATURE          = "blsa";
 const std::string BIG_ENDIAN_MARKER       = "bend";
 const std::string LITTLE_ENDIAN_MARKER    = "lend";
-const std::string FOREST_START_MARKER     = "frst";
-const std::string FOREST_END_MARKER       = "tsrf";
+const std::string ENSEMBLE_START_MARKER   = "ensl";
+const std::string ENSEMBLE_END_MARKER     = "lsne";
 const std::string TREE_START_MARKER       = "tree";
 const std::string TREE_END_MARKER         = "eert";
 const std::string TABLE_START_MARKER      = "tabl";
@@ -37,12 +38,11 @@ const std::string FILE_HEADER_CREATOR_NAME_KEY          = "creator_name";
 const std::string FILE_HEADER_CREATOR_MINOR_VERSION_KEY = "creator_major_version";
 const std::string FILE_HEADER_CREATOR_MAJOR_VERSION_KEY = "creator_minor_version";
 const std::string FILE_HEADER_CREATOR_PATCH_VERSION_KEY = "creator_patch_version";
-const std::string FOREST_HEADER_CLASS_COUNT_KEY         = "class_count";
-const std::string FOREST_HEADER_FEATURE_COUNT_KEY       = "feature_count";
-const std::string FOREST_HEADER_FEATURE_TYPE_ID_KEY     = "feature_type_id";
-const std::string TREE_HEADER_CLASS_COUNT_KEY           = FOREST_HEADER_CLASS_COUNT_KEY;
-const std::string TREE_HEADER_FEATURE_COUNT_KEY         = FOREST_HEADER_FEATURE_COUNT_KEY;
-const std::string TREE_HEADER_FEATURE_TYPE_ID_KEY       = FOREST_HEADER_FEATURE_TYPE_ID_KEY;
+const std::string ENSEMBLE_HEADER_CLASS_COUNT_KEY       = "class_count";
+const std::string ENSEMBLE_HEADER_FEATURE_COUNT_KEY     = "feature_count";
+const std::string TREE_HEADER_CLASS_COUNT_KEY           = ENSEMBLE_HEADER_CLASS_COUNT_KEY;
+const std::string TREE_HEADER_FEATURE_COUNT_KEY         = ENSEMBLE_HEADER_FEATURE_COUNT_KEY;
+const std::string TREE_HEADER_FEATURE_TYPE_ID_KEY       = "feature_type_id";
 const std::string TABLE_HEADER_ROW_COUNT_KEY            = "row_count";
 const std::string TABLE_HEADER_COLUMN_COUNT_KEY         = "column_count";
 const std::string TABLE_HEADER_SCALAR_TYPE_ID_KEY       = "scalar_type_id";
@@ -67,16 +67,65 @@ std::string getTypeName()
 }
 
 // Template specializations for all supported elementary types.
-template <> std::string getTypeName<uint8_t    >() { return "ui08"; }
-template <> std::string getTypeName<uint16_t   >() { return "ui16"; }
-template <> std::string getTypeName<uint32_t   >() { return "ui32"; }
-template <> std::string getTypeName<int8_t     >() { return "in08"; }
-template <> std::string getTypeName<int16_t    >() { return "in16"; }
-template <> std::string getTypeName<int32_t    >() { return "in32"; }
-template <> std::string getTypeName<float      >() { return "fl32"; }
-template <> std::string getTypeName<double     >() { return "fl64"; }
-template <> std::string getTypeName<bool       >() { return "bool"; }
-template <> std::string getTypeName<std::string>() { return "strn"; }
+template <>
+std::string getTypeName<uint8_t>()
+{
+    return "ui08";
+}
+
+template <>
+std::string getTypeName<uint16_t>()
+{
+    return "ui16";
+}
+
+template <>
+std::string getTypeName<uint32_t>()
+{
+    return "ui32";
+}
+
+template <>
+std::string getTypeName<int8_t>()
+{
+    return "in08";
+}
+
+template <>
+std::string getTypeName<int16_t>()
+{
+    return "in16";
+}
+
+template <>
+std::string getTypeName<int32_t>()
+{
+    return "in32";
+}
+
+template <>
+std::string getTypeName<float>()
+{
+    return "fl32";
+}
+
+template <>
+std::string getTypeName<double>()
+{
+    return "fl64";
+}
+
+template <>
+std::string getTypeName<bool>()
+{
+    return "bool";
+}
+
+template <>
+std::string getTypeName<std::string>()
+{
+    return "strn";
+}
 
 /*
  * Returns the type name of the specified scalar type.
@@ -445,14 +494,14 @@ bool BalsaFileParser::atTreeOfType( FeatureTypeID typeID )
     return result;
 }
 
-bool BalsaFileParser::atForest()
+bool BalsaFileParser::atEnsemble()
 {
-    return ( peekFixedSizeToken( m_stream, FOREST_START_MARKER.size() ) == FOREST_START_MARKER );
+    return ( peekFixedSizeToken( m_stream, ENSEMBLE_START_MARKER.size() ) == ENSEMBLE_START_MARKER );
 }
 
-bool BalsaFileParser::atEndOfForest()
+bool BalsaFileParser::atEndOfEnsemble()
 {
-    return ( peekFixedSizeToken( m_stream, FOREST_END_MARKER.size() ) == FOREST_END_MARKER );
+    return ( peekFixedSizeToken( m_stream, ENSEMBLE_END_MARKER.size() ) == ENSEMBLE_END_MARKER );
 }
 
 bool BalsaFileParser::atEOF()
@@ -460,23 +509,76 @@ bool BalsaFileParser::atEOF()
     return m_stream.peek() == EOF;
 }
 
-ForestHeader BalsaFileParser::enterForest()
+EnsembleHeader BalsaFileParser::enterEnsemble()
 {
-    expect( m_stream, FOREST_START_MARKER, "Missing forest start marker." );
-    ForestHeader result = parseForestHeader();
-    m_treeOffset        = m_stream.tellg();
+    expect( m_stream, ENSEMBLE_START_MARKER, "Missing ensemble start marker." );
+    EnsembleHeader result = parseEnsembleHeader();
+    m_treeOffset          = m_stream.tellg();
     return result;
 }
 
-void BalsaFileParser::leaveForest()
+void BalsaFileParser::leaveEnsemble()
 {
-    expect( m_stream, FOREST_END_MARKER, "Missing forest end marker." );
+    expect( m_stream, ENSEMBLE_END_MARKER, "Missing ensemble end marker." );
 }
 
-void BalsaFileParser::reenterForest()
+void BalsaFileParser::reenterEnsemble()
 {
-    if ( m_treeOffset == 0 ) throw ClientError( "No forrest was entered yet." );
+    if ( m_treeOffset == 0 ) throw ClientError( "No ensemble was entered yet." );
     m_stream.seekg( m_treeOffset );
+}
+
+Classifier::SharedPointer BalsaFileParser::parseClassifier()
+{
+    // Parse the tree start marker.
+    parseTreeStartMarker();
+
+    // Parse the header.
+    TreeHeader header = parseTreeHeader();
+
+    // Check the feature type.
+    Classifier::SharedPointer result;
+    switch ( header.featureTypeID )
+    {
+        case FeatureTypeID::FLOAT:
+        {
+            // Create an empty classifier.
+            DecisionTreeClassifier<float>::SharedPointer classifier( new DecisionTreeClassifier<float>( header.classCount, header.featureCount ) );
+
+            // Move assign the internal tables.
+            classifier->m_leftChildID    = parseTable<NodeID>();
+            classifier->m_rightChildID   = parseTable<NodeID>();
+            classifier->m_splitFeatureID = parseTable<FeatureID>();
+            classifier->m_splitValue     = parseTable<float>();
+            classifier->m_label          = parseTable<Label>();
+
+            result = classifier;
+        }
+        break;
+        case FeatureTypeID::DOUBLE:
+        {
+            // Create an empty classifier.
+            DecisionTreeClassifier<double>::SharedPointer classifier( new DecisionTreeClassifier<double>( header.classCount, header.featureCount ) );
+
+            // Move assign the internal tables.
+            classifier->m_leftChildID    = parseTable<NodeID>();
+            classifier->m_rightChildID   = parseTable<NodeID>();
+            classifier->m_splitFeatureID = parseTable<FeatureID>();
+            classifier->m_splitValue     = parseTable<double>();
+            classifier->m_label          = parseTable<Label>();
+
+            result = classifier;
+        }
+        break;
+        default:
+            assert( false );
+    }
+
+    // Parse the tree end marker.
+    parseTreeEndMarker();
+
+    // Return the result.
+    return result;
 }
 
 void BalsaFileParser::parseFileSignature()
@@ -504,13 +606,12 @@ void BalsaFileParser::parseTableEndMarker()
     expect( m_stream, TABLE_END_MARKER, "Invalid table end marker." );
 }
 
-ForestHeader BalsaFileParser::parseForestHeader()
+EnsembleHeader BalsaFileParser::parseEnsembleHeader()
 {
-    ForestHeader result;
-    Dictionary   dictionary = Dictionary::deserialize( m_stream );
-    result.classCount       = dictionary.get<uint8_t>( FOREST_HEADER_CLASS_COUNT_KEY );
-    result.featureCount     = dictionary.get<uint8_t>( FOREST_HEADER_FEATURE_COUNT_KEY );
-    result.featureTypeID    = getFeatureTypeID( dictionary.get<std::string>( FOREST_HEADER_FEATURE_TYPE_ID_KEY ) );
+    EnsembleHeader result;
+    Dictionary     dictionary = Dictionary::deserialize( m_stream );
+    result.classCount         = dictionary.get<uint8_t>( ENSEMBLE_HEADER_CLASS_COUNT_KEY );
+    result.featureCount       = dictionary.get<uint8_t>( ENSEMBLE_HEADER_FEATURE_COUNT_KEY );
     return result;
 }
 
@@ -534,59 +635,85 @@ TableHeader BalsaFileParser::parseTableHeader()
     return result;
 }
 
-BalsaFileWriter::BalsaFileWriter( const std::string & filename ):
-m_insideForest( false ),
-m_fileHeaderWritten( false )
+BalsaFileWriter::BalsaFileWriter( const std::string & filename, std::optional<std::string> creatorName, std::optional<unsigned char> creatorMajorVersion, std::optional<unsigned char> creatorMinorVersion, std::optional<unsigned char> creatorPatchVersion ):
+m_insideEnsemble( false )
 {
     // Configure the file input stream to throw an exception on error.
     m_stream.exceptions( std::ofstream::failbit | std::ofstream::badbit );
 
     // Open the file to write and truncate it if it exists.
     m_stream.open( filename, std::ios::binary );
+
+    // Write the file header.
+    writeFileSignature();
+    writeEndiannessMarker();
+    Dictionary dictionary;
+    dictionary.set<uint8_t>( FILE_HEADER_FILE_MAJOR_VERSION_KEY, FILE_FORMAT_MAJOR_VERSION );
+    dictionary.set<uint8_t>( FILE_HEADER_FILE_MINOR_VERSION_KEY, FILE_FORMAT_MINOR_VERSION );
+    if ( creatorName ) dictionary.set<std::string>( FILE_HEADER_CREATOR_NAME_KEY, *creatorName );
+    if ( creatorMajorVersion ) dictionary.set<uint8_t>( FILE_HEADER_CREATOR_MAJOR_VERSION_KEY, *creatorMajorVersion );
+    if ( creatorMinorVersion ) dictionary.set<uint8_t>( FILE_HEADER_CREATOR_MINOR_VERSION_KEY, *creatorMinorVersion );
+    if ( creatorPatchVersion ) dictionary.set<uint8_t>( FILE_HEADER_CREATOR_PATCH_VERSION_KEY, *creatorPatchVersion );
+    dictionary.serialize( m_stream );
 }
 
-void BalsaFileWriter::setCreatorName( const std::string & value )
+void BalsaFileWriter::enterEnsemble( unsigned char classCount, unsigned char featureCount )
 {
-    m_creatorName = value;
+    assert( !m_insideEnsemble );
+    m_stream.write( ENSEMBLE_START_MARKER.data(), ENSEMBLE_START_MARKER.size() );
+    writeEnsembleHeader( classCount, featureCount );
+    m_insideEnsemble = true;
 }
 
-void BalsaFileWriter::setCreatorMajorVersion( unsigned char value )
+void BalsaFileWriter::leaveEnsemble()
 {
-    m_creatorMajorVersion = value;
+    assert( m_insideEnsemble );
+    m_stream.write( ENSEMBLE_END_MARKER.data(), ENSEMBLE_END_MARKER.size() );
+    m_insideEnsemble = false;
 }
 
-void BalsaFileWriter::setCreatorMinorVersion( unsigned char value )
+void BalsaFileWriter::writeClassifier( const Classifier & classifier )
 {
-    m_creatorMinorVersion = value;
+    ClassifierWriteDispatcher writer( *this );
+    classifier.visit( writer );
 }
 
-void BalsaFileWriter::setCreatorPatchVersion( unsigned char value )
+void BalsaFileWriter::ClassifierWriteDispatcher::visit( const EnsembleClassifier & classifier )
 {
-    m_creatorPatchVersion = value;
+    // Writing ensemble classifiers is not supported yet.
+    (void) classifier;
+    assert( false );
 }
 
-void BalsaFileWriter::enterForest( unsigned char classCount, unsigned char featureCount, FeatureTypeID featureType )
+void BalsaFileWriter::ClassifierWriteDispatcher::visit( const DecisionTreeClassifier<float> & classifier )
 {
-    assert( !m_insideForest );
-    writeFileHeaderOnce();
-    m_stream.write( FOREST_START_MARKER.data(), FOREST_START_MARKER.size() );
-    writeForestHeader( classCount, featureCount, featureType );
-    m_insideForest = true;
+    m_writer.writeTreeStartMarker();
+    m_writer.writeTreeHeader( classifier.m_classCount, classifier.m_featureCount, getFeatureTypeID<float>() );
+    m_writer.writeTable( classifier.m_leftChildID );
+    m_writer.writeTable( classifier.m_rightChildID );
+    m_writer.writeTable( classifier.m_splitFeatureID );
+    m_writer.writeTable( classifier.m_splitValue );
+    m_writer.writeTable( classifier.m_label );
+    m_writer.writeTreeEndMarker();
 }
 
-void BalsaFileWriter::leaveForest()
+void BalsaFileWriter::ClassifierWriteDispatcher::visit( const DecisionTreeClassifier<double> & classifier )
 {
-    assert( m_insideForest );
-    m_stream.write( FOREST_END_MARKER.data(), FOREST_END_MARKER.size() );
-    m_insideForest = false;
+    m_writer.writeTreeStartMarker();
+    m_writer.writeTreeHeader( classifier.m_classCount, classifier.m_featureCount, getFeatureTypeID<double>() );
+    m_writer.writeTable( classifier.m_leftChildID );
+    m_writer.writeTable( classifier.m_rightChildID );
+    m_writer.writeTable( classifier.m_splitFeatureID );
+    m_writer.writeTable( classifier.m_splitValue );
+    m_writer.writeTable( classifier.m_label );
+    m_writer.writeTreeEndMarker();
 }
 
-void BalsaFileWriter::writeForestHeader( unsigned char classCount, unsigned char featureCount, FeatureTypeID featureType )
+void BalsaFileWriter::writeEnsembleHeader( unsigned char classCount, unsigned char featureCount )
 {
     Dictionary header;
-    header.set<uint8_t>( FOREST_HEADER_CLASS_COUNT_KEY, classCount );
-    header.set<uint8_t>( FOREST_HEADER_FEATURE_COUNT_KEY, featureCount );
-    header.set<std::string>( FOREST_HEADER_FEATURE_TYPE_ID_KEY, getTypeName( featureType ) );
+    header.set<uint8_t>( ENSEMBLE_HEADER_CLASS_COUNT_KEY, classCount );
+    header.set<uint8_t>( ENSEMBLE_HEADER_FEATURE_COUNT_KEY, featureCount );
     header.serialize( m_stream );
 }
 
@@ -606,24 +733,6 @@ void BalsaFileWriter::writeTableHeader( unsigned int rowCount, unsigned int colu
     header.set<uint32_t>( TABLE_HEADER_COLUMN_COUNT_KEY, columnCount );
     header.set<std::string>( TABLE_HEADER_SCALAR_TYPE_ID_KEY, getTypeName( scalarType ) );
     header.serialize( m_stream );
-}
-
-void BalsaFileWriter::writeFileHeaderOnce()
-{
-    if ( m_fileHeaderWritten ) return;
-
-    writeFileSignature();
-    writeEndiannessMarker();
-    Dictionary dictionary;
-    dictionary.set<uint8_t>( FILE_HEADER_FILE_MAJOR_VERSION_KEY, FILE_FORMAT_MAJOR_VERSION );
-    dictionary.set<uint8_t>( FILE_HEADER_FILE_MINOR_VERSION_KEY, FILE_FORMAT_MINOR_VERSION );
-    if ( m_creatorName ) dictionary.set<std::string>( FILE_HEADER_CREATOR_NAME_KEY, *m_creatorName );
-    if ( m_creatorMajorVersion ) dictionary.set<uint8_t>( FILE_HEADER_CREATOR_MAJOR_VERSION_KEY, *m_creatorMajorVersion );
-    if ( m_creatorMinorVersion ) dictionary.set<uint8_t>( FILE_HEADER_CREATOR_MINOR_VERSION_KEY, *m_creatorMinorVersion );
-    if ( m_creatorPatchVersion ) dictionary.set<uint8_t>( FILE_HEADER_CREATOR_PATCH_VERSION_KEY, *m_creatorPatchVersion );
-    dictionary.serialize( m_stream );
-
-    m_fileHeaderWritten = true;
 }
 
 void BalsaFileWriter::writeFileSignature()
