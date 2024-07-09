@@ -1,16 +1,11 @@
 #include <cassert>
-#include <fstream>
-#include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <string>
 
 #include "classifierfilestream.h"
 #include "config.h"
-#include "datatypes.h"
 #include "exceptions.h"
-#include "fileio.h"
-#include "table.h"
 
 using namespace balsa;
 
