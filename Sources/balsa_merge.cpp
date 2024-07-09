@@ -5,12 +5,12 @@
 #include <sstream>
 #include <string>
 
+#include "classifierfilestream.h"
 #include "config.h"
 #include "datatypes.h"
 #include "exceptions.h"
 #include "fileio.h"
 #include "table.h"
-#include "classifierfilestream.h"
 
 using namespace balsa;
 
@@ -73,8 +73,8 @@ public:
         return options;
     }
 
-  std::string              outputFile;
-  std::vector<std::string> modelFiles;
+    std::string              outputFile;
+    std::vector<std::string> modelFiles;
 };
 
 } // namespace
@@ -90,9 +90,9 @@ int main( int argc, char ** argv )
         EnsembleFileOutputStream out( options.outputFile, "balsa_merge", balsa_VERSION_MAJOR, balsa_VERSION_MINOR, balsa_VERSION_PATCH );
 
         // Append all input models to the merged file.
-        unsigned int classCount = 0;
+        unsigned int classCount   = 0;
         unsigned int featureCount = 0;
-        for ( auto &modelFile: options.modelFiles )
+        for ( auto & modelFile : options.modelFiles )
         {
             // Open the input file and make sure the model is compatible with what was merged earlier.
             ClassifierFileInputStream in( modelFile );
@@ -100,7 +100,7 @@ int main( int argc, char ** argv )
                 throw ClientError( "The class count of the model '" + modelFile + "' differs from the earlier input files." );
             if ( featureCount != 0 && in.getFeatureCount() != featureCount )
                 throw ClientError( "The feature count of the model '" + modelFile + "' differs from the earlier input files." );
-            classCount = in.getClassCount();
+            classCount   = in.getClassCount();
             featureCount = in.getFeatureCount();
 
             // Append all submodels to the output file.

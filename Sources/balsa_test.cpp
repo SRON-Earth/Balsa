@@ -1,6 +1,6 @@
 #include <algorithm>
-#include <cstdlib>
 #include <cstdio>
+#include <cstdlib>
 #include <filesystem>
 #include <iostream>
 #include <limits>
@@ -48,21 +48,21 @@ bool testCross2x2()
 {
     // Create a square where the data points on one diagonal belong to class A,
     // and the data points on the other diagonal belong to class B.
-    FeatureType  points[] = { -1, 1, 1, 1, -1, -1, 1, -1 };
-    uint8_t truth[]  = { 0, 1, 1, 0 };
+    FeatureType points[] = { -1, 1, 1, 1, -1, -1, 1, -1 };
+    uint8_t     truth[]  = { 0, 1, 1, 0 };
 
     // Train a single decision tree.
     NamedTemporaryFile modelFile( "balsa_test_cross_2x2.tmp" );
     {
-        EnsembleFileOutputStream outputStream( modelFile );
+        EnsembleFileOutputStream                      outputStream( modelFile );
         RandomForestTrainer<FeatureType *, uint8_t *> trainer( outputStream, 2, std::numeric_limits<unsigned int>::max(), 1.0, 1, 1 );
         trainer.train( points, points + 8, 2, truth );
     }
 
     // Classify the training data.
-    uint8_t labels[4];
+    uint8_t                   labels[4];
     ClassifierFileInputStream inputStream( modelFile, 0 );
-    EnsembleClassifier classifier( inputStream, 0 );
+    EnsembleClassifier        classifier( inputStream, 0 );
     classifier.classify( points, points + 8, labels );
 
     // Ensure the classification result matches the ground truth exactly.
@@ -95,15 +95,15 @@ bool testCheckerboard()
     // Train a single decision tree.
     NamedTemporaryFile modelFile( "balsa_test_checkerboard.tmp" );
     {
-        EnsembleFileOutputStream outputStream( modelFile );
+        EnsembleFileOutputStream                                        outputStream( modelFile );
         RandomForestTrainer<typename Table<FeatureType>::ConstIterator> trainer( outputStream, generator.getFeatureCount(), std::numeric_limits<unsigned int>::max(), 1.0, 1, 1 );
         trainer.train( points.begin(), points.end(), points.getColumnCount(), truth.begin() );
     }
 
     // Classify the training data.
-    Table<Label> labels( points.getRowCount(), 1 );
+    Table<Label>              labels( points.getRowCount(), 1 );
     ClassifierFileInputStream inputStream( modelFile, 0 );
-    EnsembleClassifier classifier( inputStream, 0 );
+    EnsembleClassifier        classifier( inputStream, 0 );
     classifier.classify( points.begin(), points.end(), labels.begin() );
 
     // Ensure the classification result matches the ground truth exactly.
@@ -133,15 +133,15 @@ bool testConcentricRings()
     // Train a single decision tree.
     NamedTemporaryFile modelFile( "balsa_test_concentric_rings.tmp" );
     {
-        EnsembleFileOutputStream outputStream( modelFile );
+        EnsembleFileOutputStream                                        outputStream( modelFile );
         RandomForestTrainer<typename Table<FeatureType>::ConstIterator> trainer( outputStream, generator.getFeatureCount(), std::numeric_limits<unsigned int>::max(), 1.0, 1, 1 );
         trainer.train( points.begin(), points.end(), points.getColumnCount(), truth.begin() );
     }
 
     // Classify the training data.
-    Table<Label> labels( points.getRowCount(), 1 );
+    Table<Label>              labels( points.getRowCount(), 1 );
     ClassifierFileInputStream inputStream( modelFile, 0 );
-    EnsembleClassifier classifier( inputStream, 0 );
+    EnsembleClassifier        classifier( inputStream, 0 );
     classifier.classify( points.begin(), points.end(), labels.begin() );
 
     // Ensure the classification result matches the ground truth exactly.

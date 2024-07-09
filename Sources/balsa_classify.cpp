@@ -1,13 +1,13 @@
 #include <chrono>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <vector>
-#include <filesystem>
 
-#include "config.h"
 #include "classifierfilestream.h"
+#include "config.h"
 #include "datatypes.h"
 #include "ensembleclassifier.h"
 #include "exceptions.h"
@@ -82,7 +82,7 @@ public:
             {
                 unsigned int label  = 0;
                 float        weight = 0;
-                if ( !( args >> label  ) ) throw ParseError( "Missing class parameter to -cw option." );
+                if ( !( args >> label ) ) throw ParseError( "Missing class parameter to -cw option." );
                 if ( !( args >> weight ) ) throw ParseError( "Missing weight parameter to -cw option." );
                 options.m_classWeights.push_back( std::tuple<unsigned int, float>( label, weight ) );
             }
@@ -117,10 +117,10 @@ public:
     std::vector<std::tuple<unsigned int, float>> m_classWeights;
 };
 
-std::string createOutputFileName( const std::string &inputFilePath )
+std::string createOutputFileName( const std::string & inputFilePath )
 {
     // Extract the base name and the extensions.
-    auto path =  std::filesystem::path( inputFilePath );
+    auto path = std::filesystem::path( inputFilePath );
 
     // Create the output file name.
     auto extension = path.extension();
@@ -141,7 +141,7 @@ int main( int argc, char ** argv )
         // Debug.
         std::cout << "Model File : " << options.modelFile << std::endl;
         std::cout << "Data Files :";
-        for ( auto &f: options.dataFiles ) std::cout << ' ' << f << std::endl;
+        for ( auto & f : options.dataFiles ) std::cout << ' ' << f << std::endl;
         std::cout << "Threads    : " << options.threadCount << std::endl;
         std::cout << "Preload    : " << options.maxPreload << std::endl;
         std::cout << std::endl;
@@ -149,13 +149,13 @@ int main( int argc, char ** argv )
 
         // Create a random forest classifier.
         ClassifierFileInputStream inputStream( options.modelFile, options.maxPreload );
-        EnsembleClassifier classifier( inputStream, options.threadCount - 1 );
+        EnsembleClassifier        classifier( inputStream, options.threadCount - 1 );
 
         // Override the class weights.
         std::vector<float> weights( classifier.getClassCount(), 1.0 );
-        for ( auto &pair: options.m_classWeights )
+        for ( auto & pair : options.m_classWeights )
         {
-            auto label = std::get<0>( pair );
+            auto label  = std::get<0>( pair );
             auto weight = std::get<1>( pair );
             if ( label >= weights.size() ) throw ClientError( "Class out of range: " + std::to_string( label ) );
             if ( weight != weight || weight < 0 ) throw ClientError( "Invalid weight: " + std::to_string( weight ) );
@@ -167,7 +167,7 @@ int main( int argc, char ** argv )
         StopWatch::Seconds dataLoadTime       = 0;
         StopWatch::Seconds classificationTime = 0;
         StopWatch::Seconds labelStoreTime     = 0;
-        for ( auto & dataFile: options.dataFiles )
+        for ( auto & dataFile : options.dataFiles )
         {
             // Load the data.
             StopWatch watch;
@@ -186,8 +186,7 @@ int main( int argc, char ** argv )
 
             // Store the labels.
             watch.start();
-            BalsaFileWriter fileWriter( createOutputFileName( dataFile ), "balsa_classify",
-                balsa_VERSION_MAJOR, balsa_VERSION_MINOR, balsa_VERSION_PATCH );
+            BalsaFileWriter fileWriter( createOutputFileName( dataFile ), "balsa_classify", balsa_VERSION_MAJOR, balsa_VERSION_MINOR, balsa_VERSION_PATCH );
             fileWriter.writeTable( labels );
             watch.stop();
             labelStoreTime += watch.getElapsedTime();

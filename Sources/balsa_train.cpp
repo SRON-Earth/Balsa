@@ -4,8 +4,8 @@
 #include <sstream>
 #include <string>
 
-#include "config.h"
 #include "classifierfilestream.h"
+#include "config.h"
 #include "exceptions.h"
 #include "randomforesttrainer.h"
 #include "table.h"
@@ -153,7 +153,7 @@ int main( int argc, char ** argv )
         std::cout << "Ingesting data..." << std::endl;
         watch.start();
         auto dataSet = readTableAs<double>( options.dataFile );
-        auto labels = readTableAs<Label>( options.labelFile );
+        auto labels  = readTableAs<Label>( options.labelFile );
         if ( labels.getRowCount() != dataSet.getRowCount() ) throw ParseError( "Point file and label file have different row counts." );
         if ( labels.getColumnCount() != 1 ) throw ParseError( "Invalid label file: table has too many columns." );
         std::cout << "Dataset loaded: " << dataSet.getRowCount() << " points. (" << watch.stop() << " seconds)." << std::endl;
@@ -162,7 +162,7 @@ int main( int argc, char ** argv )
         // Train a random forest on the data.
         std::cout << "Training..." << std::endl;
         EnsembleFileOutputStream outputStream( options.outputFile, "balsa_train", balsa_VERSION_MAJOR, balsa_VERSION_MINOR, balsa_VERSION_PATCH );
-        RandomForestTrainer trainer( outputStream, options.featuresToConsider, options.maxDepth, options.minPurity, options.treeCount, options.threadCount, options.writeDotty );
+        RandomForestTrainer      trainer( outputStream, options.featuresToConsider, options.maxDepth, options.minPurity, options.treeCount, options.threadCount, options.writeDotty );
         watch.start();
         trainer.train( dataSet.begin(), dataSet.end(), dataSet.getColumnCount(), labels.begin() );
         std::cout << "Done (" << watch.stop() << " seconds)." << std::endl;

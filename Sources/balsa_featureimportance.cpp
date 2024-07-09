@@ -7,8 +7,8 @@
 #include "classifierfilestream.h"
 #include "ensembleclassifier.h"
 #include "exceptions.h"
-#include "table.h"
 #include "modelevaluation.h"
+#include "table.h"
 
 using namespace balsa;
 
@@ -77,7 +77,7 @@ public:
         // Parse the filenames.
         if ( token.size() == 0 ) throw ParseError( getUsage() );
         options.modelFile = token;
-        if ( !( args >> options.dataFile  ) ) throw ParseError( "Missing data file."  );
+        if ( !( args >> options.dataFile ) ) throw ParseError( "Missing data file." );
         if ( !( args >> options.labelFile ) ) throw ParseError( "Missing label file." );
 
         // Return  results.
@@ -106,7 +106,7 @@ int main( int argc, char ** argv )
 
         // Create a classifier for the model.
         ClassifierFileInputStream inputStream( options.modelFile, options.maxPreload );
-        EnsembleClassifier classifier( inputStream, options.threadCount - 1 );
+        EnsembleClassifier        classifier( inputStream, options.threadCount - 1 );
 
         // Calculate the feature importance and print them.
         std::cout << "Analyzing feature importance..." << std::endl;

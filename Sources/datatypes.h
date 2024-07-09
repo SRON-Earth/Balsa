@@ -1,8 +1,8 @@
 #ifndef DATATYPES_H
 #define DATATYPES_H
 
-#include <cstdint>
 #include "table.h"
+#include <cstdint>
 
 namespace balsa
 {

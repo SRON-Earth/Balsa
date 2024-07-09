@@ -64,8 +64,8 @@ FeatureTypeID getFeatureTypeID()
  */
 struct EnsembleHeader
 {
-    unsigned char classCount;     // Number of classes distinguished by the ensemble.
-    unsigned char featureCount;   // Number of features the ensemble was trained on.
+    unsigned char classCount;   // Number of classes distinguished by the ensemble.
+    unsigned char featureCount; // Number of features the ensemble was trained on.
 };
 
 /*
@@ -73,9 +73,9 @@ struct EnsembleHeader
  */
 struct TreeHeader
 {
-    unsigned char classCount;     // Number of classes distinguished by the tree.
-    unsigned char featureCount;   // Number of features the tree was trained on.
-    FeatureTypeID featureTypeID;  // Numeric type used for features.
+    unsigned char classCount;    // Number of classes distinguished by the tree.
+    unsigned char featureCount;  // Number of features the tree was trained on.
+    FeatureTypeID featureTypeID; // Numeric type used for features.
 };
 
 /*
@@ -83,9 +83,9 @@ struct TreeHeader
  */
 struct TableHeader
 {
-    unsigned int rowCount;      // Number of rows.
-    unsigned int columnCount;   // Number of columns.
-    ScalarTypeID scalarTypeID;  // Numeric type of the elements of the table.
+    unsigned int rowCount;     // Number of rows.
+    unsigned int columnCount;  // Number of columns.
+    ScalarTypeID scalarTypeID; // Numeric type of the elements of the table.
 };
 
 /*
@@ -95,9 +95,9 @@ class BalsaFileParser
 {
 public:
 
-	/*
-	 * Constructor; opens the specified file for parsing.
-	 */
+    /*
+     * Constructor; opens the specified file for parsing.
+     */
     BalsaFileParser( const std::string & filename );
 
     /*
@@ -115,7 +115,7 @@ public:
     /*
      * Returns the name of the tool that created the file (if available).
      */
-    std::optional<std::string>  getCreatorName() const;
+    std::optional<std::string> getCreatorName() const;
 
     /*
      * Returns the major version number of the tool that created the file
@@ -320,8 +320,8 @@ private:
     bool atTreeOfType( FeatureTypeID typeID );
 
     EnsembleHeader parseEnsembleHeader();
-    TreeHeader   parseTreeHeader();
-    TableHeader  parseTableHeader();
+    TreeHeader     parseTreeHeader();
+    TableHeader    parseTableHeader();
 
     std::ifstream               m_stream;
     std::streampos              m_treeOffset;
@@ -362,9 +362,9 @@ class BalsaFileWriter
 {
 public:
 
-	/*
-	 * Constructor; opens the specified file for writing. The file will be
-	 * truncated if it exists.
+    /*
+     * Constructor; opens the specified file for writing. The file will be
+     * truncated if it exists.
      *
      * \param filename Name of the file to write.
      * \param creatorName Name of the tool that created the file (optional).
@@ -375,12 +375,12 @@ public:
      *  the file (optional). This information will be stored in the file header.
      * \param creatorPatchVersion Patch version number of the tool that created
      *  the file (optional). This information will be stored in the file header.
-	 */
+     */
     BalsaFileWriter( const std::string & filename,
-        std::optional<std::string> creatorName = std::nullopt,
-        std::optional<unsigned char> creatorMajorVersion = std::nullopt,
-        std::optional<unsigned char> creatorMinorVersion = std::nullopt,
-        std::optional<unsigned char> creatorPatchVersion = std::nullopt );
+        std::optional<std::string>       creatorName         = std::nullopt,
+        std::optional<unsigned char>     creatorMajorVersion = std::nullopt,
+        std::optional<unsigned char>     creatorMinorVersion = std::nullopt,
+        std::optional<unsigned char>     creatorPatchVersion = std::nullopt );
 
     /*
      * Write an ensemble start marker and ensemble description.
@@ -433,19 +433,18 @@ private:
     {
     public:
 
-      ClassifierWriteDispatcher( BalsaFileWriter & writer ):
-      m_writer( writer )
-      {
-      }
+        ClassifierWriteDispatcher( BalsaFileWriter & writer ):
+        m_writer( writer )
+        {
+        }
 
-      void visit( const EnsembleClassifier &classifier );
-      void visit( const DecisionTreeClassifier<float> &classifier );
-      void visit( const DecisionTreeClassifier<double> &classifier );
+        void visit( const EnsembleClassifier & classifier );
+        void visit( const DecisionTreeClassifier<float> & classifier );
+        void visit( const DecisionTreeClassifier<double> & classifier );
 
     private:
 
         BalsaFileWriter & m_writer;
-
     };
 
     void writeFileSignature();

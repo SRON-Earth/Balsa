@@ -3,12 +3,13 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstdint>
 #include <fstream>
 #include <iomanip>
 #include <vector>
 
-#include "genericparser.h"
 #include "exceptions.h"
+#include "genericparser.h"
 #include "serdes.h"
 
 namespace balsa
@@ -73,11 +74,11 @@ public:
      * \param rowNumber The row that is to be scanned.
      * \param weights The list of non-negative weight factors that will be applied to the counts.
      */
-    std::size_t getColumnOfWeightedRowMaximum( std::size_t rowNumber, const std::vector<float> &weights ) const
+    std::size_t getColumnOfWeightedRowMaximum( std::size_t rowNumber, const std::vector<float> & weights ) const
     {
         // Find the maximum of the weighted values.
-        auto rowData    =  m_data.begin() + rowNumber * m_columnCount;
-        double topScore = 0;
+        auto        rowData   = m_data.begin() + rowNumber * m_columnCount;
+        double      topScore  = 0;
         std::size_t topColumn = 0;
         for ( std::size_t column = 0; column < m_columnCount; ++column )
         {
@@ -308,8 +309,8 @@ inline std::ostream & operator<<( std::ostream & out, const Table<uint8_t> & tab
     return out;
 }
 
-template<typename CellType>
-Table<CellType> parseCSV( std::istream &in )
+template <typename CellType>
+Table<CellType> parseCSV( std::istream & in )
 {
     // Create a generic parser that does not consume newlines as whitespace.
     GenericParser parser( in, " \t\r" );

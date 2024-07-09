@@ -52,8 +52,8 @@ public:
     m_cacheIndex( 0 )
     {
         EnsembleHeader header = m_fileParser.enterEnsemble();
-        m_classCount = header.classCount;
-        m_featureCount = header.featureCount;
+        m_classCount          = header.classCount;
+        m_featureCount        = header.featureCount;
     }
 
     /*
@@ -165,23 +165,23 @@ class EnsembleFileOutputStream: public ClassifierOutputStream
 public:
 
     /**
-    * Constructs an open ensemble output stream.
-    *
-    * \param filename Name of the file to write.
-    * \param creatorName Name of the tool that created the file (optional).
-    *  This information will be stored in the file header.
-    * \param creatorMajorVersion Major version number of the tool that created
-    *  the file (optional). This information will be stored in the file header.
-    * \param creatorMinorVersion Minor version number of the tool that created
-    *  the file (optional). This information will be stored in the file header.
-    * \param creatorPatchVersion Patch version number of the tool that created
-    *  the file (optional). This information will be stored in the file header.
-    */
+     * Constructs an open ensemble output stream.
+     *
+     * \param filename Name of the file to write.
+     * \param creatorName Name of the tool that created the file (optional).
+     *  This information will be stored in the file header.
+     * \param creatorMajorVersion Major version number of the tool that created
+     *  the file (optional). This information will be stored in the file header.
+     * \param creatorMinorVersion Minor version number of the tool that created
+     *  the file (optional). This information will be stored in the file header.
+     * \param creatorPatchVersion Patch version number of the tool that created
+     *  the file (optional). This information will be stored in the file header.
+     */
     EnsembleFileOutputStream( const std::string & filename,
-        std::optional<std::string> creatorName = std::nullopt,
-        std::optional<unsigned char> creatorMajorVersion = std::nullopt,
-        std::optional<unsigned char> creatorMinorVersion = std::nullopt,
-        std::optional<unsigned char> creatorPatchVersion = std::nullopt ):
+        std::optional<std::string>                creatorName         = std::nullopt,
+        std::optional<unsigned char>              creatorMajorVersion = std::nullopt,
+        std::optional<unsigned char>              creatorMinorVersion = std::nullopt,
+        std::optional<unsigned char>              creatorPatchVersion = std::nullopt ):
     m_fileWriter( filename, creatorName, creatorMajorVersion, creatorMinorVersion, creatorPatchVersion ),
     m_classCount( 0 ),
     m_featureCount( 0 )
@@ -196,22 +196,22 @@ public:
 private:
 
     /**
-    * Perform subclass-specific operations when the stream is closed.
-    */
+     * Perform subclass-specific operations when the stream is closed.
+     */
     void onClose()
     {
         if ( m_classCount != 0 ) m_fileWriter.leaveEnsemble();
     }
 
     /**
-    * Perform the actual write in a subclass-specific way.
-    * This is guaranteed to be called only when the stream is still open.
-    */
-    void onWrite( const Classifier &classifier )
+     * Perform the actual write in a subclass-specific way.
+     * This is guaranteed to be called only when the stream is still open.
+     */
+    void onWrite( const Classifier & classifier )
     {
         if ( m_classCount == 0 )
         {
-            m_classCount = classifier.getClassCount();
+            m_classCount   = classifier.getClassCount();
             m_featureCount = classifier.getFeatureCount();
             m_fileWriter.enterEnsemble( m_classCount, m_featureCount );
         }

@@ -112,13 +112,11 @@ int main( int argc, char ** argv )
 
         // Write the output files.
         {
-            BalsaFileWriter fileWriter( options.pointFile, "balsa_generate",
-                balsa_VERSION_MAJOR, balsa_VERSION_MINOR, balsa_VERSION_PATCH );
+            BalsaFileWriter fileWriter( options.pointFile, "balsa_generate", balsa_VERSION_MAJOR, balsa_VERSION_MINOR, balsa_VERSION_PATCH );
             fileWriter.writeTable( points );
         }
         {
-            BalsaFileWriter fileWriter( options.labelFile, "balsa_generate",
-                balsa_VERSION_MAJOR, balsa_VERSION_MINOR, balsa_VERSION_PATCH );
+            BalsaFileWriter fileWriter( options.labelFile, "balsa_generate", balsa_VERSION_MAJOR, balsa_VERSION_MINOR, balsa_VERSION_PATCH );
             fileWriter.writeTable( labels );
         }
     }

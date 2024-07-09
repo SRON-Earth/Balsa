@@ -54,60 +54,59 @@ class ClassifierOutputStream
 {
 public:
 
-  /**
-   * Constructs an open stream.
-   */
-  ClassifierOutputStream():
-  m_isClosed( false )
-  {
-  }
+    /**
+     * Constructs an open stream.
+     */
+    ClassifierOutputStream():
+    m_isClosed( false )
+    {
+    }
 
-  virtual ~ClassifierOutputStream()
-  {
-      // TODO: Shouldn't call virtual function from the destructor!
-      close();
-  }
+    virtual ~ClassifierOutputStream()
+    {
+        // TODO: Shouldn't call virtual function from the destructor!
+        close();
+    }
 
-  /**
-   * Write a classifier to the output stream.
-   * \pre isOpen()
-   */
-  void write( const Classifier &classifier )
-  {
-      assert( isOpen() );
-      onWrite( classifier );
-  }
+    /**
+     * Write a classifier to the output stream.
+     * \pre isOpen()
+     */
+    void write( const Classifier & classifier )
+    {
+        assert( isOpen() );
+        onWrite( classifier );
+    }
 
-  void close()
-  {
-      // Close the stream and let the subclass perform closing actions.
-      if ( m_isClosed ) return;
-      onClose();
-      m_isClosed = true;
-  }
+    void close()
+    {
+        // Close the stream and let the subclass perform closing actions.
+        if ( m_isClosed ) return;
+        onClose();
+        m_isClosed = true;
+    }
 
-  bool isOpen() const
-  {
-      return !m_isClosed;
-  }
+    bool isOpen() const
+    {
+        return !m_isClosed;
+    }
 
 private:
 
-  /**
-   * Perform subclass-specific operations when the stream is closed.
-   */
-  virtual void onClose()
-  {
-  }
+    /**
+     * Perform subclass-specific operations when the stream is closed.
+     */
+    virtual void onClose()
+    {
+    }
 
-  /**
-   * Perform the actual write in a subclass-specific way.
-   * This is guaranteed to be called only when the stream is still open.
-   */
-  virtual void onWrite( const Classifier &classifier ) = 0;
+    /**
+     * Perform the actual write in a subclass-specific way.
+     * This is guaranteed to be called only when the stream is still open.
+     */
+    virtual void onWrite( const Classifier & classifier ) = 0;
 
-  bool m_isClosed;
-
+    bool m_isClosed;
 };
 
 } // namespace balsa

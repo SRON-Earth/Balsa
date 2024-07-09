@@ -64,11 +64,11 @@ public:
     /**
      * Bulk-classifies a sequence of data points.
      */
-    template<typename FeatureIterator, typename LabelOutputIterator>
+    template <typename FeatureIterator, typename LabelOutputIterator>
     void classify( FeatureIterator pointsStart, FeatureIterator pointsEnd, LabelOutputIterator labelsStart ) const
     {
         // Statically check that the label output iterator points to Labels.
-        typedef std::remove_cv_t<typename iterator_value_type<LabelOutputIterator>::type>  LabelType;
+        typedef std::remove_cv_t<typename iterator_value_type<LabelOutputIterator>::type> LabelType;
         static_assert( std::is_same<LabelType, Label>::value, "The labelStart iterator must point to instances of type Label." );
 
         // Statically check that the FeatureIterator points to an arithmetical type.
@@ -104,7 +104,7 @@ public:
      * \pre The column count of the vote table must match the number of
      *  features, the row count must match the number of points.
      */
-    template<typename FeatureIterator>
+    template <typename FeatureIterator>
     unsigned int classifyAndVote( FeatureIterator pointsStart, FeatureIterator pointsEnd, VoteTable & table ) const
     {
         // Statically check that the FeatureIterator points to an arithmetical type.
@@ -137,7 +137,7 @@ private:
     {
     }
 
-    template<typename FeatureIterator>
+    template <typename FeatureIterator>
     void recursiveClassifyVote( std::vector<DataPointID>::iterator pointIDsStart, std::vector<DataPointID>::iterator pointIDsEnd, FeatureIterator pointsStart, VoteTable & voteTable, NodeID currentNodeID ) const
     {
         // If the current node is an interior node, split the points along the split value, and classify both halves.
@@ -148,7 +148,7 @@ private:
             auto featureID  = m_splitFeatureID( currentNodeID, 0 );
 
             // Split the point IDs in two halves: points that lie below the split value, and points that lie on or above the feature split value.
-            auto featureCount = m_featureCount;
+            auto featureCount      = m_featureCount;
             auto pointIsBelowLimit = [&pointsStart, featureCount, splitValue, featureID]( const unsigned int & pointID )
             {
                 return pointsStart[featureCount * pointID + featureID] < splitValue;

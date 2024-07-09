@@ -72,15 +72,59 @@ std::string getCommonTypeName()
     return "";
 }
 
-template <> std::string getCommonTypeName<uint8_t>() { return "unsigned 8-bit integers"; }
-template <> std::string getCommonTypeName<uint16_t>() { return "unsigned 16-bit integers"; }
-template <> std::string getCommonTypeName<uint32_t>() { return "unsigned 32-bit integers"; }
-template <> std::string getCommonTypeName<int8_t>() { return "signed 8-bit integers"; }
-template <> std::string getCommonTypeName<int16_t>() { return "signed 16-bit integers"; }
-template <> std::string getCommonTypeName<int32_t>() { return "signed 32-bit integers"; }
-template <> std::string getCommonTypeName<bool>() { return "booleans"; }
-template <> std::string getCommonTypeName<float>() { return "single precision floating point numbers"; }
-template <> std::string getCommonTypeName<double>() { return "double precision floating point numbers"; }
+template <>
+std::string getCommonTypeName<uint8_t>()
+{
+    return "unsigned 8-bit integers";
+}
+
+template <>
+std::string getCommonTypeName<uint16_t>()
+{
+    return "unsigned 16-bit integers";
+}
+
+template <>
+std::string getCommonTypeName<uint32_t>()
+{
+    return "unsigned 32-bit integers";
+}
+
+template <>
+std::string getCommonTypeName<int8_t>()
+{
+    return "signed 8-bit integers";
+}
+
+template <>
+std::string getCommonTypeName<int16_t>()
+{
+    return "signed 16-bit integers";
+}
+
+template <>
+std::string getCommonTypeName<int32_t>()
+{
+    return "signed 32-bit integers";
+}
+
+template <>
+std::string getCommonTypeName<bool>()
+{
+    return "booleans";
+}
+
+template <>
+std::string getCommonTypeName<float>()
+{
+    return "single precision floating point numbers";
+}
+
+template <>
+std::string getCommonTypeName<double>()
+{
+    return "double precision floating point numbers";
+}
 
 template <typename Type>
 void parseAndPrintTable( BalsaFileParser & parser )
@@ -99,18 +143,18 @@ class PrintDispatcher: public ClassifierVisitor
 {
 public:
 
-    void visit( const EnsembleClassifier &classifier )
+    void visit( const EnsembleClassifier & classifier )
     {
         (void) classifier;
         assert( false );
     }
 
-    void visit( const DecisionTreeClassifier<float> &classifier )
+    void visit( const DecisionTreeClassifier<float> & classifier )
     {
         std::cout << classifier;
     }
 
-    void visit( const DecisionTreeClassifier<double> &classifier )
+    void visit( const DecisionTreeClassifier<double> & classifier )
     {
         std::cout << classifier;
     }
@@ -132,16 +176,16 @@ int main( int argc, char ** argv )
         std::cout << "File version   : " << parser.getFileMajorVersion() << "." << parser.getFileMinorVersion() << std::endl;
 
         // Print information about the tool that created the file.
-        auto creatorName = parser.getCreatorName();
+        auto creatorName         = parser.getCreatorName();
         auto creatorMajorVersion = parser.getCreatorMajorVersion();
         auto creatorMinorVersion = parser.getCreatorMinorVersion();
         auto creatorPatchVersion = parser.getCreatorPatchVersion();
         std::cout << "Creator name   : "
-            << (creatorName ? *creatorName : "*** UNKNOWN ***") << std::endl;
+                  << ( creatorName ? *creatorName : "*** UNKNOWN ***" ) << std::endl;
         std::cout << "Creator version: "
-            << (creatorMajorVersion ? std::to_string(*creatorMajorVersion) : "?") << "."
-            << (creatorMinorVersion ? std::to_string(*creatorMinorVersion) : "?") << "."
-            << (creatorPatchVersion ? std::to_string(*creatorPatchVersion) : "?") << std::endl;
+                  << ( creatorMajorVersion ? std::to_string( *creatorMajorVersion ) : "?" ) << "."
+                  << ( creatorMinorVersion ? std::to_string( *creatorMinorVersion ) : "?" ) << "."
+                  << ( creatorPatchVersion ? std::to_string( *creatorPatchVersion ) : "?" ) << std::endl;
 
         // Read and print data objects until the end of the file.
         while ( !parser.atEOF() )
@@ -165,22 +209,32 @@ int main( int argc, char ** argv )
             else if ( parser.atTree() )
             {
                 PrintDispatcher printer;
-                auto classifier = parser.parseClassifier();
+                auto            classifier = parser.parseClassifier();
                 classifier->visit( printer );
             }
             else if ( parser.atTable() )
             {
                 // Parse and print the table.
-                if      ( parser.atTableOfType<uint8_t >() ) parseAndPrintTable<uint8_t >( parser );
-                else if ( parser.atTableOfType<uint16_t>() ) parseAndPrintTable<uint16_t>( parser );
-                else if ( parser.atTableOfType<uint32_t>() ) parseAndPrintTable<uint32_t>( parser );
-                else if ( parser.atTableOfType<int8_t  >() ) parseAndPrintTable<int8_t  >( parser );
-                else if ( parser.atTableOfType<int16_t >() ) parseAndPrintTable<int16_t >( parser );
-                else if ( parser.atTableOfType<int32_t >() ) parseAndPrintTable<int32_t >( parser );
-                else if ( parser.atTableOfType<float   >() ) parseAndPrintTable<float   >( parser );
-                else if ( parser.atTableOfType<double  >() ) parseAndPrintTable<double  >( parser );
-                else if ( parser.atTableOfType<bool    >() ) parseAndPrintTable<bool    >( parser );
-                else assert( false );
+                if ( parser.atTableOfType<uint8_t>() )
+                    parseAndPrintTable<uint8_t>( parser );
+                else if ( parser.atTableOfType<uint16_t>() )
+                    parseAndPrintTable<uint16_t>( parser );
+                else if ( parser.atTableOfType<uint32_t>() )
+                    parseAndPrintTable<uint32_t>( parser );
+                else if ( parser.atTableOfType<int8_t>() )
+                    parseAndPrintTable<int8_t>( parser );
+                else if ( parser.atTableOfType<int16_t>() )
+                    parseAndPrintTable<int16_t>( parser );
+                else if ( parser.atTableOfType<int32_t>() )
+                    parseAndPrintTable<int32_t>( parser );
+                else if ( parser.atTableOfType<float>() )
+                    parseAndPrintTable<float>( parser );
+                else if ( parser.atTableOfType<double>() )
+                    parseAndPrintTable<double>( parser );
+                else if ( parser.atTableOfType<bool>() )
+                    parseAndPrintTable<bool>( parser );
+                else
+                    assert( false );
             }
         }
     }

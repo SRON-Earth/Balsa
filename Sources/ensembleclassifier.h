@@ -1,8 +1,8 @@
 #ifndef ENSEMBLECLASSIFIER_H
 #define ENSEMBLECLASSIFIER_H
 
-#include <iostream>
 #include <cassert>
+#include <iostream>
 #include <thread>
 
 #include "classifier.h"
@@ -19,27 +19,27 @@ namespace balsa
 /**
  * A Visitor that invokes the classify() template method on a visited Classifier.
  */
-template<typename FeatureIterator, typename LabelOutputIterator>
+template <typename FeatureIterator, typename LabelOutputIterator>
 class ClassifyDispatcher: public ClassifierVisitor
 {
 public:
 
-  ClassifyDispatcher( FeatureIterator featureStart, FeatureIterator featureEnd, LabelOutputIterator labelStart ):
-  m_featureStart( featureStart ),
-  m_featureEnd( featureEnd ),
-  m_labelStart( labelStart )
-  {
-  }
+    ClassifyDispatcher( FeatureIterator featureStart, FeatureIterator featureEnd, LabelOutputIterator labelStart ):
+    m_featureStart( featureStart ),
+    m_featureEnd( featureEnd ),
+    m_labelStart( labelStart )
+    {
+    }
 
-  void visit( const EnsembleClassifier &classifier );
-  void visit( const DecisionTreeClassifier<float> &classifier );
-  void visit( const DecisionTreeClassifier<double> &classifier );
+    void visit( const EnsembleClassifier & classifier );
+    void visit( const DecisionTreeClassifier<float> & classifier );
+    void visit( const DecisionTreeClassifier<double> & classifier );
 
 private:
 
-  FeatureIterator m_featureStart;
-  FeatureIterator m_featureEnd;
-  LabelOutputIterator m_labelStart;
+    FeatureIterator     m_featureStart;
+    FeatureIterator     m_featureEnd;
+    LabelOutputIterator m_labelStart;
 };
 
 /**
@@ -63,11 +63,10 @@ public:
 
 private:
 
-    FeatureIterator   m_featureStart;
-    FeatureIterator   m_featureEnd;
-    VoteTable       & m_voteTable;
+    FeatureIterator m_featureStart;
+    FeatureIterator m_featureEnd;
+    VoteTable &     m_voteTable;
 };
-
 
 /**
  * A Classifier that invokes multiple underlying Classifiers to come to a vote-based classification.
@@ -171,7 +170,7 @@ public:
      * \pre The column count of the vote table must match the number of
      *  features, the row count must match the number of points.
      */
-    template<typename FeatureIterator>
+    template <typename FeatureIterator>
     unsigned int classifyAndVote( FeatureIterator pointsStart, FeatureIterator pointsEnd, VoteTable & table ) const
     {
         // Statically check that the FeatureIterator points to an arithmetical type.
@@ -207,7 +206,7 @@ private:
     /**
      * A thread that runs classifyAndVote on a thread-local vote table.
      */
-    template<typename FeatureIterator>
+    template <typename FeatureIterator>
     class WorkerThread
     {
     public:
@@ -277,7 +276,7 @@ private:
         std::thread               m_thread;
     };
 
-    template<typename FeatureIterator>
+    template <typename FeatureIterator>
     unsigned int classifyAndVoteSingleThreaded( FeatureIterator pointsStart, FeatureIterator pointsEnd, unsigned int featureCount, VoteTable & table ) const
     {
         (void) featureCount;
@@ -295,7 +294,7 @@ private:
         return voterCount;
     }
 
-    template<typename FeatureIterator>
+    template <typename FeatureIterator>
     unsigned int classifyAndVoteMultiThreaded( FeatureIterator pointsStart, FeatureIterator pointsEnd, unsigned int featureCount, VoteTable & table ) const
     {
         // Reset the stream of classifiers.
@@ -337,22 +336,22 @@ private:
     std::vector<float>      m_classWeights;
 };
 
-template<typename FeatureIterator, typename LabelOutputIterator>
-void ClassifyDispatcher<FeatureIterator, LabelOutputIterator>::visit( const EnsembleClassifier &classifier )
+template <typename FeatureIterator, typename LabelOutputIterator>
+void ClassifyDispatcher<FeatureIterator, LabelOutputIterator>::visit( const EnsembleClassifier & classifier )
 {
     (void) classifier;
     assert( false );
     // classifier.classify( m_featureStart, m_featureEnd, m_labelStart );
 }
 
-template<typename FeatureIterator, typename LabelOutputIterator>
-void ClassifyDispatcher<FeatureIterator, LabelOutputIterator>::visit( const DecisionTreeClassifier<float> &classifier )
+template <typename FeatureIterator, typename LabelOutputIterator>
+void ClassifyDispatcher<FeatureIterator, LabelOutputIterator>::visit( const DecisionTreeClassifier<float> & classifier )
 {
     classifier.classify( m_featureStart, m_featureEnd, m_labelStart );
 }
 
-template<typename FeatureIterator, typename LabelOutputIterator>
-void ClassifyDispatcher<FeatureIterator, LabelOutputIterator>::visit( const DecisionTreeClassifier<double> &classifier )
+template <typename FeatureIterator, typename LabelOutputIterator>
+void ClassifyDispatcher<FeatureIterator, LabelOutputIterator>::visit( const DecisionTreeClassifier<double> & classifier )
 {
     classifier.classify( m_featureStart, m_featureEnd, m_labelStart );
 }

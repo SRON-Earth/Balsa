@@ -67,16 +67,65 @@ std::string getTypeName()
 }
 
 // Template specializations for all supported elementary types.
-template <> std::string getTypeName<uint8_t    >() { return "ui08"; }
-template <> std::string getTypeName<uint16_t   >() { return "ui16"; }
-template <> std::string getTypeName<uint32_t   >() { return "ui32"; }
-template <> std::string getTypeName<int8_t     >() { return "in08"; }
-template <> std::string getTypeName<int16_t    >() { return "in16"; }
-template <> std::string getTypeName<int32_t    >() { return "in32"; }
-template <> std::string getTypeName<float      >() { return "fl32"; }
-template <> std::string getTypeName<double     >() { return "fl64"; }
-template <> std::string getTypeName<bool       >() { return "bool"; }
-template <> std::string getTypeName<std::string>() { return "strn"; }
+template <>
+std::string getTypeName<uint8_t>()
+{
+    return "ui08";
+}
+
+template <>
+std::string getTypeName<uint16_t>()
+{
+    return "ui16";
+}
+
+template <>
+std::string getTypeName<uint32_t>()
+{
+    return "ui32";
+}
+
+template <>
+std::string getTypeName<int8_t>()
+{
+    return "in08";
+}
+
+template <>
+std::string getTypeName<int16_t>()
+{
+    return "in16";
+}
+
+template <>
+std::string getTypeName<int32_t>()
+{
+    return "in32";
+}
+
+template <>
+std::string getTypeName<float>()
+{
+    return "fl32";
+}
+
+template <>
+std::string getTypeName<double>()
+{
+    return "fl64";
+}
+
+template <>
+std::string getTypeName<bool>()
+{
+    return "bool";
+}
+
+template <>
+std::string getTypeName<std::string>()
+{
+    return "strn";
+}
 
 /*
  * Returns the type name of the specified scalar type.
@@ -464,7 +513,7 @@ EnsembleHeader BalsaFileParser::enterEnsemble()
 {
     expect( m_stream, ENSEMBLE_START_MARKER, "Missing ensemble start marker." );
     EnsembleHeader result = parseEnsembleHeader();
-    m_treeOffset        = m_stream.tellg();
+    m_treeOffset          = m_stream.tellg();
     return result;
 }
 
@@ -491,7 +540,7 @@ Classifier::SharedPointer BalsaFileParser::parseClassifier()
     Classifier::SharedPointer result;
     switch ( header.featureTypeID )
     {
-    case FeatureTypeID::FLOAT:
+        case FeatureTypeID::FLOAT:
         {
             // Create an empty classifier.
             DecisionTreeClassifier<float>::SharedPointer classifier( new DecisionTreeClassifier<float>( header.classCount, header.featureCount ) );
@@ -506,7 +555,7 @@ Classifier::SharedPointer BalsaFileParser::parseClassifier()
             result = classifier;
         }
         break;
-    case FeatureTypeID::DOUBLE:
+        case FeatureTypeID::DOUBLE:
         {
             // Create an empty classifier.
             DecisionTreeClassifier<double>::SharedPointer classifier( new DecisionTreeClassifier<double>( header.classCount, header.featureCount ) );
@@ -521,8 +570,8 @@ Classifier::SharedPointer BalsaFileParser::parseClassifier()
             result = classifier;
         }
         break;
-    default:
-        assert( false );
+        default:
+            assert( false );
     }
 
     // Parse the tree end marker.
@@ -560,9 +609,9 @@ void BalsaFileParser::parseTableEndMarker()
 EnsembleHeader BalsaFileParser::parseEnsembleHeader()
 {
     EnsembleHeader result;
-    Dictionary   dictionary = Dictionary::deserialize( m_stream );
-    result.classCount       = dictionary.get<uint8_t>( ENSEMBLE_HEADER_CLASS_COUNT_KEY );
-    result.featureCount     = dictionary.get<uint8_t>( ENSEMBLE_HEADER_FEATURE_COUNT_KEY );
+    Dictionary     dictionary = Dictionary::deserialize( m_stream );
+    result.classCount         = dictionary.get<uint8_t>( ENSEMBLE_HEADER_CLASS_COUNT_KEY );
+    result.featureCount       = dictionary.get<uint8_t>( ENSEMBLE_HEADER_FEATURE_COUNT_KEY );
     return result;
 }
 
@@ -586,9 +635,7 @@ TableHeader BalsaFileParser::parseTableHeader()
     return result;
 }
 
-BalsaFileWriter::BalsaFileWriter( const std::string & filename, std::optional<std::string> creatorName,
-    std::optional<unsigned char> creatorMajorVersion, std::optional<unsigned char> creatorMinorVersion,
-    std::optional<unsigned char> creatorPatchVersion ):
+BalsaFileWriter::BalsaFileWriter( const std::string & filename, std::optional<std::string> creatorName, std::optional<unsigned char> creatorMajorVersion, std::optional<unsigned char> creatorMinorVersion, std::optional<unsigned char> creatorPatchVersion ):
 m_insideEnsemble( false )
 {
     // Configure the file input stream to throw an exception on error.
@@ -631,14 +678,14 @@ void BalsaFileWriter::writeClassifier( const Classifier & classifier )
     classifier.visit( writer );
 }
 
-void BalsaFileWriter::ClassifierWriteDispatcher::visit( const EnsembleClassifier &classifier )
+void BalsaFileWriter::ClassifierWriteDispatcher::visit( const EnsembleClassifier & classifier )
 {
     // Writing ensemble classifiers is not supported yet.
     (void) classifier;
     assert( false );
 }
 
-void BalsaFileWriter::ClassifierWriteDispatcher::visit( const DecisionTreeClassifier<float> &classifier )
+void BalsaFileWriter::ClassifierWriteDispatcher::visit( const DecisionTreeClassifier<float> & classifier )
 {
     m_writer.writeTreeStartMarker();
     m_writer.writeTreeHeader( classifier.m_classCount, classifier.m_featureCount, getFeatureTypeID<float>() );
@@ -650,7 +697,7 @@ void BalsaFileWriter::ClassifierWriteDispatcher::visit( const DecisionTreeClassi
     m_writer.writeTreeEndMarker();
 }
 
-void BalsaFileWriter::ClassifierWriteDispatcher::visit( const DecisionTreeClassifier<double> &classifier )
+void BalsaFileWriter::ClassifierWriteDispatcher::visit( const DecisionTreeClassifier<double> & classifier )
 {
     m_writer.writeTreeStartMarker();
     m_writer.writeTreeHeader( classifier.m_classCount, classifier.m_featureCount, getFeatureTypeID<double>() );
