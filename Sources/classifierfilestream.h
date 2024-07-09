@@ -25,7 +25,7 @@ class ClassifierFileInputStream: public ClassifierInputStream
 {
 public:
 
-    /*
+    /**
      * Construct an open classifier input stream.
      *
      * The \c maxPreload parameter determines how many classifiers to preload
@@ -56,7 +56,7 @@ public:
         m_featureCount        = header.featureCount;
     }
 
-    /*
+    /**
      * Copy constructor (deleted). Classifier input streams cannot be copied.
      */
     ClassifierFileInputStream( const ClassifierFileInputStream & ) = delete;

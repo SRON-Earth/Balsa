@@ -14,7 +14,7 @@
 namespace balsa
 {
 
-/*
+/**
  * An enumeration of supported scalar types.
  */
 enum class ScalarTypeID
@@ -30,7 +30,7 @@ enum class ScalarTypeID
     BOOL
 };
 
-/*
+/**
  * Returns the scalar type identifier for the specified type.
  */
 template <typename Type>
@@ -40,7 +40,7 @@ ScalarTypeID getScalarTypeID()
     return static_cast<ScalarTypeID>( 0 );
 }
 
-/*
+/**
  * An enumeration of supported feature types.
  */
 enum class FeatureTypeID
@@ -49,7 +49,7 @@ enum class FeatureTypeID
     DOUBLE
 };
 
-/*
+/**
  * Returns the feature type identifier for the specified type.
  */
 template <typename Type>
@@ -59,7 +59,7 @@ FeatureTypeID getFeatureTypeID()
     return static_cast<FeatureTypeID>( 0 );
 }
 
-/*
+/**
  * Description of an ensemble of classification models.
  */
 struct EnsembleHeader
@@ -68,7 +68,7 @@ struct EnsembleHeader
     unsigned char featureCount; // Number of features the ensemble was trained on.
 };
 
-/*
+/**
  * Description of a decision tree.
  */
 struct TreeHeader
@@ -78,7 +78,7 @@ struct TreeHeader
     FeatureTypeID featureTypeID; // Numeric type used for features.
 };
 
-/*
+/**
  * Description of a table.
  */
 struct TableHeader
@@ -88,79 +88,79 @@ struct TableHeader
     ScalarTypeID scalarTypeID; // Numeric type of the elements of the table.
 };
 
-/*
+/**
  * A parser for files written in the balsa file format.
  */
 class BalsaFileParser
 {
 public:
 
-    /*
+    /**
      * Constructor; opens the specified file for parsing.
      */
     BalsaFileParser( const std::string & filename );
 
-    /*
+    /**
      * Returns the major version number of the balsa file format specification
      * the file adheres to.
      */
     unsigned int getFileMajorVersion() const;
 
-    /*
+    /**
      * Returns the minor version number of the balsa file format specification
      * the file adheres to.
      */
     unsigned int getFileMinorVersion() const;
 
-    /*
+    /**
      * Returns the name of the tool that created the file (if available).
      */
     std::optional<std::string> getCreatorName() const;
 
-    /*
+    /**
      * Returns the major version number of the tool that created the file
      * (if available).
      */
     std::optional<unsigned int> getCreatorMajorVersion() const;
 
-    /*
+    /**
      * Returns the minor version number of the tool that created the file
      * (if available).
      */
     std::optional<unsigned int> getCreatorMinorVersion() const;
 
-    /*
+    /**
      * Returns the patch version number of the tool that created the file
      * (if available).
      */
     std::optional<unsigned int> getCreatorPatchVersion() const;
 
-    /*
+    /**
      * Returns true iff the reader is positioned at the end of the file.
      */
     bool atEOF();
 
-    /*
+    /**
      * Returns true iff the reader is positioned at the start of an ensemble.
      */
     bool atEnsemble();
 
-    /*
+    /**
      * Returns true iff the reader is positioned at end of an ensemble.
      */
     bool atEndOfEnsemble();
 
-    /*
+    /**
      * Returns true iff the reader is positioned at a decision tree.
      */
     bool atTree();
 
-    /*
+    /**
      * Returns true iff the reader is positioned at a table.
      */
     bool atTable();
 
-    /*
+    /**
      * Returns true iff the reader is positioned at a decision tree using
      * features of the specified type.
      */
@@ -170,7 +170,7 @@ public:
         return atTreeOfType( getFeatureTypeID<FeatureType>() );
     }
 
-    /*
+    /**
      * Returns true iff the reader is positioned at a table that contains
      * elements of the specified type.
      */
@@ -180,7 +180,7 @@ public:
         return atTableOfType( getScalarTypeID<ScalarType>() );
     }
 
-    /*
+    /**
      * Parses an ensemble start marker and description.
      *
      * \pre The parser is positioned at an ensemble.
@@ -192,7 +192,7 @@ public:
      */
     EnsembleHeader enterEnsemble();
 
-    /*
+    /**
      * Parses and discards an ensemble end marker.
      *
      * \pre The parser is positioned at the end of an ensemble.
@@ -201,7 +201,7 @@ public:
      */
     void leaveEnsemble();
 
-    /*
+    /**
      * Reposition the parser at the first submodel of the last ensemble
      * entered using \c enterEnsemble().
      *
@@ -209,7 +209,7 @@ public:
      */
     void reenterEnsemble();
 
-    /*
+    /**
      * Parses a classifier.
      *
      * \pre The parser is positioned at a classifier.
@@ -218,7 +218,7 @@ public:
      */
     Classifier::SharedPointer parseClassifier();
 
-    /*
+    /**
      * Parses a table containing elements of the specified scalar type.
      *
      * \pre The parser is positioned at a table of the specified scalar type.
@@ -249,7 +249,7 @@ public:
         return result;
     }
 
-    /*
+    /**
      * Parses a table containing elements of the specified scalar type. If the
      * table stored in the file contains elements of a different scalar type,
      * the elements will be converted to the requested type if possible.
@@ -333,7 +333,7 @@ private:
     std::optional<unsigned int> m_creatorPatchVersion;
 };
 
-/*
+/**
  * Read a table containing elements of the specified scalar type from a file.
  */
 template <typename ScalarType>
@@ -343,7 +343,7 @@ Table<ScalarType> readTable( const std::string & filename )
     return parser.parseTable<ScalarType>();
 }
 
-/*
+/**
  * Read a table containing elements of the specified scalar type from a file. If
  * the table stored in the file contains elements of a different scalar type,
  * the elements will be converted to the requested type if possible.
@@ -355,14 +355,14 @@ Table<ScalarType> readTableAs( const std::string & filename )
     return parser.parseTableAs<ScalarType>();
 }
 
-/*
+/**
  * A writer for files that adhere to the balsa file format.
  */
 class BalsaFileWriter
 {
 public:
 
-    /*
+    /**
      * Constructor; opens the specified file for writing. The file will be
      * truncated if it exists.
      *
@@ -382,7 +382,7 @@ public:
         std::optional<unsigned char>     creatorMinorVersion = std::nullopt,
         std::optional<unsigned char>     creatorPatchVersion = std::nullopt );
 
-    /*
+    /**
      * Write an ensemble start marker and ensemble description.
      *
      * After calling this function, the submodels that compose the ensemble can
@@ -395,7 +395,7 @@ public:
      */
     void enterEnsemble( unsigned char classCount, unsigned char featureCount );
 
-    /*
+    /**
      * Write an ensemble end marker.
      *
      * This function should be called after all submodels that compose the
@@ -405,7 +405,7 @@ public:
      */
     void leaveEnsemble();
 
-    /*
+    /**
      * Write a model to the file.
      *
      * Decision trees can be written as part of an ensemble, or as top-level
@@ -413,7 +413,7 @@ public:
      */
     void writeClassifier( const Classifier & classifier );
 
-    /*
+    /**
      * Write a table to the file.
      *
      * \pre The writer is not positioned inside an ensemble.

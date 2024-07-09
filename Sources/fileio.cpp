@@ -8,13 +8,13 @@
 namespace balsa
 {
 
-/*
+/**
  * Balsa file format version.
  */
 constexpr const unsigned char FILE_FORMAT_MAJOR_VERSION = 1;
 constexpr const unsigned char FILE_FORMAT_MINOR_VERSION = 0;
 
-/*
+/**
  * Marker names.
  */
 const std::string FILE_SIGNATURE          = "blsa";
@@ -29,7 +29,7 @@ const std::string TABLE_END_MARKER        = "lbat";
 const std::string DICTIONARY_START_MARKER = "dict";
 const std::string DICTIONARY_END_MARKER   = "tcid";
 
-/*
+/**
  * Dictionary key names.
  */
 const std::string FILE_HEADER_FILE_MAJOR_VERSION_KEY    = "file_major_version";
@@ -47,7 +47,7 @@ const std::string TABLE_HEADER_ROW_COUNT_KEY            = "row_count";
 const std::string TABLE_HEADER_COLUMN_COUNT_KEY         = "column_count";
 const std::string TABLE_HEADER_SCALAR_TYPE_ID_KEY       = "scalar_type_id";
 
-/*
+/**
  * An enumeration of recognized platform endianness.
  */
 enum class Endianness
@@ -56,7 +56,7 @@ enum class Endianness
     LITTLE
 };
 
-/*
+/**
  * Returns the type name of the specified elementary type.
  */
 template <typename Type>
@@ -127,7 +127,7 @@ std::string getTypeName<std::string>()
     return "strn";
 }
 
-/*
+/**
  * Returns the type name of the specified scalar type.
  */
 std::string getTypeName( ScalarTypeID scalarTypeID )
@@ -157,7 +157,7 @@ std::string getTypeName( ScalarTypeID scalarTypeID )
     }
 }
 
-/*
+/**
  * Returns the scalar type identifier that corresponds to the specified type
  * name.
  */
@@ -175,7 +175,7 @@ ScalarTypeID getScalarTypeID( const std::string & typeName )
     throw ParseError( "Unknown scalar type: '" + typeName + "'." );
 }
 
-/*
+/**
  * Returns the type name of the specified feature type.
  */
 std::string getTypeName( FeatureTypeID featureTypeID )
@@ -191,7 +191,7 @@ std::string getTypeName( FeatureTypeID featureTypeID )
     }
 }
 
-/*
+/**
  * Returns the feature type identifier that corresponds to the specified type
  * name.
  */
@@ -202,7 +202,7 @@ FeatureTypeID getFeatureTypeID( const std::string & typeName )
     throw ParseError( "Unknown feature type: '" + typeName + "'." );
 }
 
-/*
+/**
  * Serialize a string to a binary output stream.
  */
 void serializeString( std::ostream & stream, const std::string & value )
@@ -212,7 +212,7 @@ void serializeString( std::ostream & stream, const std::string & value )
     stream.write( value.data(), value.size() );
 }
 
-/*
+/**
  * Deserialize a string from a binary input stream.
  */
 std::string deserializeString( std::istream & stream )
@@ -224,7 +224,7 @@ std::string deserializeString( std::istream & stream )
     return value;
 }
 
-/*
+/**
  * A dictionary of which the values can be of any of the supported elementary
  * types.
  */
@@ -235,7 +235,7 @@ class Dictionary
 
 public:
 
-    /*
+    /**
      * Returns the number of items in the dictionary.
      */
     std::size_t size() const
@@ -243,7 +243,7 @@ public:
         return m_dictionary.size();
     }
 
-    /*
+    /**
      * Enters the specified key into the dictionary with the specified value. If
      * the dictionary already contains the specified key the associated value
      * will be replaced by the specfied value.
@@ -257,7 +257,7 @@ public:
         assert( m_dictionary.size() < 256 );
     }
 
-    /*
+    /**
      * Retrieves the value associated with the specified key from the
      * dictionary.
      */
@@ -267,7 +267,7 @@ public:
         return std::get<T>( m_dictionary.at( key ) );
     }
 
-    /*
+    /**
      * Returns the value associated with the specified key, or an empty value
      * if the dictionary does not contain the specified key.
      */
@@ -279,7 +279,7 @@ public:
         return std::get<T>( it->second );
     }
 
-    /*
+    /**
      * Serialize the dictionary to a binary output stream.
      */
     void serialize( std::ostream & stream ) const
@@ -295,7 +295,7 @@ public:
         stream.write( DICTIONARY_END_MARKER.data(), DICTIONARY_END_MARKER.size() );
     }
 
-    /*
+    /**
      * Deserialize a dictionary from a binary output stream.
      */
     static Dictionary deserialize( std::istream & stream )
@@ -369,7 +369,7 @@ private:
     std::map<KeyType, ValueType> m_dictionary;
 };
 
-/*
+/**
  * Determines the platform endianness.
  */
 Endianness getPlatformEndianness()
@@ -380,7 +380,7 @@ Endianness getPlatformEndianness()
     return ( *charAddress == 0x01 ) ? Endianness::LITTLE : Endianness::BIG;
 }
 
-/*
+/**
  * Parse the endianness marker from a binary input stream.
  */
 Endianness parseFileEndianness( std::istream & stream )
