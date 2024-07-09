@@ -77,13 +77,13 @@ public:
 
     /**
      * Creates an ensemble classifier.
-     * \param classifiers A resettable stream of classifiers to apply.
+     * \param classifierStream A resettable stream of classifiers to apply.
      * \param maxWorkerThreads The maximum number of threads that may be created in addition to the main thread.
      */
-    EnsembleClassifier( ClassifierInputStream & classifiers, unsigned int maxWorkerThreads = 0 ):
-    m_classifierStream( classifiers ),
+    EnsembleClassifier( ClassifierInputStream & classifierStream, unsigned int maxWorkerThreads = 0 ):
+    m_classifierStreamPtr( &classifierStream ),
     m_maxWorkerThreads( maxWorkerThreads ),
-    m_classWeights( m_classifierStream.getClassCount(), 1.0 )
+    m_classWeights( classifierStream.getClassCount(), 1.0 )
     {
     }
 
@@ -92,7 +92,7 @@ public:
      */
     unsigned int getClassCount() const
     {
-        return m_classifierStream.getClassCount();
+        return m_classifierStreamPtr->getClassCount();
     }
 
     /**
@@ -100,7 +100,7 @@ public:
      */
     unsigned int getFeatureCount() const
     {
-        return m_classifierStream.getFeatureCount();
+        return m_classifierStreamPtr->getFeatureCount();
     }
 
     /**
@@ -139,7 +139,7 @@ public:
         static_assert( std::is_arithmetic<FeatureIteratedType>::value, "Features must be of an integral or floating point type." );
 
         // Check the dimensions of the input data.
-        unsigned int featureCount = m_classifierStream.getFeatureCount();
+        unsigned int featureCount = m_classifierStreamPtr->getFeatureCount();
         if ( featureCount == 0 ) throw ClientError( "Data points must have at least one feature." );
         auto entryCount = std::distance( pointsStart, pointsEnd );
         if ( entryCount % featureCount ) throw ClientError( "Malformed dataset." );
@@ -148,7 +148,7 @@ public:
         auto pointCount = entryCount / featureCount;
 
         // Create a table for the label votes.
-        VoteTable voteCounts( pointCount, m_classifierStream.getClassCount() );
+        VoteTable voteCounts( pointCount, m_classifierStreamPtr->getClassCount() );
 
         // Let all classifiers vote on the point labels.
         classifyAndVote( pointsStart, pointsEnd, voteCounts );
@@ -178,11 +178,41 @@ public:
         static_assert( std::is_arithmetic<FeatureIteratedType>::value, "Features must be of an integral or floating point type." );
 
         // Dispatch to single- or multithreaded implementation.
-        unsigned int featureCount = m_classifierStream.getFeatureCount();
+        unsigned int featureCount = m_classifierStreamPtr->getFeatureCount();
         if ( m_maxWorkerThreads > 0 )
             return classifyAndVoteMultiThreaded( pointsStart, pointsEnd, featureCount, table );
         else
             return classifyAndVoteSingleThreaded( pointsStart, pointsEnd, featureCount, table );
+    }
+
+protected:
+
+    /**
+     * Constructs an ensemble classifier without an associated classifier
+     * stream.
+     *
+     * This constructor is intended to facilitate derived (convenience) classes
+     * that own a classifier stream instance. After this constructor finishes,
+     * the object is not yet in a usable state. Derived classes using this
+     * constructor should call \c init() in their constructor body to ensure
+     * the base class object as a whole is well-defined.
+     */
+    explicit EnsembleClassifier():
+    m_classifierStreamPtr( nullptr ),
+    m_maxWorkerThreads( 0 )
+    {
+    }
+
+    /**
+     * Finish the initialization of an ensemble classifier constructed using the
+     * default constructor.
+     */
+    void init( ClassifierInputStream & classifierStream, unsigned int maxWorkerThreads )
+    {
+        assert( !m_classifierStreamPtr );
+        m_classifierStreamPtr = &classifierStream;
+        m_maxWorkerThreads    = maxWorkerThreads;
+        m_classWeights.resize( m_classifierStreamPtr->getClassCount(), 1.0 );
     }
 
 private:
@@ -282,9 +312,9 @@ private:
         (void) featureCount;
 
         // Reset the stream of classifiers, and apply each classifier that comes out of it.
-        m_classifierStream.rewind();
+        m_classifierStreamPtr->rewind();
         unsigned int voterCount = 0;
-        for ( auto classifier = m_classifierStream.next(); classifier; classifier = m_classifierStream.next(), ++voterCount )
+        for ( auto classifier = m_classifierStreamPtr->next(); classifier; classifier = m_classifierStreamPtr->next(), ++voterCount )
         {
             ClassifyAndVoteDispatcher voter( pointsStart, pointsEnd, table );
             classifier->visit( voter );
@@ -298,14 +328,14 @@ private:
     unsigned int classifyAndVoteMultiThreaded( FeatureIterator pointsStart, FeatureIterator pointsEnd, unsigned int featureCount, VoteTable & table ) const
     {
         // Reset the stream of classifiers.
-        m_classifierStream.rewind();
+        m_classifierStreamPtr->rewind();
         unsigned int voterCount = 0;
 
         // Create message queues for communicating with the worker threads.
         MessageQueue<WorkerJob> jobQueue;
 
         // Record the number of classes.
-        unsigned int classCount = m_classifierStream.getClassCount();
+        unsigned int classCount = m_classifierStreamPtr->getClassCount();
 
         // Create the workers.
         std::vector<typename WorkerThread<FeatureIterator>::SharedPointer> workers;
@@ -316,7 +346,7 @@ private:
         for ( auto & worker : workers ) worker->start();
 
         // Reset the stream of classifiers, and apply each classifier that comes out of it.
-        for ( auto classifier = m_classifierStream.next(); classifier; classifier = m_classifierStream.next(), ++voterCount ) jobQueue.send( WorkerJob( classifier ) );
+        for ( auto classifier = m_classifierStreamPtr->next(); classifier; classifier = m_classifierStreamPtr->next(), ++voterCount ) jobQueue.send( WorkerJob( classifier ) );
 
         // Send stop messages for all workers.
         for ( auto i = workers.size(); i > 0; --i ) jobQueue.send( WorkerJob( nullptr ) );
@@ -331,7 +361,7 @@ private:
         return voterCount;
     }
 
-    ClassifierInputStream & m_classifierStream;
+    ClassifierInputStream * m_classifierStreamPtr;
     unsigned int            m_maxWorkerThreads;
     std::vector<float>      m_classWeights;
 };

@@ -4,10 +4,9 @@
 #include <sstream>
 #include <string>
 
-#include "classifierfilestream.h"
-#include "ensembleclassifier.h"
 #include "exceptions.h"
 #include "modelevaluation.h"
+#include "randomforestclassifier.h"
 #include "table.h"
 
 using namespace balsa;
@@ -105,8 +104,7 @@ int main( int argc, char ** argv )
         auto labels  = readTableAs<Label>( options.labelFile );
 
         // Create a classifier for the model.
-        ClassifierFileInputStream inputStream( options.modelFile, options.maxPreload );
-        EnsembleClassifier        classifier( inputStream, options.threadCount - 1 );
+        RandomForestClassifier classifier( options.modelFile, options.threadCount - 1, options.maxPreload );
 
         // Calculate the feature importance and print them.
         std::cout << "Analyzing feature importance..." << std::endl;

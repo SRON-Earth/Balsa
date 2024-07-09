@@ -6,10 +6,9 @@
 #include <limits>
 #include <string>
 
-#include "classifierfilestream.h"
 #include "datagenerator.h"
 #include "datatypes.h"
-#include "ensembleclassifier.h"
+#include "randomforestclassifier.h"
 #include "randomforesttrainer.h"
 #include "table.h"
 
@@ -60,9 +59,8 @@ bool testCross2x2()
     }
 
     // Classify the training data.
-    uint8_t                   labels[4];
-    ClassifierFileInputStream inputStream( modelFile, 0 );
-    EnsembleClassifier        classifier( inputStream, 0 );
+    uint8_t                labels[4];
+    RandomForestClassifier classifier( modelFile, 0, 0 );
     classifier.classify( points, points + 8, labels );
 
     // Ensure the classification result matches the ground truth exactly.
@@ -101,9 +99,8 @@ bool testCheckerboard()
     }
 
     // Classify the training data.
-    Table<Label>              labels( points.getRowCount(), 1 );
-    ClassifierFileInputStream inputStream( modelFile, 0 );
-    EnsembleClassifier        classifier( inputStream, 0 );
+    Table<Label>           labels( points.getRowCount(), 1 );
+    RandomForestClassifier classifier( modelFile, 0, 0 );
     classifier.classify( points.begin(), points.end(), labels.begin() );
 
     // Ensure the classification result matches the ground truth exactly.
@@ -139,9 +136,8 @@ bool testConcentricRings()
     }
 
     // Classify the training data.
-    Table<Label>              labels( points.getRowCount(), 1 );
-    ClassifierFileInputStream inputStream( modelFile, 0 );
-    EnsembleClassifier        classifier( inputStream, 0 );
+    Table<Label>           labels( points.getRowCount(), 1 );
+    RandomForestClassifier classifier( modelFile, 0, 0 );
     classifier.classify( points.begin(), points.end(), labels.begin() );
 
     // Ensure the classification result matches the ground truth exactly.

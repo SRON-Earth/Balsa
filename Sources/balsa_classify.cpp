@@ -6,11 +6,10 @@
 #include <string>
 #include <vector>
 
-#include "classifierfilestream.h"
 #include "config.h"
 #include "datatypes.h"
-#include "ensembleclassifier.h"
 #include "exceptions.h"
+#include "randomforestclassifier.h"
 #include "table.h"
 #include "timing.h"
 
@@ -148,8 +147,7 @@ int main( int argc, char ** argv )
         assert( options.threadCount > 0 );
 
         // Create a random forest classifier.
-        ClassifierFileInputStream inputStream( options.modelFile, options.maxPreload );
-        EnsembleClassifier        classifier( inputStream, options.threadCount - 1 );
+        RandomForestClassifier classifier( options.modelFile, options.threadCount - 1, options.maxPreload );
 
         // Override the class weights.
         std::vector<float> weights( classifier.getClassCount(), 1.0 );
