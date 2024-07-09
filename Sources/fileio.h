@@ -181,9 +181,9 @@ public:
     }
 
     /*
-     * Parses a ensemble start marker and description.
+     * Parses an ensemble start marker and description.
      *
-     * \pre The parser is positioned at a ensemble.
+     * \pre The parser is positioned at an ensemble.
      * \post The parser will be positioned at the first submodel in the
      *  ensemble.
      * \post The \c reenterEnsemble() member function can be used to reposition
@@ -193,9 +193,9 @@ public:
     EnsembleHeader enterEnsemble();
 
     /*
-     * Parses and discards a ensemble end marker.
+     * Parses and discards an ensemble end marker.
      *
-     * \pre The parser is positioned at the end of a ensemble.
+     * \pre The parser is positioned at the end of an ensemble.
      * \post The parser will be positioned at the next object in the file, or at
      *  the end of the file if it contains no more objects.
      */
@@ -205,7 +205,7 @@ public:
      * Reposition the parser at the first submodel of the last ensemble
      * entered using \c enterEnsemble().
      *
-     * \pre A ensemble was entered using \c enterEnsemble().
+     * \pre An ensemble was entered using \c enterEnsemble().
      */
     void reenterEnsemble();
 
@@ -365,74 +365,50 @@ public:
 	/*
 	 * Constructor; opens the specified file for writing. The file will be
 	 * truncated if it exists.
+     *
+     * \param filename Name of the file to write.
+     * \param creatorName Name of the tool that created the file (optional).
+     *  This information will be stored in the file header.
+     * \param creatorMajorVersion Major version number of the tool that created
+     *  the file (optional). This information will be stored in the file header.
+     * \param creatorMinorVersion Minor version number of the tool that created
+     *  the file (optional). This information will be stored in the file header.
+     * \param creatorPatchVersion Patch version number of the tool that created
+     *  the file (optional). This information will be stored in the file header.
 	 */
-    BalsaFileWriter( const std::string & filename );
+    BalsaFileWriter( const std::string & filename,
+        std::optional<std::string> creatorName = std::nullopt,
+        std::optional<unsigned char> creatorMajorVersion = std::nullopt,
+        std::optional<unsigned char> creatorMinorVersion = std::nullopt,
+        std::optional<unsigned char> creatorPatchVersion = std::nullopt );
 
     /*
-     * Set the name of the tool that created this file.
+     * Write an ensemble start marker and ensemble description.
      *
-     * This information will be stored in the file header. The creator name is
-     * optional; if this function has not been called before writing the first
-     * object to the file, no creator name will be written to the file header.
-     */
-    void setCreatorName( const std::string & value );
-
-    /*
-     * Set the major version number of the tool that created this file.
+     * After calling this function, the submodels that compose the ensemble can
+     * be written using the \c writeTree() function. Once all submodels have
+     * been written, the ensemble should be finalized using a call to the \c
+     * leaveEnsemble() function.
      *
-     * This information will be stored in the file header. The creator major
-     * version number is optional; if this function has not been called before
-     * writing the first object to the file, no creator major version number
-     * will be written to the file header.
-     */
-    void setCreatorMajorVersion( unsigned char value );
-
-    /*
-     * Set the minor version number of the tool that created this file.
-     *
-     * This information will be stored in the file header. The creator major
-     * version number is optional; if this function has not been called before
-     * writing the first object to the file, no creator minor version number
-     * will be written to the file header.
-     */
-    void setCreatorMinorVersion( unsigned char value );
-
-    /*
-     * Set the patch version number of the tool that created this file.
-     *
-     * This information will be stored in the file header. The creator patch
-     * version number is optional; if this function has not been called before
-     * writing the first object to the file, no creator patch version number
-     * will be written to the file header.
-     */
-    void setCreatorPatchVersion( unsigned char value );
-
-    /*
-     * Write a ensemble start marker and ensemble description.
-     *
-     * After calling this function, the submodels that compose the ensemble
-     * can be written using the \c writeTree() function. Once all submodels have been written, the ensemble should be finalized using a call to
-     * the \c leaveEnsemble() function.
-     *
-     * \pre The writer is not positioned inside a ensemble (ensembles cannot be
+     * \pre The writer is not positioned inside an ensemble (ensembles cannot be
      *  nested).
      */
     void enterEnsemble( unsigned char classCount, unsigned char featureCount );
 
     /*
-     * Write a ensemble end marker.
+     * Write an ensemble end marker.
      *
      * This function should be called after all submodels that compose the
      * ensemble have been written.
      *
-     * \pre The writer is positioned inside a ensemble.
+     * \pre The writer is positioned inside an ensemble.
      */
     void leaveEnsemble();
 
     /*
      * Write a model to the file.
      *
-     * Decision trees can be written as part of a ensemble, or as top-level
+     * Decision trees can be written as part of an ensemble, or as top-level
      * objects.
      */
     void writeClassifier( const Classifier & classifier );
@@ -440,12 +416,11 @@ public:
     /*
      * Write a table to the file.
      *
-     * \pre The writer is not positioned inside a ensemble.
+     * \pre The writer is not positioned inside an ensemble.
      */
     template <typename ScalarType>
     void writeTable( const Table<ScalarType> & table )
     {
-        writeFileHeaderOnce();
         writeTableStartMarker();
         writeTableHeader( table.getRowCount(), table.getColumnCount(), getScalarTypeID<ScalarType>() );
         table.writeCellData( m_stream );
@@ -473,7 +448,6 @@ private:
 
     };
 
-    void writeFileHeaderOnce();
     void writeFileSignature();
     void writeEndiannessMarker();
     void writeTreeStartMarker();
@@ -484,13 +458,8 @@ private:
     void writeTreeHeader( unsigned char classCount, unsigned char featureCount, FeatureTypeID featureType );
     void writeTableHeader( unsigned int rowCount, unsigned int columnCount, ScalarTypeID scalarType );
 
-    std::ofstream                m_stream;
-    bool                         m_insideEnsemble;
-    bool                         m_fileHeaderWritten;
-    std::optional<std::string>   m_creatorName;
-    std::optional<unsigned char> m_creatorMajorVersion;
-    std::optional<unsigned char> m_creatorMinorVersion;
-    std::optional<unsigned char> m_creatorPatchVersion;
+    std::ofstream m_stream;
+    bool          m_insideEnsemble;
 };
 
 // Template specialization for all supported scalar types.

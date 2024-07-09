@@ -586,41 +586,33 @@ TableHeader BalsaFileParser::parseTableHeader()
     return result;
 }
 
-BalsaFileWriter::BalsaFileWriter( const std::string & filename ):
-m_insideEnsemble( false ),
-m_fileHeaderWritten( false )
+BalsaFileWriter::BalsaFileWriter( const std::string & filename, std::optional<std::string> creatorName,
+    std::optional<unsigned char> creatorMajorVersion, std::optional<unsigned char> creatorMinorVersion,
+    std::optional<unsigned char> creatorPatchVersion ):
+m_insideEnsemble( false )
 {
     // Configure the file input stream to throw an exception on error.
     m_stream.exceptions( std::ofstream::failbit | std::ofstream::badbit );
 
     // Open the file to write and truncate it if it exists.
     m_stream.open( filename, std::ios::binary );
-}
 
-void BalsaFileWriter::setCreatorName( const std::string & value )
-{
-    m_creatorName = value;
-}
-
-void BalsaFileWriter::setCreatorMajorVersion( unsigned char value )
-{
-    m_creatorMajorVersion = value;
-}
-
-void BalsaFileWriter::setCreatorMinorVersion( unsigned char value )
-{
-    m_creatorMinorVersion = value;
-}
-
-void BalsaFileWriter::setCreatorPatchVersion( unsigned char value )
-{
-    m_creatorPatchVersion = value;
+    // Write the file header.
+    writeFileSignature();
+    writeEndiannessMarker();
+    Dictionary dictionary;
+    dictionary.set<uint8_t>( FILE_HEADER_FILE_MAJOR_VERSION_KEY, FILE_FORMAT_MAJOR_VERSION );
+    dictionary.set<uint8_t>( FILE_HEADER_FILE_MINOR_VERSION_KEY, FILE_FORMAT_MINOR_VERSION );
+    if ( creatorName ) dictionary.set<std::string>( FILE_HEADER_CREATOR_NAME_KEY, *creatorName );
+    if ( creatorMajorVersion ) dictionary.set<uint8_t>( FILE_HEADER_CREATOR_MAJOR_VERSION_KEY, *creatorMajorVersion );
+    if ( creatorMinorVersion ) dictionary.set<uint8_t>( FILE_HEADER_CREATOR_MINOR_VERSION_KEY, *creatorMinorVersion );
+    if ( creatorPatchVersion ) dictionary.set<uint8_t>( FILE_HEADER_CREATOR_PATCH_VERSION_KEY, *creatorPatchVersion );
+    dictionary.serialize( m_stream );
 }
 
 void BalsaFileWriter::enterEnsemble( unsigned char classCount, unsigned char featureCount )
 {
     assert( !m_insideEnsemble );
-    writeFileHeaderOnce();
     m_stream.write( ENSEMBLE_START_MARKER.data(), ENSEMBLE_START_MARKER.size() );
     writeEnsembleHeader( classCount, featureCount );
     m_insideEnsemble = true;
@@ -641,13 +633,13 @@ void BalsaFileWriter::writeClassifier( const Classifier & classifier )
 
 void BalsaFileWriter::ClassifierWriteDispatcher::visit( const EnsembleClassifier &classifier )
 {
+    // Writing ensemble classifiers is not supported yet.
     (void) classifier;
     assert( false );
 }
 
 void BalsaFileWriter::ClassifierWriteDispatcher::visit( const DecisionTreeClassifier<float> &classifier )
 {
-    m_writer.writeFileHeaderOnce();
     m_writer.writeTreeStartMarker();
     m_writer.writeTreeHeader( classifier.m_classCount, classifier.m_featureCount, getFeatureTypeID<float>() );
     m_writer.writeTable( classifier.m_leftChildID );
@@ -660,7 +652,6 @@ void BalsaFileWriter::ClassifierWriteDispatcher::visit( const DecisionTreeClassi
 
 void BalsaFileWriter::ClassifierWriteDispatcher::visit( const DecisionTreeClassifier<double> &classifier )
 {
-    m_writer.writeFileHeaderOnce();
     m_writer.writeTreeStartMarker();
     m_writer.writeTreeHeader( classifier.m_classCount, classifier.m_featureCount, getFeatureTypeID<double>() );
     m_writer.writeTable( classifier.m_leftChildID );
@@ -695,24 +686,6 @@ void BalsaFileWriter::writeTableHeader( unsigned int rowCount, unsigned int colu
     header.set<uint32_t>( TABLE_HEADER_COLUMN_COUNT_KEY, columnCount );
     header.set<std::string>( TABLE_HEADER_SCALAR_TYPE_ID_KEY, getTypeName( scalarType ) );
     header.serialize( m_stream );
-}
-
-void BalsaFileWriter::writeFileHeaderOnce()
-{
-    if ( m_fileHeaderWritten ) return;
-
-    writeFileSignature();
-    writeEndiannessMarker();
-    Dictionary dictionary;
-    dictionary.set<uint8_t>( FILE_HEADER_FILE_MAJOR_VERSION_KEY, FILE_FORMAT_MAJOR_VERSION );
-    dictionary.set<uint8_t>( FILE_HEADER_FILE_MINOR_VERSION_KEY, FILE_FORMAT_MINOR_VERSION );
-    if ( m_creatorName ) dictionary.set<std::string>( FILE_HEADER_CREATOR_NAME_KEY, *m_creatorName );
-    if ( m_creatorMajorVersion ) dictionary.set<uint8_t>( FILE_HEADER_CREATOR_MAJOR_VERSION_KEY, *m_creatorMajorVersion );
-    if ( m_creatorMinorVersion ) dictionary.set<uint8_t>( FILE_HEADER_CREATOR_MINOR_VERSION_KEY, *m_creatorMinorVersion );
-    if ( m_creatorPatchVersion ) dictionary.set<uint8_t>( FILE_HEADER_CREATOR_PATCH_VERSION_KEY, *m_creatorPatchVersion );
-    dictionary.serialize( m_stream );
-
-    m_fileHeaderWritten = true;
 }
 
 void BalsaFileWriter::writeFileSignature()

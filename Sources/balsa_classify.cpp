@@ -186,11 +186,8 @@ int main( int argc, char ** argv )
 
             // Store the labels.
             watch.start();
-            BalsaFileWriter fileWriter( createOutputFileName( dataFile ) );
-            fileWriter.setCreatorName( "balsa_classify" );
-            fileWriter.setCreatorMajorVersion( balsa_VERSION_MAJOR );
-            fileWriter.setCreatorMinorVersion( balsa_VERSION_MINOR );
-            fileWriter.setCreatorPatchVersion( balsa_VERSION_PATCH );
+            BalsaFileWriter fileWriter( createOutputFileName( dataFile ), "balsa_classify",
+                balsa_VERSION_MAJOR, balsa_VERSION_MINOR, balsa_VERSION_PATCH );
             fileWriter.writeTable( labels );
             watch.stop();
             labelStoreTime += watch.getElapsedTime();

@@ -25,6 +25,27 @@ class ClassifierFileInputStream: public ClassifierInputStream
 {
 public:
 
+    /*
+     * Construct an open classifier input stream.
+     *
+     * The \c maxPreload parameter determines how many classifiers to preload
+     * (cache) in memory. This allows a trade-off to be made between memory
+     * usage and disk I/O.
+     *
+     * If set to zero, all classifiers present in the input file are loaded into
+     * memory. Calling \c next() always return classifiers from memory, and
+     * calling \c rewind() will not cause classifiers to be reloaded.
+     *
+     * If set to a positive value \c N, this determines the number of
+     * classifiers that will be read from the input file and cached. Calls
+     * to \c next() will return classifiers from the cache. If the cache is
+     * empty, the next \c N classifiers will be read into the cache. Calling \c
+     * rewind() will empty the cache and reposition the input stream at the
+     * beginning.
+     *
+     * \param filename Name of the file to open.
+     * \param maxPreload The number of classifiers to preload (cache).
+     */
     ClassifierFileInputStream( const std::string & filename, unsigned int maxPreload = 0 ):
     m_fileParser( filename ),
     m_maxPreload( maxPreload ),
@@ -35,6 +56,9 @@ public:
         m_featureCount = header.featureCount;
     }
 
+    /*
+     * Copy constructor (deleted). Classifier input streams cannot be copied.
+     */
     ClassifierFileInputStream( const ClassifierFileInputStream & ) = delete;
 
     /**
@@ -141,18 +165,29 @@ class EnsembleFileOutputStream: public ClassifierOutputStream
 public:
 
     /**
-    * Constructs an open stream.
+    * Constructs an open ensemble output stream.
+    *
+    * \param filename Name of the file to write.
+    * \param creatorName Name of the tool that created the file (optional).
+    *  This information will be stored in the file header.
+    * \param creatorMajorVersion Major version number of the tool that created
+    *  the file (optional). This information will be stored in the file header.
+    * \param creatorMinorVersion Minor version number of the tool that created
+    *  the file (optional). This information will be stored in the file header.
+    * \param creatorPatchVersion Patch version number of the tool that created
+    *  the file (optional). This information will be stored in the file header.
     */
-    EnsembleFileOutputStream( const std::string & filename ):
-    ClassifierOutputStream(),
-    m_fileWriter( filename ),
+    EnsembleFileOutputStream( const std::string & filename,
+        std::optional<std::string> creatorName = std::nullopt,
+        std::optional<unsigned char> creatorMajorVersion = std::nullopt,
+        std::optional<unsigned char> creatorMinorVersion = std::nullopt,
+        std::optional<unsigned char> creatorPatchVersion = std::nullopt ):
+    m_fileWriter( filename, creatorName, creatorMajorVersion, creatorMinorVersion, creatorPatchVersion ),
     m_classCount( 0 ),
     m_featureCount( 0 )
     {
-
     }
 
-    // TODO: Why is this necessary??
     ~EnsembleFileOutputStream()
     {
         close();
@@ -186,12 +221,9 @@ private:
         m_fileWriter.writeClassifier( classifier );
     }
 
-// private:
-
     BalsaFileWriter m_fileWriter;
     unsigned int    m_classCount;
     unsigned int    m_featureCount;
-
 };
 
 } // namespace balsa
