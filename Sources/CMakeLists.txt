@@ -6,6 +6,7 @@ add_library( balsa SHARED fileio.cpp modelevaluation.cpp serdes.cpp weightedcoin
 target_include_directories( balsa PUBLIC ${CMAKE_CURRENT_LIST_DIR} )
 
 add_library( balsa-static STATIC EXCLUDE_FROM_ALL fileio.cpp modelevaluation.cpp serdes.cpp weightedcoin.cpp )
+set_property( TARGET balsa-static PROPERTY POSITION_INDEPENDENT_CODE ON )
 target_include_directories( balsa-static PUBLIC ${CMAKE_CURRENT_LIST_DIR} )
 
 add_executable( balsa_train balsa_train.cpp )
