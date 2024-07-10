@@ -36,22 +36,95 @@ def load_dataset_bin(filename):
         dataset.shape = (-1, num_columns)
     return dataset
 
+def read_string(infile):
+
+    fmt = "<B"
+    fmt_size = struct.calcsize(fmt)
+    string_size, = struct.unpack(fmt, infile.read(fmt_size))
+    return infile.read(string_size).decode("ascii")
+
+def read_kv_pair(infile):
+
+    key = read_string(infile)
+
+    raw_value_type = infile.read(4)
+
+    if raw_value_type == b"strn":
+        value = read_string(infile)
+
+    else:
+        if raw_value_type == b"ui08":
+            fmt = "<B"
+        elif raw_value_type == b"ui32":
+            fmt = "<I"
+        elif raw_value_type == b"fl32":
+            fmt = "<f"
+        elif raw_value_type == b"fl64":
+            fmt = "<d"
+        else:
+            assert False
+
+        fmt_size = struct.calcsize(fmt)
+        value, = struct.unpack(fmt, infile.read(fmt_size))
+
+    return key, value
+
+def read_dictionary(infile):
+
+    dict_start_marker = infile.read(4)
+    assert dict_start_marker == b"dict"
+
+    fmt = "<B"
+    fmt_size = struct.calcsize(fmt)
+    dict_size, = struct.unpack(fmt, infile.read(fmt_size))
+
+    result = {}
+    for i in range(dict_size):
+        key, value = read_kv_pair(infile)
+        result[key] = value
+
+    dict_end_marker = infile.read(4)
+    assert dict_end_marker == b"tcid"
+
+    return result
+
 def load_dataset_balsa(filename):
 
-    header_format = "<4s4s4sI4sI4s"
-    header_size = struct.calcsize(header_format)
     with open(filename, "rb") as infile:
-        _, raw_value_type, _, num_rows, _, num_columns, _ = struct.unpack(header_format, infile.read(header_size))
-        value_type = raw_value_type.decode("ascii", errors="ignore")
-        if value_type == "fl32":
-            dataset = np.frombuffer(infile.read(), "<f4")
-        elif value_type == "ui08":
-            dataset = np.frombuffer(infile.read(), "<u1")
+
+        file_signature = infile.read(4)
+        assert file_signature == b"blsa"
+        endianness_marker = infile.read(4)
+        assert endianness_marker == b"lend"
+
+        file_header = read_dictionary(infile)
+        assert file_header["file_major_version"] == 1
+        assert file_header["file_minor_version"] == 0
+
+        table_start_marker = infile.read(4)
+        assert table_start_marker == b"tabl"
+
+        table_header = read_dictionary(infile)
+        num_rows = table_header["row_count"]
+        num_columns = table_header["column_count"]
+        scalar_type_id = table_header["scalar_type_id"]
+
+        if scalar_type_id == "fl32":
+            size = num_rows * num_columns * 4
+            dataset = np.frombuffer(infile.read(size), "<f4")
+        elif scalar_type_id == "ui08":
+            size = num_rows * num_columns * 1
+            dataset = np.frombuffer(infile.read(size), "<u1")
         else:
-            raise RuntimeError("Unsupported value type: '" + value_type + "'.")
-    dataset.shape = (-1, num_columns)
-    assert len(dataset) == num_rows, "The number of rows read does not match the row count stored in the header."
-    return dataset
+            raise RuntimeError("Unsupported value type: '" + scalar_type_id + "'.")
+
+        dataset.shape = (-1, num_columns)
+        assert len(dataset) == num_rows, "The number of rows read does not match the row count stored in the header."
+
+        table_end_marker = infile.read(4)
+        assert table_end_marker == b"lbat"
+
+        return dataset
 
 def store_labelled_dataset_csv(filename, data_points, labels):
 
@@ -86,6 +159,35 @@ def store_labelled_dataset_bin(data_filename, label_filename, data_points, label
     store_dataset_bin(data_filename, data_points)
     store_dataset_bin(label_filename, labels)
 
+def write_string(outfile, string):
+
+    raw_string = string.encode("ascii")
+    assert len(raw_string) < 256
+    outfile.write(struct.pack(f"<B{len(raw_string)}s", len(raw_string), raw_string))
+
+def write_kv_pair(outfile, key, value, value_type):
+
+    if value_type == "strn":
+        write_string(outfile, key)
+        outfile.write(b"strn")
+        write_string(outfile, value)
+        return
+
+    if value_type == "ui08":
+        fmt = "<B"
+    elif value_type == "ui32":
+        fmt = "<I"
+    elif value_type == "fl32":
+        fmt = "<f"
+    elif value_type == "fl64":
+        fmt = "<d"
+    else:
+        assert False
+
+    write_string(outfile, key)
+    outfile.write(value_type.encode("ascii"))
+    outfile.write(struct.pack(fmt, value))
+
 def store_dataset_balsa(filename, dataset):
 
     assert dataset.ndim == 1 or dataset.ndim == 2
@@ -93,15 +195,37 @@ def store_dataset_balsa(filename, dataset):
 
     num_rows, num_columns = (*dataset.shape, 1)[:2]
     with open(filename, "wb") as outfile:
+
+        # Write file signature.
+        outfile.write(b"blsa")
+
+        # Write endianness marker.
+        outfile.write(b"lend")
+
+        # Write file header dictionary.
+        outfile.write(b"dict")
+        outfile.write(struct.pack("<B", 2))
+        write_kv_pair(outfile, "file_major_version", 1, "ui08")
+        write_kv_pair(outfile, "file_minor_version", 0, "ui08")
+        outfile.write(b"tcid")
+
+        # Write table start marker.
         outfile.write(b"tabl")
-        outfile.write(b"fl32")
-        outfile.write(b"rows")
-        outfile.write(struct.pack("<I", num_rows))
-        outfile.write(b"cols")
-        outfile.write(struct.pack("<I", num_columns))
-        outfile.write(b"data")
+
+        # Write table header dictionary.
+        outfile.write(b"dict")
+        outfile.write(struct.pack("<B", 3))
+        write_kv_pair(outfile, "row_count", num_rows, "ui32")
+        write_kv_pair(outfile, "column_count", num_columns, "ui32")
+        write_kv_pair(outfile, "scalar_type_id", "fl32", "strn")
+        outfile.write(b"tcid")
+
+        # Write table elements.
         for i in range(num_rows):
             outfile.write(dataset[i].tobytes())
+
+        # Write table end marker.
+        outfile.write(b"lbat")
 
 def store_labelled_dataset_balsa(data_filename, label_filename, data_points, labels):
 
@@ -223,6 +347,6 @@ def ingest_test_dataset(test_data_filename):
 
     data_points, labels = load_labelled_dataset_json(test_data_filename)
 
-    for data_format in ("csv", "bin", "balsa"):
+    for data_format in DATA_FORMATS:
         test_data_filename, test_label_filename = get_test_dataset_filenames(data_format)
         store_labelled_dataset(data_format, test_data_filename, test_label_filename, data_points, labels)
