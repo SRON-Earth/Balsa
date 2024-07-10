@@ -77,6 +77,7 @@ public:
 
         // Check the dimensions of the input data.
         auto entryCount = std::distance( pointsStart, pointsEnd );
+        assert( m_featureCount > 0 );
         if ( entryCount % m_featureCount ) throw ClientError( "Malformed dataset." );
 
         // Determine the number of points in the input data.
@@ -113,6 +114,7 @@ public:
 
         // Check the dimensions of the input data.
         auto entryCount = std::distance( pointsStart, pointsEnd );
+        assert( m_featureCount > 0 );
         if ( entryCount % m_featureCount ) throw ClientError( "Malformed dataset." );
 
         // Determine the number of points in the input data.

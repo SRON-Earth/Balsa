@@ -140,8 +140,8 @@ public:
 
         // Check the dimensions of the input data.
         unsigned int featureCount = m_classifierStreamPtr->getFeatureCount();
-        if ( featureCount == 0 ) throw ClientError( "Data points must have at least one feature." );
         auto entryCount = std::distance( pointsStart, pointsEnd );
+        assert( featureCount > 0 );
         if ( entryCount % featureCount ) throw ClientError( "Malformed dataset." );
 
         // Determine the number of points in the input data.
@@ -165,7 +165,6 @@ public:
      *  the first point.
      * \param pointsEnd An itetartor that points to the end of the block of
      *  point data.
-     * \param featureCount The number of features for each data point.
      * \param table A table for counting votes.
      * \pre The column count of the vote table must match the number of
      *  features, the row count must match the number of points.
@@ -178,11 +177,10 @@ public:
         static_assert( std::is_arithmetic<FeatureIteratedType>::value, "Features must be of an integral or floating point type." );
 
         // Dispatch to single- or multithreaded implementation.
-        unsigned int featureCount = m_classifierStreamPtr->getFeatureCount();
         if ( m_maxWorkerThreads > 0 )
-            return classifyAndVoteMultiThreaded( pointsStart, pointsEnd, featureCount, table );
+            return classifyAndVoteMultiThreaded( pointsStart, pointsEnd, table );
         else
-            return classifyAndVoteSingleThreaded( pointsStart, pointsEnd, featureCount, table );
+            return classifyAndVoteSingleThreaded( pointsStart, pointsEnd, table );
     }
 
 protected:
@@ -243,12 +241,11 @@ private:
 
         typedef std::shared_ptr<WorkerThread> SharedPointer;
 
-        WorkerThread( MessageQueue<WorkerJob> & jobQueue, unsigned int classCount, FeatureIterator pointsStart, FeatureIterator pointsEnd, unsigned int featureCount ):
+        WorkerThread( MessageQueue<WorkerJob> & jobQueue, unsigned int classCount, unsigned int featureCount, FeatureIterator pointsStart, FeatureIterator pointsEnd ):
         m_running( false ),
         m_jobQueue( jobQueue ),
         m_pointsStart( pointsStart ),
         m_pointsEnd( pointsEnd ),
-        m_featureCount( featureCount ),
         m_voteCounts( 0, 0 ) // Overwrite this below.
         {
             // Check the dimensions of the input data.
@@ -301,18 +298,17 @@ private:
         MessageQueue<WorkerJob> & m_jobQueue;
         FeatureIterator           m_pointsStart;
         FeatureIterator           m_pointsEnd;
-        unsigned int              m_featureCount;
         VoteTable                 m_voteCounts;
         std::thread               m_thread;
     };
 
     template <typename FeatureIterator>
-    unsigned int classifyAndVoteSingleThreaded( FeatureIterator pointsStart, FeatureIterator pointsEnd, unsigned int featureCount, VoteTable & table ) const
+    unsigned int classifyAndVoteSingleThreaded( FeatureIterator pointsStart, FeatureIterator pointsEnd, VoteTable & table ) const
     {
-        (void) featureCount;
-
-        // Reset the stream of classifiers, and apply each classifier that comes out of it.
+        // Reset the stream of classifiers.
         m_classifierStreamPtr->rewind();
+
+        // Apply each classifier to the data.
         unsigned int voterCount = 0;
         for ( auto classifier = m_classifierStreamPtr->next(); classifier; classifier = m_classifierStreamPtr->next(), ++voterCount )
         {
@@ -325,27 +321,26 @@ private:
     }
 
     template <typename FeatureIterator>
-    unsigned int classifyAndVoteMultiThreaded( FeatureIterator pointsStart, FeatureIterator pointsEnd, unsigned int featureCount, VoteTable & table ) const
+    unsigned int classifyAndVoteMultiThreaded( FeatureIterator pointsStart, FeatureIterator pointsEnd, VoteTable & table ) const
     {
         // Reset the stream of classifiers.
         m_classifierStreamPtr->rewind();
-        unsigned int voterCount = 0;
 
         // Create message queues for communicating with the worker threads.
         MessageQueue<WorkerJob> jobQueue;
 
-        // Record the number of classes.
-        unsigned int classCount = m_classifierStreamPtr->getClassCount();
-
         // Create the workers.
         std::vector<typename WorkerThread<FeatureIterator>::SharedPointer> workers;
+        const unsigned int classCount = m_classifierStreamPtr->getClassCount();
+        const unsigned int featureCount = m_classifierStreamPtr->getFeatureCount();
         for ( unsigned int i = 0; i < m_maxWorkerThreads; ++i )
-            workers.push_back( typename WorkerThread<FeatureIterator>::SharedPointer( new WorkerThread<FeatureIterator>( jobQueue, classCount, pointsStart, pointsEnd, featureCount ) ) );
+            workers.push_back( typename WorkerThread<FeatureIterator>::SharedPointer( new WorkerThread<FeatureIterator>( jobQueue, classCount, featureCount, pointsStart, pointsEnd ) ) );
 
         // Start all the workers.
         for ( auto & worker : workers ) worker->start();
 
         // Reset the stream of classifiers, and apply each classifier that comes out of it.
+        unsigned int voterCount = 0;
         for ( auto classifier = m_classifierStreamPtr->next(); classifier; classifier = m_classifierStreamPtr->next(), ++voterCount ) jobQueue.send( WorkerJob( classifier ) );
 
         // Send stop messages for all workers.
