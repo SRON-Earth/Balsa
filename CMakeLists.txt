@@ -15,7 +15,6 @@ FetchContent_Declare(
 	balsa
 	GIT_REPOSITORY "${BALSA_GIT_URL}"
 	GIT_TAG "${BALSA_GIT_TAG}"
-	GIT_SHALLOW ON
 )
 FetchContent_MakeAvailable(balsa)
 
