@@ -130,10 +130,6 @@ public:
     template <typename FeatureIterator, typename LabelOutputIterator>
     void classify( FeatureIterator pointsStart, FeatureIterator pointsEnd, LabelOutputIterator labelsStart ) const
     {
-        // Statically check that the label output iterator points to Labels.
-        typedef std::remove_cv_t<typename iterator_value_type<LabelOutputIterator>::type> LabelType;
-        static_assert( std::is_same<LabelType, Label>::value, "The labelStart iterator must point to instances of type Label." );
-
         // Statically check that the FeatureIterator points to an arithmetical type.
         typedef std::remove_cv_t<typename iterator_value_type<FeatureIterator>::type> FeatureIteratedType;
         static_assert( std::is_arithmetic<FeatureIteratedType>::value, "Features must be of an integral or floating point type." );

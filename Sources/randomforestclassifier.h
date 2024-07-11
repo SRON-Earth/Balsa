@@ -6,7 +6,6 @@
 
 namespace balsa
 {
-
 class RandomForestClassifier: public EnsembleClassifier
 {
 public:

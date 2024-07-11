@@ -64,7 +64,7 @@ Balsa is a fast and memory-efficient C++ implementation of the RandomForest clas
 <a name="packagecontents"></a>
 ## Package Contents [(top)](#tableofcontents)
 
-The Balsa package provides a trainer and classifier that can be used from the command-line or from within a third-party C++ application. In addition, it provides a number of utilities for manipulating data files, and for evaulating classifier performance.
+The Balsa package provides a trainer and classifier that can be used from the command-line or from within a third-party C++ application. In addition, it provides a number of utilities for manipulating data files and models, and for evaulating classifier performance.
 
 The Balsa package provides the following command-line tools:
 
@@ -73,7 +73,7 @@ The Balsa package provides the following command-line tools:
 * **balsa\_print** prints the contents of Balsa point files, label files, and models in human-readable form.
 * **balsa\_generate** generates random data sets for testing and experimentation.
 * **balsa\_measure** calculates metrics to assess the performance of a model.
-* **balsa\_featureimportance** performs feature importance analysis on a Balsa model.
+* **balsa\_featureimportance** performs permutation feature importance analysis on a Balsa model.
 * **balsa\_merge** merges multiple trained Random Forest model files into a single model.
 
 These tools are built and installed as part of a standard [Balsa installation process](#installation).
@@ -108,7 +108,7 @@ The classification problem can be solved by fitting a mathematical model (a *pre
 
 To train a good model, the labels in the known dataset need to be as accurate as possible. For the fruit sorting example, it would be possible to obtain a highly accurate training set by letting a human observer classify the fruit by hand. In a very reliably labeled data set like this, the labels are called the *ground truth* of the data set. This term is often used more loosely to refer to the labels of the known data set in applications where the observations may not be 100% reliable. A data set with ground truth is sometimes called a *gold standard*.
 
-Labels are usually represented as integers in machine learning, because the actual semantic interpretation is not important or meaningful to the software. Using 0 to identify oranges and 1 to identify apples, the ground truth for the example data points might look like this:
+Labels are usually represented as integers in machine learning, because the actual semantic interpretation is not important or meaningful to the algorithm. Using 0 to identify oranges and 1 to identify apples, the ground truth for the example data points might look like this:
 
 | Apple? |
 |--------|
@@ -130,7 +130,7 @@ If the class probabilities in a population are nearly the same, the population i
 
 **N.B. for training purposes, it is usually necessary to create a balanced training set, even if the sample is taken from an unbalanced population!**
 
-In the example of the fruit machine, let's assume that the endless stream of fruit that comes onto the conveyor belt consists of 78% apples and 22% oranges. The class probabilities in the population are then 0.78 and 0.22. A sample containing 1000 pieces of fruit drawn from the belt may contain 763 apples and 237 oranges. The relative class frequencies in that sample are 0.763 and 0.237. Both the sample and the population are unbalanced. In order to create a balanced training set, we can randomly pick exactly 237 apples from the unbalanced set. Combined with the 237 oranges, we then have a balanced training set of 474 points.
+In the example of the fruit machine, let's assume that the endless stream of fruit that comes onto the conveyor belt consists of 78% apples and 22% oranges. The class probabilities in the population are then 0.78 and 0.22. A sample containing 1000 pieces of fruit drawn from the belt may contain 763 apples and 237 oranges. The relative class frequencies in that sample are 0.763 and 0.237. Both the sample and the population are unbalanced. In order to create a balanced training set, we can randomly pick exactly 237 apples from the unbalanced set. Combined with the 237 oranges, we then have a balanced training set of 474 points. Alternatively, we could randomly draw 763 oranges from the set of 237, allowing some oranges to be picked more than once. This data inflation process is called *bootstrapping*.
 
 <a name="theoryprobabilitiesandodds"></a>
 ### Probabilities and Odds [(top)](#tableofcontents)
@@ -167,7 +167,7 @@ The leaf nodes of the tree contain class labels. A data point p is classified by
 
 The training process of a decision tree consists of building a tree that will, to some desired extent, correctly classify a given training data set. If all data points in the data set are unique, it is straightforward to find a decision tree that classifies all data in that set 100% correctly. To do so, we can pick any feature f and any split value L that splits the data points in two nonempty parts. We continue to split each sub-group of points further until there are only points in each sub-group that all have the same label.
 
-Depending on the exact choices we make, we can construct many different but equivalent decision trees that will perfectly fit the training data. Note, however, that two equivalent trees may give different results for out-of-bag data.
+Depending on the exact choices we make, we can construct many different, but equivalent decision trees that will perfectly fit the training data. Note, however, that two equivalent trees may give different results for points that are not in the training set (out-of-bag data).
 
 A good decision tree trainer will try to find a very small decision tree for a given data set, i.e. a tree with the smallest number of nodes. Small trees are easier to store, and less costly to evaluate during classification. The most common strategy for finding small trees is to find splits that cause the maximum amount of *information gain* (*Shannon Entropy*). Searching for optimal splits is a computationally intensive task, because the information gain has to be calculated at every potential split position. For this reason, the *Gini Gain* is often used as a slightly less computationally expensive approximation of to Shannon Entropy.
 
@@ -232,7 +232,7 @@ After building the software, it can be installed using `make install` (UNIX) or 
 <a name="balsagenerate"></a>
 ### Creating Test Data [(top)](#tableofcontents)
 
-The **balsa_generate** tool generates structured random test data sets for experimentation and education. Given a data set specification file as input, it generates one file containing data points, and one file containing labels that can be used for training.
+The **balsa_generate** tool generates structured random test data sets for experimentation and education. Given a data set specification file as input, it generates one file containing data points, and one file containing labels that can be used for training or performance testing.
 
 A data set description for balsa_generate for our earlier apples-and-oranges example might look like this:
 
@@ -319,16 +319,16 @@ A model can be used to classify a (known or unknown) data set. For experimentati
 
 The two parameters are the trained model file and the unknown new data file. The output labels will be written to a file called "fresh-fruit-data-predictions.balsa", i.e., its name will be the stem of the filename with "-predictions" appended to it. This output file can be compared to actual labels (e.g. from balsa_generate) for evaluation of the model. 
 
-Note that it is possible to pass multiple data files on the command-line for bulk-classification. Under most circumstances, passing multiple files in a single invocation is much more efficient than classifying files in separate runs.
+Note that it is possible to pass multiple data files on the command-line for bulk-classification. Under most circumstances, passing multiple files in a single invocation is much more efficient than classifying files in separate runs, because the trained model will only have to be loaded once.
 
-The resource usage of the command-line classifier can be tuned to achieve to achieve shorter wall-clock times at the expense of additional memory usage and CPU load. We note, however, that the command-line classifier is already extremely fast and memory-efficient in single-threaded mode. The chapters on [Optimizing Resource Usage](#optimizingresourceusage) and [Optimizing Model Performance] (#optimizingmodelperformance) cover the tuning process in detail.
+The resource usage of the command-line classifier can be tuned to achieve shorter wall-clock times at the expense of additional memory usage and CPU load. We note, however, that the command-line classifier is already extremely fast and memory-efficient in single-threaded mode. The chapters on [Optimizing Resource Usage](#optimizingresourceusage) and [Optimizing Model Performance] (#optimizingmodelperformance) cover the tuning process in detail.
 
 <a name="balsameasure"></a>
 ### Measuring Classifier Performance [(top)](#tableofcontents)
 
 The balsa\_measure utility measures how well a trained model performs. To do so, it compares the output of the classifier against the known ground truth of a set of test data points:
 
-	balsa_measure ground-truth.balsa classifier-output.balsa
+	balsa_measure ground-truth-labels.balsa classifier-output-labels.balsa
 
 The utilily takes two sets of label files as input. The first file is the ground truth of a test set (which was not available to the classifier), the second file is the set of labels that the classifier assigned to the test set. The measurement utility calculates a number of common [performance metrics](#performancemetrics) for the trained model.
 
@@ -341,7 +341,7 @@ The balsa\_featureimportance tool can determine how sensitive a trained model is
 
 	balsa_featureimportance model.balsa testpoints.balsa ground-truth.balsa
 
-To determine the predictive strength of each feature, balsa\_featureimportance first calculates the same performance metrics as balsa\_measure on the dataset. This measurement is used as a baseline for reference. Next, to calculate the importance of a feature f, it randomly shuffles the values of feature k between all points in the dataset, effectively destroying any predictive value they may carry. The tool then calculates how well the model performs on the shuffled dataset. The tool can perform several shuffling iterations per feature to derive at an average value.
+To determine the predictive strength of each feature, balsa\_featureimportance first calculates the same performance metrics as balsa\_measure on the dataset. This measurement is used as a baseline for reference. Next, to calculate the importance of a feature f, it randomly shuffles the values of feature k between all points in the dataset, effectively destroying any predictive value that this feature may carry. The tool then calculates how well the model performs on the shuffled dataset. The tool can perform several shuffling iterations per feature to derive at an average value.
 
 An example output might look like this:
 
@@ -358,7 +358,7 @@ The output tells us that the average accuracy of the classifier (ACC) is 0.2346 
 There are some important caveats when interpreting these results:
 
 * Feature imporance tells us how important a feature is _for this particular model_. It might be possible to train a different model on the same data that relies more heavily on different features.
-* The feature importance is calculated based on _accuracy_. Future versions of Balsa may perform the calculation based on other metrics. These metrics may give rise to different conclusions.
+* The feature importance is calculated based on _accuracy_. Future versions of Balsa may perform the calculation based on other metrics as well. These metrics may give rise to different conclusions.
 * If two or more features are heavily correlated, this method of feature importance will mark all features in such a corrrelated group as unimportant. If all features in the group are removed however, the model performance would degrade heavily.
 
 <a name="balsaprint"></a>
@@ -400,9 +400,11 @@ Label files are printed with a row number. Each row is one point. There is only 
 	9   : 0
 	10  : 0
 
-Random forest model files consist of multiple individual trees. Each tree is separately marked. A fragment of an example output file might look like this:
+Random forest model files consist of multiple individual trees. While Balsa currently only supports random forests, the internal file format and code are designed to support more general ensemble classifiers in the future. For this reason, a Balsa file containing a random forest will actually contain an ensemble classifier with trees. 
 
-	FOREST
+When an ensemble file is printed, the ENSEMBLE header will be printed once at the top. Each submodel in the ensemble is separately marked by a header that indicates the type of the submodel at the start (for random forests, all submodels will be of type 'TREE'). A fragment of an example output file might look like this:
+
+	ENSEMBLE
 	TREE 7 features.
 	N:   L:   R:   F:   V:              L:
 	0    1    2    5    0.73222         1
@@ -412,28 +414,28 @@ Random forest model files consist of multiple individual trees. Each tree is sep
 	4    9    10   0    0.110652        1
 	5    11   12   0    0.379905        0
 
-The FOREST marker is printed once. The TREE marker and header is printed before each tree. It includes the feature count of the tree. Trees are printed in tabular form. The columns are **N**ode identifier, **L**eft node, **R**ight node, the **F**eature on which the node is split, the feature **V**alue on which the node is split, and the **L**abel of the most prevalent class in the node. N.B. the left- and right- node IDs are nonzero  for internal tree nodes, and zero for leaf nodes. The node with ID 0 is always the root node of the tree.
+The TREE marker and header is printed before each tree. It includes the feature count of the tree. Trees are printed in tabular form. The columns are **N**ode identifier, **L**eft node, **R**ight node, the **F**eature on which the node is split, the feature **V**alue on which the node is split, and the **L**abel of the most prevalent class in the node. N.B. the left- and right- node IDs are nonzero  for internal tree nodes, and zero for leaf nodes. The node with ID 0 is always the root node of the tree.
 
 <a name="balsamerge"></a>
 ### Merging Balsa Models [(top)](#tableofcontents)
 
-A Random Forest model consists of a set of individually trained randomized decision trees. Two or more forests that are trained on the same data sets (or different data sets from the same population) can be merged into a single forest model using the 'balsa\_merge' tool. This is particular useful for distributed computing environments, where multiple independent computers can run 'balsa\_train' concurrently on large datasets. Another useful application is to update a trained forest by adding more trees. The new trees can either be trained on the same data, or on a different, possibly new data set:
+A Random Forest model consists of a set of individually trained randomized decision trees. Two or more forests that are trained on the same data sets (or different data sets from the same population) can be merged into a single forest model using the 'balsa\_merge' tool, to create a stronger model. This is particular useful for distributed computing environments, where multiple independent computers can run 'balsa\_train' concurrently on large datasets. Another useful application is to update a trained forest by adding more trees. The new trees can either be trained on the same data, or on a different, possibly new data set.
 
-The following invocation creates a merged Balsa model from two earlier models:
+The following invocation creates a merged Balsa model from two separately trained models:
 
 	balsa_merge model1.balsa model2.balsa merged-model.balsa
 	
-N.B. balsa\_merge will only merge forests that are trained on data with the same number of features. The input models must also have the same feature data type (double or float) for the merge to succeed.
+N.B. balsa\_merge will only merge forests that are trained on data with the same number of features.
 
 <a name="usingbalsacpp"></a>
 ## Using Balsa from C++ [(top)](#tableofcontents)
 
-The core of Balsa is a C++ library that can be used directly from within a third-pary C++ application. Both training and classification can be done in this manner. A mixed approach (e.g. training using the command-line tool balsa_train, classification from a custom C++ application) is fully supported.
+The core of Balsa is a C++ library that can be used directly from within a third-party C++ application. Both training and classification can be done in this manner. A mixed approach (e.g. training using the command-line tool balsa_train, classification from a custom C++ application) is fully supported.
 
 <a name="cppincludingbalsa"></a>
 ### Including Balsa in a C++ Project [(top)](#tableofcontents)
 
-To include Balsa in a C++ project, you will need to include the installed Balsa header in your C++ source file(s):
+To include Balsa in a C++ project, include the installed Balsa header in your C++ source file(s):
 
 	#include <balsa.h>
 
@@ -453,16 +455,19 @@ The following complete example shows how a Balsa data model can be loaded and tr
 
 	int main( int, char ** )
 	{
-		// Load data and labels.
-		auto dataSet = readTableAs<double>( "fruit-data.balsa" );
-		auto labels  = readTableAs<Label>( "fruit-labels.balsa" );
-		auto featureCount = dataSet.getColumnCount();
+    	// Load data and labels.                                                                                                                                                                                                    
+    	auto dataSet = readTableAs<double>( "fruit-data.balsa" );
+    	auto labels  = readTableAs<Label>( "fruit-labels.balsa" );
+    	auto featureCount = dataSet.getColumnCount();
+    	
+    	// Create an output stream for writing decision tree models to an ensemble file.                                                                                                                                                          
+    	EnsembleFileOutputStream outputStream( "fruit-model.balsa" );
+    	
+    	// Create a trainer and train it on the data.
+    	RandomForestTrainer trainer( outputStream );
+    	trainer.train( dataSet.begin(), dataSet.end(), featureCount, labels.begin() );
 
-		// Train a random forest on the data, write the model to a file.
-		RandomForestTrainer trainer( "fruit-model.balsa" );
-		trainer.train( dataSet.begin(), dataSet.end(), featureCount, labels.begin() );
-
-		return 0;
+    	return 0;
 	}
 
 Remarks:
@@ -478,29 +483,28 @@ The following complete example shows how a data set can be classified from withi
 
 	#include <iostream>
 	#include <balsa.h>
-	
+
 	using namespace balsa;
 
 	int main( int, char ** )
 	{
-		// Read (and possibly convert) the data.
-		auto dataSet = Table<double>::readFileAs( "fruit-data.balsa" );
+    	// Read (and possibly convert) the data.                                                                                                                                                                                    
+    	auto dataSet = readTableAs<double>( "fruit-data.balsa" );
 
-		// Classify the data.
-		Table<Label> labels( dataSet.getRowCount(), 1 );
-		RandomForestClassifier classifier( "fruit-model.balsa" );
-		classifier.classify( dataSet.begin(), dataSet.end(), dataSet.getColumnCount(), labels.begin() );
+    	// Classify the data.                                                                                                                                                                                                       
+    	Table<Label>           labels( dataSet.getRowCount(), 1 );
+    	RandomForestClassifier classifier( "fruit-model.balsa" );
+    	classifier.classify( dataSet.begin(), dataSet.end(), labels.begin() );
 
-		// Write the result to a binary Balsa output file.
-		std::ofstream outFile( "fruit-classifier-labels.balsa", std::ios::binary );
-		labels.serialize( outFile );
+	    // Write the result to a binary Balsa output file.                                                                                                                                                                      
+	    writeTable( labels, "fruit-classifier-labels.balsa" );
 
-		// Print the results as text (or write to a text file).
-		std::cout << labels << std::endl;
+		// Print the results as text (or write to a text file).                                                                                                                                                                     
+    	std::cout << labels << std::endl;
 
-		return 0;
+	    return 0;
 	}
-
+	
 Remarks:
 
 * This example uses Balsa Tables for storing the data and labels. It is possible (and recommended) to do classification in-place on points in your own data containers. This is covered in the next example.
@@ -512,30 +516,37 @@ Remarks:
 
 The classification example in the previous section uses Balsa Tables for storing input and output. In high performance applications, it is often much more efficient to keep your data points in the container that already holds them. This prevents expensive copying to- and from Balsa Tables.
 
-In order to maintain efficiency, the RandomForestClassifier class is a template that can be configured to classify your data in-place. Specifically, the iterators that point to the input data, and the iterators that point to the output location can be redefined. There are some restrictions to adhere to:
+In order to maintain efficiency, the classification method of the RandomForestClassifier class is a template that accepts iterators for your application's native data containers. There are some restrictions:
 
-1. The input iterators must adhere to the `std::random_access_iterator` concept.
-2. The input iterators must point to a floating-point type (double or float).
+1. The input iterators for points and labels must adhere to the `std::random_access_iterator` concept.
+2. The input iterators for points must point to a floating-point type (double or float).
 3. The input iterator must iterate over the points and features in row-major order.
 4. The output iterator for labels must point to an numeric type.
 
 In practice, these restrictions mean that the point data in your application must be layed out consecutively in memory, in row-major order.
 
-The following program demonstrates how the classifier can be instantiated for different types of input- and output containers.
+The following program demonstrates how the classifier can be used on input or output containers that are not the standard Balsa Tables:
 
-	// Create alternative data- and label-containers.
-	typedef std::vector<float>  Points;
-	typedef std::valarray<int>  Labels;
-	Points points( 100 );
-	Labels labels( 100 );
+	using namespace balsa;
 
-	// Create a classifier for these container types.
-	RandomForestClassifier<Points::const_iterator, Labels::iterator> classifier( "fruit-model.dat" );
+	int main( int, char ** )
+	{
+    	// Define some alternative data- and label-containers.                                                                                                                                                                                                          
+    	typedef std::vector<float>  Points;
+    	typedef std::valarray<int>  Labels;
 
-	// Classify the points.
-	classifier.classify( points.begin(), points.end(), 4, labels.begin() );
+    	// Create fake data.                                                                                                                                                                                                                                            
+    	const std::size_t POINTCOUNT   = 100;
+    	const std::size_t FEATURECOUNT = 4;
+    	Points points( POINTCOUNT * FEATURECOUNT );
+    	Labels labels( POINTCOUNT );
 
-The default template parameters for RandomForestClassifier are `Table<double>::ConstIterator` for data point iterators and `Table<Label>::Iterator` for label iterators.
+    	// Classify the data.                                                                                                                                                                                                                                           
+    	RandomForestClassifier classifier( "fruit-model.balsa" );
+    	classifier.classify( points.begin(), points.end(), std::begin( labels ) );
+
+    	return 0;
+	}
 
 <a name="cppsingleprecision"></a>
 ### Using Single-Precision Features [(top)](#tableofcontents)
@@ -549,16 +560,13 @@ Changing the precision of the trainer is done using a template parameter of the 
 
 	// Create a double-precision trainer (the default).
 	RandomForestTrainer<double> trainer2(...);
+	
+Remarks:	
 
-The feature type of the classifier is implicitly derived from the pointed-to type of the output container:
-
-	// Create a single-precision trainer.
-	RandomForestClassifier< Table<float>::ConstIterator > trainer3( ... );
-
-Remarks:
-
-* Changing from double to single precision has significant impact on the memory usage of the trainer. The memory usage of the classifier is extremely low even at double precision, so the impact will be far less noticeable there.
-* To prevent unnecessary time loss during model loading, train and classify with the same precision as the data that will be used during classification.
+* Changing from double to single precision has significant impact on the memory usage of the trainer.
+* The precision of the classifier is implicitly defined by the trained model. If a single-precision trained model is used, the classifier will be single-precision, etc.
+* It is possible to classify double-precision data points with single-precision classifier, and vice versa. 
+* Merged random forest models may contain mixed-precision decision tree classifiers.
 
 <a name="optimizingsystemperformance"></a>
 ## Optimizing System Performance [(top)](#tableofcontents)
@@ -568,7 +576,6 @@ Balsa is designed to be a very fast, resource-efficient implementation of the Ra
 Balsa's efficiency is most apparent when dealing with larger training data sets. For smaller data sets (up to 1 million points, 10 features) other Random Forest implementations may be slightly faster, and/or have a smaller memory footprint. As training sets get larger, Balsa performance will generally scale very well.
 
 N.B., this section is about optimizing speed, memory usage, etc. The topic of optimizing the quality and strength of the classifier is discussed [here](optimizingmodelperformance).
-
 
 <a name="quantifyingsystemperformance"></a>
 ### Quantifying System Performance [(top)](#tableofcontents)
@@ -679,8 +686,8 @@ In light of this, we recommend to evaluate classifiers as follows:
 
 * Calculate as many metrics as possible.
 * Take note of metrics that seem suspicious.
-* Consult the definition and intuitive description of the metric.
-* Determine if the deviating metric is a problem for your application.
+* Consult the definition and intuitive description of the metric in this manual.
+* Determine whether the deviating metric is a problem for your application.
 * If so, adjust the classifier parameters and retrain.
 
 <a name="fundamentalproperties"></a>
@@ -913,4 +920,4 @@ The P4 metric combines the four basic metrics into one single score. If either v
 <a name="contactandcredits"></a>
 ## Contact and Credits [(top)](#tableofcontents)
 
-Balsa was developed for the [Netherlands Institute of Space Research](https://www.sron.nl) by Denis de Leeuw Duarte and Joris van Zwieten of [Jigsaw B.V.](https://www.jigsaw.nl) in The Netherlands, using funding from the [European Space Agency](https://www.esa.int).
+Balsa was developed for the [Netherlands Institute of Space Research](https://www.sron.nl) by [Jigsaw B.V.](https://www.jigsaw.nl) in The Netherlands, using funding from the [European Space Agency](https://www.esa.int).

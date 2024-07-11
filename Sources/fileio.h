@@ -461,6 +461,16 @@ private:
     bool          m_insideEnsemble;
 };
 
+/**
+ * Write a table to a single-table file.
+ */
+template <typename ScalarType>
+void writeTable( const Table<ScalarType> &table, const std::string & filename )
+{
+    BalsaFileWriter fileWriter( filename );
+    fileWriter.writeTable( table );
+}
+
 // Template specialization for all supported scalar types.
 template <>
 ScalarTypeID getScalarTypeID<uint8_t>();
