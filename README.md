@@ -237,22 +237,23 @@ The **balsa_generate** tool generates structured random test data sets for exper
 A data set description for balsa_generate for our earlier apples-and-oranges example might look like this:
 
     multisource(4)
-	{
-		source(78)
-		{
+    {
+        source(78)
+        {
             gaussian(122, 11  );
             gaussian(40 , 9   );
             gaussian(13 , 12  );
             uniform( 100, 150 );
-		}
-		source(22)
-		{
-	        gaussian(100, 10  );
-	        gaussian(100, 10  );
-	        gaussian( 20, 10  );
-	        uniform( 110, 155 );
-		}
-	}
+        }
+
+        source(22)
+        {
+            gaussian(100, 10  );
+            gaussian(100, 10  );
+            gaussian( 20, 10  );
+            uniform( 110, 155 );
+        }
+    }
 
 The first line of the file specifies that the data set is to be drawn from a 'multisource' population (this is currently the only supported type). There will be 4 features per data point, indicated by the number 4 between braces.
 
@@ -337,7 +338,7 @@ The utility takes two sets of label files as input. The first file is the ground
 
 In a classification problem, some features can carry more discriminatory information than others. It is often useful to know the relative importance of the features in a dataset.
 
-The balsa\_featureimportance tool can determine how sensitive a trained model is to each feature by measuring how much the predictive quality of the model degrades when the values of that feature are randomly shuffled between points. This can be done by invoking the tool with a model and a set of test point with known labels:
+The balsa\_featureimportance tool can determine how sensitive a trained model is to each feature by measuring how much the predictive quality of the model degrades when the values of that feature are randomly shuffled between points. This can be done by invoking the tool with a model and a set of test points with known labels:
 
 	balsa_featureimportance model.balsa testpoints.balsa ground-truth.balsa
 
@@ -437,38 +438,38 @@ The core of Balsa is a C++ library that can be used directly from within a third
 
 To include Balsa in a C++ project, include the installed Balsa header in your C++ source file(s):
 
-	#include <balsa.h>
+    #include <balsa.h>
 
 To compile and link, specify the correct minimal C++ standard, and link against the Balsa library. On UNIX systems, a typical invocation might look like this:
 
-	c++ -std=c++17 fruit-classifier.cpp -lbalsa -o fruit-classifier
+    c++ -std=c++17 fruit-classifier.cpp -lbalsa -o fruit-classifier
 
 <a name="cpptraining"></a>
 ### Training in C++ [(top)](#tableofcontents)
 
 The following complete example shows how a Balsa data model can be loaded and trained in C++:
 
-	#include <iostream>
-	#include <balsa.h>
+    #include <iostream>
+    #include <balsa.h>
 
-	using namespace balsa;
+    using namespace balsa;
 
-	int main( int, char ** )
-	{
-    	// Load data and labels.
-    	auto dataSet = readTableAs<double>( "fruit-data.balsa" );
-    	auto labels  = readTableAs<Label>( "fruit-labels.balsa" );
-    	auto featureCount = dataSet.getColumnCount();
+    int main( int, char ** )
+    {
+        // Load data and labels.
+        auto dataSet = readTableAs<double>( "fruit-data.balsa" );
+        auto labels  = readTableAs<Label>( "fruit-labels.balsa" );
+        auto featureCount = dataSet.getColumnCount();
 
-    	// Create an output stream for writing decision tree models to an ensemble file.
-    	EnsembleFileOutputStream outputStream( "fruit-model.balsa" );
+        // Create an output stream for writing decision tree models to an ensemble file.
+        EnsembleFileOutputStream outputStream( "fruit-model.balsa" );
 
-    	// Create a trainer and train it on the data.
-    	RandomForestTrainer trainer( outputStream );
-    	trainer.train( dataSet.begin(), dataSet.end(), featureCount, labels.begin() );
+        // Create a trainer and train it on the data.
+        RandomForestTrainer trainer( outputStream );
+        trainer.train( dataSet.begin(), dataSet.end(), featureCount, labels.begin() );
 
-    	return 0;
-	}
+        return 0;
+    }
 
 Remarks:
 
@@ -481,29 +482,29 @@ Remarks:
 
 The following complete example shows how a data set can be classified from within a C++ application:
 
-	#include <iostream>
-	#include <balsa.h>
+    #include <iostream>
+    #include <balsa.h>
 
-	using namespace balsa;
+    using namespace balsa;
 
-	int main( int, char ** )
-	{
-    	// Read (and possibly convert) the data.
-    	auto dataSet = readTableAs<double>( "fruit-data.balsa" );
+    int main( int, char ** )
+    {
+        // Read (and possibly convert) the data.
+        auto dataSet = readTableAs<double>( "fruit-data.balsa" );
 
-    	// Classify the data.
-    	Table<Label>           labels( dataSet.getRowCount(), 1 );
-    	RandomForestClassifier classifier( "fruit-model.balsa" );
-    	classifier.classify( dataSet.begin(), dataSet.end(), labels.begin() );
+        // Classify the data.
+        Table<Label>           labels( dataSet.getRowCount(), 1 );
+        RandomForestClassifier classifier( "fruit-model.balsa" );
+        classifier.classify( dataSet.begin(), dataSet.end(), labels.begin() );
 
-	    // Write the result to a binary Balsa output file.
-	    writeTable( labels, "fruit-classifier-labels.balsa" );
+        // Write the result to a binary Balsa output file.
+        writeTable( labels, "fruit-classifier-labels.balsa" );
 
-		// Print the results as text (or write to a text file).
-    	std::cout << labels << std::endl;
+        // Print the results as text (or write to a text file).
+        std::cout << labels << std::endl;
 
-	    return 0;
-	}
+        return 0;
+    }
 
 Remarks:
 
@@ -527,26 +528,26 @@ In practice, these restrictions mean that the point data in your application mus
 
 The following program demonstrates how the classifier can be used on input or output containers that are not the standard Balsa Tables:
 
-	using namespace balsa;
+    using namespace balsa;
 
-	int main( int, char ** )
-	{
-    	// Define some alternative data- and label-containers.
-    	typedef std::vector<float>  Points;
-    	typedef std::valarray<int>  Labels;
+    int main( int, char ** )
+    {
+        // Define some alternative data- and label-containers.
+        typedef std::vector<float>  Points;
+        typedef std::valarray<int>  Labels;
 
-    	// Create fake data.
-    	const std::size_t POINTCOUNT   = 100;
-    	const std::size_t FEATURECOUNT = 4;
-    	Points points( POINTCOUNT * FEATURECOUNT );
-    	Labels labels( POINTCOUNT );
+        // Create fake data.
+        const std::size_t POINTCOUNT   = 100;
+        const std::size_t FEATURECOUNT = 4;
+        Points points( POINTCOUNT * FEATURECOUNT );
+        Labels labels( POINTCOUNT );
 
-    	// Classify the data.
-    	RandomForestClassifier classifier( "fruit-model.balsa" );
-    	classifier.classify( points.begin(), points.end(), std::begin( labels ) );
+        // Classify the data.
+        RandomForestClassifier classifier( "fruit-model.balsa" );
+        classifier.classify( points.begin(), points.end(), std::begin( labels ) );
 
-    	return 0;
-	}
+        return 0;
+    }
 
 <a name="cppsingleprecision"></a>
 ### Using Single-Precision Features [(top)](#tableofcontents)
@@ -555,11 +556,11 @@ By default, Balsa uses double-precision floating point numbers for feature value
 
 Changing the precision of the trainer is done using a template parameter of the trainer:
 
-	// Create a single-precision trainer.
-	RandomForestTrainer<float> trainer1(...):
+    // Create a single-precision trainer.
+    RandomForestTrainer<float> trainer1(...):
 
-	// Create a double-precision trainer (the default).
-	RandomForestTrainer<double> trainer2(...);
+    // Create a double-precision trainer (the default).
+    RandomForestTrainer<double> trainer2(...);
 
 Remarks:
 
@@ -708,10 +709,10 @@ Given the results of a classifier-run on a known test set, we can directly deter
 
 Note that following relations hold:
 
-	P  = TP + FN
-	N  = FP + TN
-	PP = TP + FP
-	PN = FN + TN
+    P  = TP + FN
+    N  = FP + TN
+    PP = TP + FP
+    PN = FN + TN
 
 All metrics that we use to gauge the quality of a predictive model derive from these basic properties.
 
@@ -720,10 +721,10 @@ All metrics that we use to gauge the quality of a predictive model derive from t
 
 For a given test data set, the relation between the ground truth and the output of the classifier can be summarized conveniently in the form of a *confusion matrix*. Each entry CM[r,c] in the matrix contains the number of points of class 'c' in the ground truth that were labeled 'r' by the classifier. For a set of 1000 points and 4 classes, such a  matrix might look like this:
 
-	183 0    0   1
-	2   171  3   13
-	55  0    392 22
-	18  4    23  113
+    183 0    0   1
+    2   171  3   13
+    55  0    392 22
+    18  4    23  113
 
 In this example, the entry on row 2 in column 2 (starting from 0) indicates that there were 392 points in the ground truth that were correctly classified as being of class 2. The entry on row 3, column 1 indicates that 4 points of class 1 were incorrectly classified as being of class 3, and so on.
 
@@ -736,16 +737,16 @@ The TP, TN, FP and FN for a particular class label l (denoted as TP[l], FP[l], e
 
 For example, if one is interested in the TP, FP, etc. of the class with label 1 in a data set with 5 classes, the corresponding entries are laid out as follows:
 
-	TN FN TN TN TN
-	FP TP FP FP FP
-	TN FN TN TN TN
-	TN FN TN TN TN
-	TN FN TN TN TN
+    TN FN TN TN TN
+    FP TP FP FP FP
+    TN FN TN TN TN
+    TN FN TN TN TN
+    TN FN TN TN TN
 
 To calculate TN[1], *all* 'TN' entries need to be summed, for FP[1] all FP entries need to be summed, etc. In the special case of binary classification problems, this interpretation of the confusion matrix is simplified due to the fact that each type of entry will occur only once:
 
-	TP FP
-	FN TN
+    TP FP
+    FN TN
 
 <a name="performancemetrics"></a>
 ### Performance Metrics [(top)](#tableofcontents)
@@ -759,13 +760,13 @@ We will now define and discuss a number of common performance evaluation metrics
 
 The *True Positive Rate* (TPR) is the fraction of all positive points in the ground truth that are correctly classified as positive by the classifier. Equivalently, it is the probability that a randomly picked positive point in the ground truth is correctly identified as positive by the classifier:
 
-	TPR = TP/P = TP/(TP + FN)
+    TPR = TP/P = TP/(TP + FN)
 
 The TPR is also known as *sensitivity*, or *recall*.
 
 The *True Negative Rate* (TNR) is the fraction of all negative points in the ground truth that are correctly classified as negative. Equivalently, it is the probability that a randomly picked negative point in the ground truth is correctly identified as negative by the classifier:
 
-	TNR = TN/N = TN/(FP + TN)
+    TNR = TN/N = TN/(FP + TN)
 
 The TNR is also known as *specificity*.
 
@@ -780,13 +781,13 @@ The TPR and TNR indicate how frequently a positive or negative point is found by
 
 The *False Positive Rate* (FPR) is the fraction of all negative points in the ground truth that are incorrectly labeled positive by the classifier. Equivalently, it is the probability that a randomly selected negative point from the ground truth is incorrectly labeled positive:
 
-	FPR = FP / N = FP / (FP + TN)
+    FPR = FP / N = FP / (FP + TN)
 
 The false positive rate is also known as the *Type I Error*.
 
 The *False Negative Rate* (FNR) is the fraction of all positive points in the ground truth that are incorrectly labeled negative by the classifier:
 
-	FNR = FN / P = FN / (FN + TP)
+    FNR = FN / P = FN / (FN + TP)
 
 The False Negative Rate is also known as the *Type II Error*.
 
@@ -801,11 +802,11 @@ The FPR and FNR indicate how frequently the classifier is wrong, for each respec
 
 The *True Positive Odds* indicate how many times more likely it is that a positive point in the ground truth is correctly labeled by the classifier, versus it being incorrectly labeled:
 
-	TPO = TPR / (1 - TPR) = TPR / FNR = (TP/P) / (FN/P) = TP/FN
+    TPO = TPR / (1 - TPR) = TPR / FNR = (TP/P) / (FN/P) = TP/FN
 
 The *False Positive Odds* indicate how many times more likely it is that a negative point in the ground truth is incorrectly labeled by the classifier, versus it being correctly labeled:
 
-	FPO = FPR / (1 - FPR) = FPR / TNR = (FP/N) / (TN/N) = FP/TN
+    FPO = FPR / (1 - FPR) = FPR / TNR = (FP/N) / (TN/N) = FP/TN
 
 ##### Discussion
 
@@ -818,13 +819,13 @@ These metrics are simply the TPR and FPR written in odds-form. They are primaril
 
 The *Positive Predictive Value* (PPV) is the fraction of all points that have been classified as positive that are actually positive in the ground truth. Equivalently, it is the probability that the classifier is correct when it classifies a point as positive:
 
-	PPV = TP / PP = TP / (TP + FP)
+    PPV = TP / PP = TP / (TP + FP)
 
 Positive Predictive Value is also known as *Precision*.
 
 The *Negative Predictive Value* (NPV) is the fraction of all points that have been classified as negative that are actually negative in the ground truth. Equivalently, it is the probability that the classifier is correct when it classifies a point as negative:
 
-	NPV = TN / PN = TN / (TN + FN)
+    NPV = TN / PN = TN / (TN + FN)
 
 ##### Discussion
 
@@ -839,11 +840,11 @@ The PPV is most useful when the cost of dealing with a false positive is high. T
 
 The *Positive Likelihood Ratio* indicates how many times more likely it is that a positively classified point is correctly labeled, versus it being incorrectly labeled:
 
-	LR+ = TPR / (1 - TNR) = TPR / FPR = (TP/P) / (FP/N) = (TP * N) / (FP * P)
+    LR+ = TPR / (1 - TNR) = TPR / FPR = (TP/P) / (FP/N) = (TP * N) / (FP * P)
 
 The *Negative Likelihood Ratio* indicates how many times more likely it is that a negatively classified point is incorrectly labeled, versus it being correctly labeled:
 
-	LR- = (1 - TPR) / TNR = FNR / TNR = (FN/P) / (TN/N) = (FN * N) / (TN * P)
+    LR- = (1 - TPR) / TNR = FNR / TNR = (FN/P) / (TN/N) = (FN * N) / (TN * P)
 
 ##### Discussion
 
@@ -860,7 +861,7 @@ In summary, the *larger* LR+ and the *smaller* LR-, the more information the cla
 
 The *Accuracy* (ACC) is the fraction of all points that are classified correctly by the classifier. Alternatively, it is the probability that a randomly picked point from the test set will be classified correctly:
 
-	ACC = (TP + TN) / (P + N) = (TP + TN) / (TP + TN + FP + FN)
+    ACC = (TP + TN) / (P + N) = (TP + TN) / (TP + TN + FP + FN)
 
 ##### Discussion
 
@@ -873,7 +874,7 @@ The accuracy is one of the most commonly used metrics to gauge a classifier, but
 
 The *F-beta Score* is a weighted harmonic mean between the True Positive Rate (recall) an the Positive Predictive Value (precision):
 
-	Fb = (1 + b^2) (PPV * TPR) / (b^2 * PPV + TPR)
+    Fb = (1 + b^2) (PPV * TPR) / (b^2 * PPV + TPR)
 
 The highest possible F beta score is 1.0. Note that the score is undefined (NaN) when the PPV and TPR are both zero.
 
@@ -894,11 +895,11 @@ The F-1 Score is an all-round useful single-number metric that gives more realis
 
 The Diagnostic Odds Ratio is the ratio between the True Positive Odds (TPO) and the False Positive Odds (FPO):
 
-	DOR = TPO / FPO = (TP/FN)/(FP/TN) = (TP*TN)/(FP*FN)
+    DOR = TPO / FPO = (TP/FN)/(FP/TN) = (TP*TN)/(FP*FN)
 
 It may also be expressed as the ratio between the Positive Likelihood Ratio (LR+) and the Negative Likelihood Ratio (LR-):
 
-	DOR = LR+ / LR- = ((TP*N)/(FP*P))/((FN*N)/(TN*P)) = (TP*P*TN*N)/(FP*P*FN*N) = (TP*TN)/(FP*FN)
+    DOR = LR+ / LR- = ((TP*N)/(FP*P))/((FN*N)/(TN*P)) = (TP*P*TN*N)/(FP*P*FN*N) = (TP*TN)/(FP*FN)
 
 ##### Discussion
 
@@ -911,7 +912,7 @@ The DOR is a single-number metric that ranges from 0 to positive infinity. It do
 
 The P4 metric is the harmonic mean of the True Positive Rate, True Negative Rate, Positive Predictive Value and Negative Predictive Value:
 
-	P4 = 4 / ( (1/TPR) + (1/TNR) + (1/PPV) + (1/NPV) ) )
+    P4 = 4 / ( (1/TPR) + (1/TNR) + (1/PPV) + (1/NPV) ) )
 
 ##### Discussion
 
