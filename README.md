@@ -64,7 +64,7 @@ Balsa is a fast and memory-efficient C++ implementation of the RandomForest clas
 <a name="packagecontents"></a>
 ## Package Contents [(top)](#tableofcontents)
 
-The Balsa package provides a trainer and classifier that can be used from the command-line or from within a third-party C++ application. In addition, it provides a number of utilities for manipulating data files and models, and for evaulating classifier performance.
+The Balsa package provides a trainer and classifier that can be used from the command-line or from within a third-party C++ application. In addition, it provides a number of utilities for manipulating data files and models, and for evaluating classifier performance.
 
 The Balsa package provides the following command-line tools:
 
@@ -160,7 +160,7 @@ A *Decision Tree* is a very simple example of a classifier. The tree consists of
 
 The internal nodes of a decision tree contain predicates of the form `p[f] < L`, where p[f] is the value of feature f in the data point p, and L is some scalar. Only the values of f (the *Split Feature ID*) and L (the *Split Value*) are stored in the internal tree node, because the form of the predicate is always the same. The tuple (f,L) is called a *split*.
 
-The leaf nodes of the tree contain class labels. A data point p is classified by starting at the root node. If the node predicate evaulates to true, evaluation is continued at the right child node, otherwise it continues at the left child node. When a leaf node is reached, its label is applied to the data point.
+The leaf nodes of the tree contain class labels. A data point p is classified by starting at the root node. If the node predicate evaluates to true, evaluation is continued at the right child node, otherwise it continues at the left child node. When a leaf node is reached, its label is applied to the data point.
 
 <a name="trainingtrees"></a>
 ### Training Decision Trees [(top)](#tableofcontents)
@@ -260,7 +260,7 @@ The body of the multisource population describes two data generation sources. Ea
 
 Each source definition contains an integer weight that defines the relative frequency of that class in the sample data set. By convention, these numbers add up to 100% (78% 'apples', 22% 'oranges', as per the earlier example), but this is not necessary. The data generator will normalize the numbers.
 
-Each source definition body contains a number of generator statements. Each generator produces values for one or more features. The total number of features produced by a source must match the number of features of the population. In the above example, feature values are drawn from either a Gaussian distribution (normal distribution) or from a uniform distribition. The `gaussian` and `uniform` generators both produce values for a single feature. Therefore, each source in the example contains exactly four generator statements. For the `gaussian` generator, the parameters are mean and standard deviation, for the `uniform` generator, the parameters are the lower- and upper bounds.
+Each source definition body contains a number of generator statements. Each generator produces values for one or more features. The total number of features produced by a source must match the number of features of the population. In the above example, feature values are drawn from either a Gaussian distribution (normal distribution) or from a uniform distribution. The `gaussian` and `uniform` generators both produce values for a single feature. Therefore, each source in the example contains exactly four generator statements. For the `gaussian` generator, the parameters are mean and standard deviation, for the `uniform` generator, the parameters are the lower- and upper bounds.
 
 There are other generators that produce values for multiple features: `annulus` and `checkerboard`. The `annulus` generator draws feature values from a 2-dimensional ring; its parameters are the minimum and maximum radius of the ring. For each point a radius is drawn uniformly from this range, and an angle is drawn uniformly from the range [0, 360) degrees. The generator produces two feature values for each point, which are the Cartesian coordinates corresponding to the drawn radius and angle. The `checkboard` generator draws feature values from either the black or the white "squares" of an N-dimensional checkerboard; its parameters are the square color (`black` or `white`), the number of dimensions, and for each dimension the number of squares and their size. The number of feature values produced per point is equal to the specified number of dimensions. Both the `annulus` and the `checkerboard` generators produces feature values that are centered at the origin.
 
@@ -308,7 +308,7 @@ The balsa_train tool trains a Random Forest model on a set of labeled training d
 
 This command creates "fruit-model.balsa" from "fruit-points.balsa" and "fruit-labels.balsa". Various parameters of the training process can be controlled to make trade-offs between the disk usage of the generated model files, the processor/multi-core utilization, wall-clock time, predictive performance, etc.
 
-Running `balsa_train` without any arguments displays the full range of options. By default, balsa\_train creates a forest of 150 trees of unlimited depth, using one thread/core for training. This is fine for initial experimentation on small test sets, but it is almost never the best option for real applications. In order to get the best results, both in terms of runtime/speed and in terms of classification power, you will need to tune the parameters of balsa_train. The chapters [Optimizing Resource Usage](#optimizingresourceusage) and [Optimizing Model Performance] (#optimizingmodelperformance) cover the tuning process in detail.
+Running `balsa_train` without any arguments displays the full range of options. By default, balsa\_train creates a forest of 150 trees of unlimited depth, using one thread/core for training. This is fine for initial experimentation on small test sets, but it is almost never the best option for real applications. In order to get the best results, both in terms of runtime/speed and in terms of classification power, you will need to tune the parameters of balsa_train. The chapters [Optimizing Resource Usage](#optimizingresourceusage) and [Optimizing Model Performance](#optimizingmodelperformance) cover the tuning process in detail.
 
 <a name="balsaclassify"></a>
 ### Classification on the Command Line [(top)](#tableofcontents)
@@ -317,7 +317,7 @@ A model can be used to classify a (known or unknown) data set. For experimentati
 
 	balsa_classify fruit-model.balsa fresh-fruit-data.balsa
 
-The two parameters are the trained model file and the unknown new data file. The output labels will be written to a file called "fresh-fruit-data-predictions.balsa", i.e., its name will be the stem of the filename with "-predictions" appended to it. This output file can be compared to actual labels (e.g. from balsa_generate) for evaluation of the model. 
+The two parameters are the trained model file and the unknown new data file. The output labels will be written to a file called "fresh-fruit-data-predictions.balsa", i.e., its name will be the stem of the filename with "-predictions" appended to it. This output file can be compared to actual labels (e.g. from balsa_generate) for evaluation of the model.
 
 Note that it is possible to pass multiple data files on the command-line for bulk-classification. Under most circumstances, passing multiple files in a single invocation is much more efficient than classifying files in separate runs, because the trained model will only have to be loaded once.
 
@@ -330,12 +330,12 @@ The balsa\_measure utility measures how well a trained model performs. To do so,
 
 	balsa_measure ground-truth-labels.balsa classifier-output-labels.balsa
 
-The utilily takes two sets of label files as input. The first file is the ground truth of a test set (which was not available to the classifier), the second file is the set of labels that the classifier assigned to the test set. The measurement utility calculates a number of common [performance metrics](#performancemetrics) for the trained model.
+The utility takes two sets of label files as input. The first file is the ground truth of a test set (which was not available to the classifier), the second file is the set of labels that the classifier assigned to the test set. The measurement utility calculates a number of common [performance metrics](#performancemetrics) for the trained model.
 
 <a name="balsafeatureimportance"></a>
 ### Measuring Feature Performance [(top)](#tableofcontents)
 
-In a classification problem, some features can carry more discriminatory information than others. It is often useful to know the relative importance of the features in a dataset. 
+In a classification problem, some features can carry more discriminatory information than others. It is often useful to know the relative importance of the features in a dataset.
 
 The balsa\_featureimportance tool can determine how sensitive a trained model is to each feature by measuring how much the predictive quality of the model degrades when the values of that feature are randomly shuffled between points. This can be done by invoking the tool with a model and a set of test point with known labels:
 
@@ -346,7 +346,7 @@ To determine the predictive strength of each feature, balsa\_featureimportance f
 An example output might look like this:
 
 	-----------------------------------
-	Feature #: Importance (ACC-based): 
+	Feature #: Importance (ACC-based):
 	-----------------------------------
 	0          0.2346
 	1          0.3405
@@ -357,9 +357,9 @@ The output tells us that the average accuracy of the classifier (ACC) is 0.2346 
 
 There are some important caveats when interpreting these results:
 
-* Feature imporance tells us how important a feature is _for this particular model_. It might be possible to train a different model on the same data that relies more heavily on different features.
+* Feature importance tells us how important a feature is _for this particular model_. It might be possible to train a different model on the same data that relies more heavily on different features.
 * The feature importance is calculated based on _accuracy_. Future versions of Balsa may perform the calculation based on other metrics as well. These metrics may give rise to different conclusions.
-* If two or more features are heavily correlated, this method of feature importance will mark all features in such a corrrelated group as unimportant. If all features in the group are removed however, the model performance would degrade heavily.
+* If two or more features are heavily correlated, this method of feature importance will mark all features in such a correlated group as unimportant. If all features in the group are removed however, the model performance would degrade heavily.
 
 <a name="balsaprint"></a>
 ### Printing Balsa Files [(top)](#tableofcontents)
@@ -400,7 +400,7 @@ Label files are printed with a row number. Each row is one point. There is only 
 	9   : 0
 	10  : 0
 
-Random forest model files consist of multiple individual trees. While Balsa currently only supports random forests, the internal file format and code are designed to support more general ensemble classifiers in the future. For this reason, a Balsa file containing a random forest will actually contain an ensemble classifier with trees. 
+Random forest model files consist of multiple individual trees. While Balsa currently only supports random forests, the internal file format and code are designed to support more general ensemble classifiers in the future. For this reason, a Balsa file containing a random forest will actually contain an ensemble classifier with trees.
 
 When an ensemble file is printed, the ENSEMBLE header will be printed once at the top. Each submodel in the ensemble is separately marked by a header that indicates the type of the submodel at the start (for random forests, all submodels will be of type 'TREE'). A fragment of an example output file might look like this:
 
@@ -424,7 +424,7 @@ A Random Forest model consists of a set of individually trained randomized decis
 The following invocation creates a merged Balsa model from two separately trained models:
 
 	balsa_merge model1.balsa model2.balsa merged-model.balsa
-	
+
 N.B. balsa\_merge will only merge forests that are trained on data with the same number of features.
 
 <a name="usingbalsacpp"></a>
@@ -450,19 +450,19 @@ The following complete example shows how a Balsa data model can be loaded and tr
 
 	#include <iostream>
 	#include <balsa.h>
-	
+
 	using namespace balsa;
 
 	int main( int, char ** )
 	{
-    	// Load data and labels.                                                                                                                                                                                                    
+    	// Load data and labels.
     	auto dataSet = readTableAs<double>( "fruit-data.balsa" );
     	auto labels  = readTableAs<Label>( "fruit-labels.balsa" );
     	auto featureCount = dataSet.getColumnCount();
-    	
-    	// Create an output stream for writing decision tree models to an ensemble file.                                                                                                                                                          
+
+    	// Create an output stream for writing decision tree models to an ensemble file.
     	EnsembleFileOutputStream outputStream( "fruit-model.balsa" );
-    	
+
     	// Create a trainer and train it on the data.
     	RandomForestTrainer trainer( outputStream );
     	trainer.train( dataSet.begin(), dataSet.end(), featureCount, labels.begin() );
@@ -488,23 +488,23 @@ The following complete example shows how a data set can be classified from withi
 
 	int main( int, char ** )
 	{
-    	// Read (and possibly convert) the data.                                                                                                                                                                                    
+    	// Read (and possibly convert) the data.
     	auto dataSet = readTableAs<double>( "fruit-data.balsa" );
 
-    	// Classify the data.                                                                                                                                                                                                       
+    	// Classify the data.
     	Table<Label>           labels( dataSet.getRowCount(), 1 );
     	RandomForestClassifier classifier( "fruit-model.balsa" );
     	classifier.classify( dataSet.begin(), dataSet.end(), labels.begin() );
 
-	    // Write the result to a binary Balsa output file.                                                                                                                                                                      
+	    // Write the result to a binary Balsa output file.
 	    writeTable( labels, "fruit-classifier-labels.balsa" );
 
-		// Print the results as text (or write to a text file).                                                                                                                                                                     
+		// Print the results as text (or write to a text file).
     	std::cout << labels << std::endl;
 
 	    return 0;
 	}
-	
+
 Remarks:
 
 * This example uses Balsa Tables for storing the data and labels. It is possible (and recommended) to do classification in-place on points in your own data containers. This is covered in the next example.
@@ -523,7 +523,7 @@ In order to maintain efficiency, the classification method of the RandomForestCl
 3. The input iterator must iterate over the points and features in row-major order.
 4. The output iterator for labels must point to an numeric type.
 
-In practice, these restrictions mean that the point data in your application must be layed out consecutively in memory, in row-major order.
+In practice, these restrictions mean that the point data in your application must be laid out consecutively in memory, in row-major order.
 
 The following program demonstrates how the classifier can be used on input or output containers that are not the standard Balsa Tables:
 
@@ -531,17 +531,17 @@ The following program demonstrates how the classifier can be used on input or ou
 
 	int main( int, char ** )
 	{
-    	// Define some alternative data- and label-containers.                                                                                                                                                                                                          
+    	// Define some alternative data- and label-containers.
     	typedef std::vector<float>  Points;
     	typedef std::valarray<int>  Labels;
 
-    	// Create fake data.                                                                                                                                                                                                                                            
+    	// Create fake data.
     	const std::size_t POINTCOUNT   = 100;
     	const std::size_t FEATURECOUNT = 4;
     	Points points( POINTCOUNT * FEATURECOUNT );
     	Labels labels( POINTCOUNT );
 
-    	// Classify the data.                                                                                                                                                                                                                                           
+    	// Classify the data.
     	RandomForestClassifier classifier( "fruit-model.balsa" );
     	classifier.classify( points.begin(), points.end(), std::begin( labels ) );
 
@@ -560,12 +560,12 @@ Changing the precision of the trainer is done using a template parameter of the 
 
 	// Create a double-precision trainer (the default).
 	RandomForestTrainer<double> trainer2(...);
-	
-Remarks:	
+
+Remarks:
 
 * Changing from double to single precision has significant impact on the memory usage of the trainer.
 * The precision of the classifier is implicitly defined by the trained model. If a single-precision trained model is used, the classifier will be single-precision, etc.
-* It is possible to classify double-precision data points with single-precision classifier, and vice versa. 
+* It is possible to classify double-precision data points with single-precision classifier, and vice versa.
 * Merged random forest models may contain mixed-precision decision tree classifiers.
 
 <a name="optimizingsystemperformance"></a>
@@ -591,7 +591,7 @@ The following metrics are useful to evaluate the resource usage of a program:
 
 Most operating systems have tools available for monitoring these properties. On UNIX systems, the command-line tools 'top' and 'time' can be used to measure time, CPU usage, and peak memory usage (often reported as 'resident set size', RSS).
 
-N.B. the relation between walll-clock time and total CPU-time is of particular interest, because it gives some information about how effectively the program uses the available CPU cores in a multi-core system. If a program runs for 10 minutes (wall-clock time) on 8 cores, it can measure at most 80 minutes of total CPU time. If the total is less than that, not all cores could be kept busy for the full 10 minutes.
+N.B. the relation between wall-clock time and total CPU-time is of particular interest, because it gives some information about how effectively the program uses the available CPU cores in a multi-core system. If a program runs for 10 minutes (wall-clock time) on 8 cores, it can measure at most 80 minutes of total CPU time. If the total is less than that, not all cores could be kept busy for the full 10 minutes.
 
 Some care has to be taken when interpreting these metrics. As an example, consider a system that has 10 separate cores, and various machine-learning programs that classify a large data set. Here are the metrics for these programs (times in minutes, memory in gigabytes):
 
@@ -615,7 +615,7 @@ These are the optimization considerations for training that *do not* impact clas
 * Using n threads instead of 1 increases the peak memory usage by a factor n. Conversely, using fewer threads limits peak memory usage.
 * Training of one tree is always done in one thread. Therefore, there is no advantage to using more threads/cores than there are trees to train. There is also no harm in over-assigning threads in that case, since the additional threads will never run and/or use a core.
 
-Using these guidelines, it should be straigithforward to make direct trade-offs between wall clock time and peak memory usage, without affecting classifier quality.
+Using these guidelines, it should be straightforward to make direct trade-offs between wall clock time and peak memory usage, without affecting classifier quality.
 
 There are other optimization considerations that *might* impact classifier performance:
 
@@ -658,7 +658,7 @@ If, on the other hand, your application does *not* process more than one batch o
 
 **Rule 4: Use multiple CPUs if you are using the model more than once, use at most one extra core otherwise.**
 
-If you are classifying one batch of points on a single core (zero worker threads), the total wall clock time will consist of a relatively long disk load time L, plus a short classification time C. By adding one exta thread/core, all classification can be done by the one extra thread while the other thread is loading models from the disk. The total wall clock time is then reduced to L, because classification is done in parallel to model loading. Adding more cores cannot improve this situation, so it is of limited to no use to do so.
+If you are classifying one batch of points on a single core (zero worker threads), the total wall clock time will consist of a relatively long disk load time L, plus a short classification time C. By adding one extra thread/core, all classification can be done by the one extra thread while the other thread is loading models from the disk. The total wall clock time is then reduced to L, because classification is done in parallel to model loading. Adding more cores cannot improve this situation, so it is of limited to no use to do so.
 
 **In conclusion:**
 
@@ -671,16 +671,16 @@ If you are classifying one batch of points on a single core (zero worker threads
 
 In an ideal world, a classifier would always make predictions that are 100% correct. In reality we need to assess how well a classifier performs on a particular population, and sometimes we need to tune it to perform better.
 
-To assess the model performance or *predictive quality* the available ground truth data is split into two parts: a (usually larger) *training set* that is used for training the model, and a *test set* that is used to evaluate the performance of the trained model. The predictions that the model makes on the test set are called *out-of-bag* predictions (OOB). By comparing the OOB predictions to the ground truth, we can calculate various metrics to judge te quality of the predictions.
+To assess the model performance or *predictive quality* the available ground truth data is split into two parts: a (usually larger) *training set* that is used for training the model, and a *test set* that is used to evaluate the performance of the trained model. The predictions that the model makes on the test set are called *out-of-bag* predictions (OOB). By comparing the OOB predictions to the ground truth, we can calculate various metrics to judge the quality of the predictions.
 
 <a name="bestpractices"></a>
 ### Best Practices [(top)](#tableofcontents)
 
-Just as there are no perfect classifiers in the real world, there are no perfect metrics to judge classifier performance. Each metric sheds light on different strenghts and weaknesses of a classifier, and each metric has blind spots for other types of strenghts and weaknesses. Futhermore, depending on your specific application, a large deficiency in one area may be more acceptable than a small deficiency elsewhere. It is therefore important to properly understand the metrics, and to interpret them for your application.
+Just as there are no perfect classifiers in the real world, there are no perfect metrics to judge classifier performance. Each metric sheds light on different strengths and weaknesses of a classifier, and each metric has blind spots for other types of strengths and weaknesses. Furthermore, depending on your specific application, a large deficiency in one area may be more acceptable than a small deficiency elsewhere. It is therefore important to properly understand the metrics, and to interpret them for your application.
 
 As an example, consider a credit card company that processes one million transactions per hour. On average, approximately 10 of these transactions are fraudulent. A fraudulent transaction can easily be verified by calling the owner of the creditcard, but it is undesirable to call every customer over every transaction, and the company does not have the workforce to do this.
 
-Imagine that the company is evaluating two classifiers A and B to search for fraudulent transactions automatically. Classifier A simply assumes that there are no fraudulent transactions. It always returns 'false'. Classifier B flags approximately 50 of one million cases as fraudulent, 10 of which are the actual fraud cases. Classifier A is almost never wrong. Classifier B is wrong four times as often as classifier A. Cleary though, classifier B will solve the company's problems, whereas classifier A provides no useful information at all.
+Imagine that the company is evaluating two classifiers A and B to search for fraudulent transactions automatically. Classifier A simply assumes that there are no fraudulent transactions. It always returns 'false'. Classifier B flags approximately 50 of one million cases as fraudulent, 10 of which are the actual fraud cases. Classifier A is almost never wrong. Classifier B is wrong four times as often as classifier A. Clearly though, classifier B will solve the company's problems, whereas classifier A provides no useful information at all.
 
 In light of this, we recommend to evaluate classifiers as follows:
 
@@ -702,7 +702,7 @@ Imagine that a classifier classifies some of the points in this dataset as posit
 Given the results of a classifier-run on a known test set, we can directly determine the following basic numeric properties:
 
 * The *Positive Count* (P) is the number of points that are positive in the ground truth, the *Negative Count* (N) is the number of points that are negative in the ground truth.
-* *Predicted Positives* (PP) and *Predicted Negatives* (PN) are the counts of points that are respectively classified as postitive and negative by the classifier, regardless of whether that classification is correct or not.
+* *Predicted Positives* (PP) and *Predicted Negatives* (PN) are the counts of points that are respectively classified as positive and negative by the classifier, regardless of whether that classification is correct or not.
 * *True Positives* (TP) and *True Negatives* (TN) are the counts of points that are correctly classified as positive or negative.
 * *False Positives* (FP) is the count of negative points in the ground truth that are incorrectly classified as positive. *False Negatives* (FN) is the count of positive points in the ground truth that are incorrectly classified as negative.
 
@@ -725,7 +725,7 @@ For a given test data set, the relation between the ground truth and the output 
 	55  0    392 22
 	18  4    23  113
 
-In this example, the entry on row 2 in colum 2 (starting from 0) indicates that there were 392 points in the ground truth that were correctly classified as being of class 2. The entry on row 3, column 1 indicates that 4 points of class 1 were incorrectly classified as being of class 3, and so on.
+In this example, the entry on row 2 in column 2 (starting from 0) indicates that there were 392 points in the ground truth that were correctly classified as being of class 2. The entry on row 3, column 1 indicates that 4 points of class 1 were incorrectly classified as being of class 3, and so on.
 
 The TP, TN, FP and FN for a particular class label l (denoted as TP[l], FP[l], etc.) can be calculated directly from the matrix:
 
@@ -792,7 +792,7 @@ The False Negative Rate is also known as the *Type II Error*.
 
 ##### Discussion
 
-The FPR and FNR indicate how frequently the classifier is wrong, for each respecive ground truth. They are useful when the cost of dealing with a certain type of error (a false positive or a false negative) is very high, as in the [creditcard example](#bestpractices).
+The FPR and FNR indicate how frequently the classifier is wrong, for each respective ground truth. They are useful when the cost of dealing with a certain type of error (a false positive or a false negative) is very high, as in the [creditcard example](#bestpractices).
 
 <a name="tpofpo"></a>
 #### True Positive Odds and False Positive Odds [(top)](#tableofcontents)
@@ -803,7 +803,7 @@ The *True Positive Odds* indicate how many times more likely it is that a positi
 
 	TPO = TPR / (1 - TPR) = TPR / FNR = (TP/P) / (FN/P) = TP/FN
 
-The *False Positive Odds* indicate how many times more likely it is that a negative point in the ground thruth is incorrectly labeled by the classifier, versus it being correctly labeled:
+The *False Positive Odds* indicate how many times more likely it is that a negative point in the ground truth is incorrectly labeled by the classifier, versus it being correctly labeled:
 
 	FPO = FPR / (1 - FPR) = FPR / TNR = (FP/N) / (TN/N) = FP/TN
 
@@ -847,9 +847,9 @@ The *Negative Likelihood Ratio* indicates how many times more likely it is that 
 
 ##### Discussion
 
-Both the positive and negative likelihood ratios range from zero to positive infinity. A positive likelihood ratio (LR+) *larger* than one indicates that the probability that a point is labeled *positive* given that the point is *positive* in the ground truth (a true positive) is larger than the probability that a point is labeled *positive* given that the point is *negative* in the ground truth (a false negative). The larger LR+, the more information a positive classification provides about the ground thruth. An LR+ value of one indicates the probabilities are equal, and thus a positive classification provides no information about the ground truth. If LR+ is smaller than one then the classification labels can be swapped such that LR+ becomes larger than one.
+Both the positive and negative likelihood ratios range from zero to positive infinity. A positive likelihood ratio (LR+) *larger* than one indicates that the probability that a point is labeled *positive* given that the point is *positive* in the ground truth (a true positive) is larger than the probability that a point is labeled *positive* given that the point is *negative* in the ground truth (a false negative). The larger LR+, the more information a positive classification provides about the ground truth. An LR+ value of one indicates the probabilities are equal, and thus a positive classification provides no information about the ground truth. If LR+ is smaller than one then the classification labels can be swapped such that LR+ becomes larger than one.
 
-For the negative likelihood ratio (LR-), a value *smaller* than one indicates that the probability that a point is labeled *negative* given that the point is *negative* in the ground truth (a true negative) is larger than the probability that a point is labeled *negative* given that the point is *positive* in the ground truth (a false positive). The smaller LR-, the more information a negative classification provides about the ground thruth. An LR- value of one indicates the probabilities are equal, and thus a negative classification provides no information about the ground truth. If LR- is larger than one then the classification labels can be swapped such that LR- becomes smaller than one.
+For the negative likelihood ratio (LR-), a value *smaller* than one indicates that the probability that a point is labeled *negative* given that the point is *negative* in the ground truth (a true negative) is larger than the probability that a point is labeled *negative* given that the point is *positive* in the ground truth (a false positive). The smaller LR-, the more information a negative classification provides about the ground truth. An LR- value of one indicates the probabilities are equal, and thus a negative classification provides no information about the ground truth. If LR- is larger than one then the classification labels can be swapped such that LR- becomes smaller than one.
 
 In summary, the *larger* LR+ and the *smaller* LR-, the more information the classifier provides about the ground truth. An important advantage of likelihood ratios is that these metrics are insensitive to population imbalance. LR+ and LR- could be viewed as "prevalence insensitive" analogues of the PPV and NPV.
 
@@ -864,14 +864,14 @@ The *Accuracy* (ACC) is the fraction of all points that are classified correctly
 
 ##### Discussion
 
-The accuracy is one of the most commonly used metrics to gauge a classifier, but also one that is often misleading. It is easy to interpret, because it effectively tells us the percentage of cases in which the classifier is correct. It is appealing because it is a single higher-is-better number. However, on highly impalanced populations, it is easy to achieve high accuracy using a (ultimately useless) classifier that simply always returns the most prevalent class label (The 'accuracy paradox'.) So, while low accuracy is almost never good, high accuracy does not indicate that the classifier is good.
+The accuracy is one of the most commonly used metrics to gauge a classifier, but also one that is often misleading. It is easy to interpret, because it effectively tells us the percentage of cases in which the classifier is correct. It is appealing because it is a single higher-is-better number. However, on highly imbalanced populations, it is easy to achieve high accuracy using a (ultimately useless) classifier that simply always returns the most prevalent class label (The 'accuracy paradox'.) So, while low accuracy is almost never good, high accuracy does not indicate that the classifier is good.
 
 <a name="fbeta"></a>
 #### F-beta Score [(top)](#tableofcontents)
 
 ##### Definition
 
-The *F-beta Score* is a weighted harmonic mean between the True Postive Rate (recall) an the Positive Predictive Value (precision):
+The *F-beta Score* is a weighted harmonic mean between the True Positive Rate (recall) an the Positive Predictive Value (precision):
 
 	Fb = (1 + b^2) (PPV * TPR) / (b^2 * PPV + TPR)
 
