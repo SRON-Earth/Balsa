@@ -136,6 +136,30 @@ flexibility, high performance, and ease of integration make it an invaluable
 tool for any application that requires efficient and scalable Random
 Forest-based machine learning.
 
+We conducted a performance analysis and comparison of the Balsa implementation
+against the Python-based SKLearn library and the C++-based Ranger
+implementation. This comparison, detailed in the Balsa ATBD
+[@Borsdorff:2024_atbd], focuses on both memory usage and runtime during the
+training and prediction phases of the Random Forest Classifier (RFC).  We found
+that the accuracy of the prediction across all three implementations (Balsa,
+SKLearn, and Ranger) is essentially the same, ensuring that any observed
+differences in performance are due to optimizations in memory usage and
+runtime, rather than model accuracy.  Figure \autoref{fig:balsa_memory}
+illustrates that Balsa outperforms both SKLearn and Ranger in terms of memory
+usage during both the training and prediction phases. Specifically, Balsa
+consistently shows a lower memory footprint making it particularly advantageous
+for handling larger datasets. Figure \autoref{fig:balsa_memory} presents the
+total runtime for RFC training and prediction. As shown, Balsa exhibits a
+comparable runtime to SKLearn and Ranger during training. However, Balsa excels
+in the prediction phase, where it delivers superior performance in terms of
+wall-clock time. This is particularly significant, as prediction speed is the
+final product in many machine learning workflows, making Balsa a promising
+choice for operational integration. 
+
+![Memory usage during RFC training (left) and prediction (right) for SKLearn (green), Ranger (orange), and Balsa (blue) as a function of dataset size.\label{fig:balsa_memory}](figures/fig1.png)
+
+![Runtime of RFC training (left) and prediction (right) as a function of dataset size.\label{fig:balsa_runtime}](figures/fig2.png)
+
 
 # Acknowledgements
 
