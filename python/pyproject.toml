@@ -1,0 +1,35 @@
+[build-system]
+requires = ["scikit-build-core>=0.5", "numpy>=1.25"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "balsa"
+dynamic = ["version"]
+dependencies = [
+  "numpy>=1.25"
+]
+requires-python = ">=3.9"
+description = "A Python package for fast, memory-efficient, random forest classification"
+license = {file = "LICENSE.txt"}
+classifiers = [
+	"Intended Audience :: Developers",
+	"Intended Audience :: Science/Research",
+	"License :: OSI Approved :: BSD License",
+	"Operating System :: POSIX",
+	"Operating System :: MacOS",
+	"Operating System :: Microsoft :: Windows",
+	"Operating System :: Unix",
+	"Programming Language :: C",
+	"Programming Language :: C++",
+	"Programming Language :: Python"
+]
+
+[project.urls]
+Homepage = "https://github.com/borsdorff/Balsa"
+Documentation = "https://github.com/borsdorff/Balsa/blob/main/README.md"
+Repository = "https://github.com/borsdorff/Balsa"
+Issues = "https://github.com/borsdorff/Balsa/issues"
+
+[tool.scikit-build.metadata.version]
+provider = "scikit_build_core.metadata.regex"
+input = "src/balsa/__init__.py"
