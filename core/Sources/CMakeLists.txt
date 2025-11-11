@@ -1,37 +1,88 @@
-configure_file( config.h.in config.h )
+# -------------------------------------------------------
+# Generate config.h from template
+# -------------------------------------------------------
+configure_file(config.h.in config.h)
 
-add_test( NAME testsuite COMMAND balsa_test )
+# -------------------------------------------------------
+# Add tests
+# -------------------------------------------------------
+add_test(NAME testsuite COMMAND balsa_test)
 
-add_library( balsa SHARED fileio.cpp modelevaluation.cpp serdes.cpp weightedcoin.cpp )
-target_include_directories( balsa PUBLIC ${CMAKE_CURRENT_LIST_DIR} )
+# -------------------------------------------------------
+# Build shared library
+# -------------------------------------------------------
+add_library(balsa SHARED
+    fileio.cpp
+    modelevaluation.cpp
+    serdes.cpp
+    weightedcoin.cpp
+)
+target_include_directories(balsa PUBLIC ${CMAKE_CURRENT_LIST_DIR})
 
-add_library( balsa-static STATIC EXCLUDE_FROM_ALL fileio.cpp modelevaluation.cpp serdes.cpp weightedcoin.cpp )
-set_property( TARGET balsa-static PROPERTY POSITION_INDEPENDENT_CODE ON )
-target_include_directories( balsa-static PUBLIC ${CMAKE_CURRENT_LIST_DIR} )
+# Build static library (now included in build)
+add_library(balsa-static STATIC
+    fileio.cpp
+    modelevaluation.cpp
+    serdes.cpp
+    weightedcoin.cpp
+)
+set_property(TARGET balsa-static PROPERTY POSITION_INDEPENDENT_CODE ON)
+target_include_directories(balsa-static PUBLIC ${CMAKE_CURRENT_LIST_DIR})
 
-add_executable( balsa_train balsa_train.cpp )
-target_link_libraries( balsa_train balsa )
+# -------------------------------------------------------
+# Build executables and link with balsa library
+# -------------------------------------------------------
+macro(add_balsa_tool tool_name src_file)
+    add_executable(${tool_name} ${src_file})
+    target_link_libraries(${tool_name} PRIVATE balsa)
+endmacro()
 
-add_executable( balsa_classify balsa_classify.cpp )
-target_link_libraries( balsa_classify balsa )
+add_balsa_tool(balsa_train balsa_train.cpp)
+add_balsa_tool(balsa_classify balsa_classify.cpp)
+add_balsa_tool(balsa_merge balsa_merge.cpp)
+add_balsa_tool(balsa_generate balsa_generate.cpp)
+add_balsa_tool(balsa_print balsa_print.cpp)
+add_balsa_tool(balsa_measure balsa_measure.cpp)
+add_balsa_tool(balsa_featureimportance balsa_featureimportance.cpp)
+add_balsa_tool(balsa_convert balsa_convert.cpp)
+add_balsa_tool(balsa_test balsa_test.cpp)
 
-add_executable( balsa_merge balsa_merge.cpp )
-target_link_libraries( balsa_merge balsa )
+# -------------------------------------------------------
+# Installation targets
+# -------------------------------------------------------
 
-add_executable( balsa_generate balsa_generate.cpp )
-target_link_libraries( balsa_generate balsa )
+# Install the shared library
+install(TARGETS balsa
+    LIBRARY DESTINATION lib
+)
 
-add_executable( balsa_print balsa_print.cpp )
-target_link_libraries( balsa_print balsa )
+# Install static library
+install(TARGETS balsa-static
+    ARCHIVE DESTINATION lib
+)
 
-add_executable( balsa_measure balsa_measure.cpp )
-target_link_libraries( balsa_measure balsa )
+# Install executables
+install(TARGETS
+    balsa_train
+    balsa_classify
+    balsa_merge
+    balsa_generate
+    balsa_print
+    balsa_measure
+    balsa_featureimportance
+    balsa_convert
+    balsa_test
+    RUNTIME DESTINATION bin
+)
 
-add_executable( balsa_featureimportance balsa_featureimportance.cpp )
-target_link_libraries( balsa_featureimportance balsa )
+# Install headers
+install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/
+    DESTINATION include
+    FILES_MATCHING PATTERN "*.h"
+)
 
-add_executable( balsa_convert balsa_convert.cpp )
-target_link_libraries( balsa_convert balsa )
+# Install config.h (generated)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/config.h
+    DESTINATION include
+)
 
-add_executable( balsa_test balsa_test.cpp )
-target_link_libraries( balsa_test balsa )

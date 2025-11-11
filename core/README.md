@@ -224,7 +224,12 @@ cmake -G "NMake Makefiles" ..
 nmake
 ```
 
-After building the software, it can be installed using `make install` (UNIX) or `nmake install` (Windows). The command-line tools, C++ library, and C++ header files are installed in system-wide standard locations. [The CMake manual](https://cmake.org/cmake/help/latest/guide/tutorial/index.html) contains additional information for installing into custom directories.
+After building the software, it can be installed using `make install` (UNIX) or `nmake install` (Windows). The command-line tools, C++ library, and C++ header files are installed in system-wide standard locations. [The CMake manual](https://cmake.org/cmake/help/latest/guide/tutorial/index.html) contains additional information for installing into custom directories (e.g. `cmake -DCMAKE_INSTALL_PREFIX=<install_path> ..`). If you choose a custom installation path when installing Balsa, make sure to add the bin and lib directories of that path to your environment variables so the executables and libraries can be found:
+
+```
+export PATH=<install_path>/bin:$PATH
+export LD_LIBRARY_PATH=<install_path>/lib:$LD_LIBRARY_PATH
+```
 
 <a name="balsacommandline"></a>
 ## Using Balsa from the Command Line [(top)](#tableofcontents)
