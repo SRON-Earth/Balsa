@@ -10,7 +10,7 @@ dependencies = [
 ]
 requires-python = ">=3.9"
 description = "A Python package for fast, memory-efficient, random forest classification"
-license = {file = "LICENSE.txt"}
+license = {file = "../LICENSE"}
 classifiers = [
 	"Intended Audience :: Developers",
 	"Intended Audience :: Science/Research",
