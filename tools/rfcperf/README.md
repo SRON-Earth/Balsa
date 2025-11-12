@@ -28,39 +28,110 @@ This tool is particularly useful for:
 - **Configurable**: External configuration file for classifier settings
 - **Extensible**: Driver-based architecture for adding new classifiers
 
-## Installation
-```bash
-cd tools
-pip install -e .
-```
-
 **Requirements:**
 - Python ≥ 3.7
 - NumPy
 - matplotlib
 - jsonpickle
 
+
 ## Quick Start
 
 ### 1. Prepare Your Dataset
 
-Your training data should be in JSON format (using jsonpickle):
+#### Create Dataset Specification
+
+First, create a dataset specification file named `fruit.conf`:
+```
+multisource(4)
+{
+    source(78)
+    {
+        gaussian(122, 11  );
+        gaussian(40 , 9   );
+        gaussian(13 , 12  );
+        uniform( 100, 150 );
+    }
+    source(22)
+    {
+        gaussian(100, 10  );
+        gaussian(100, 10  );
+        gaussian( 20, 10  );
+        uniform( 110, 155 );
+    }
+}
+```
+
+This specification defines a binary classification problem with 4 features per data point. The two sources represent different classes (e.g., apples and oranges) with a 78:22 distribution ratio.
+
+#### Generate Dataset Using balsa_generate
+
+Use the `balsa_generate` tool to create structured random test data:
+```bash
+# Generate 30 million data points based on fruit.conf specification
+balsa_generate -p 30000000 fruit.conf fruit-points.balsa fruit-labels.balsa
+
+# Convert binary format to readable text files
+balsa_print fruit-points.balsa > fpoints.txt
+balsa_print fruit-labels.balsa > flabels.txt
+```
+
+#### Convert to JSON Format
+
+Once you have the text files, convert them to JSON format for use with the Python bindings:
 ```python
 import numpy as np
 import jsonpickle
-import jsonpickle.ext.numpy
 
-jsonpickle.ext.numpy.register_handlers()
+# Paths to the input text files
+points_file = "fpoints.txt"
+labels_file = "flabels.txt"
+output_json = "my_dataset.json"
 
-# Your data: 2D array of features (float32)
-data_points = np.array([[1.0, 2.0], [3.0, 4.0], ...], dtype=np.float32)
+def read_points(filename):
+    """Read floating point table from text file."""
+    data = []
+    with open(filename, "r") as f:
+        lines = f.readlines()
+    # Skip header lines until we find table rows
+    for line in lines:
+        line = line.strip()
+        if not line or line[0].isdigit() == False:
+            continue
+        # Row format: "0   : 123.303  43.3323  -5.20379 102.836"
+        parts = line.split(":")
+        values = parts[1].strip().split()
+        data.append([float(v) for v in values])
+    return np.array(data, dtype=np.float32)
 
-# Your labels: 1D array (float32, values 0 or 1 for binary classification)
-labels = np.array([0, 1, 0, ...], dtype=np.float32)
+def read_labels(filename):
+    """Read label table from text file."""
+    labels = []
+    with open(filename, "r") as f:
+        lines = f.readlines()
+    for line in lines:
+        line = line.strip()
+        if not line or line[0].isdigit() == False:
+            continue
+        # Row format: "0   : 0"
+        parts = line.split(":")
+        labels.append(int(parts[1].strip()))
+    return np.array(labels, dtype=np.float64)
 
-# Save as JSON
-with open("my_dataset.json", "w") as f:
-    f.write(jsonpickle.encode((data_points, labels)))
+# Load data
+data_points = read_points(points_file)
+labels = read_labels(labels_file)
+
+# Make sure shapes match
+assert len(data_points) == len(labels), "Number of points and labels must match"
+
+# Encode and write JSON
+with open(output_json, "w") as f:
+    f.write(jsonpickle.encode([data_points, labels]))
+
+print(f"Dataset written to {output_json}")
+print(f"Data shape: {data_points.shape}")
+print(f"Labels shape: {labels.shape}")
 ```
 
 ### 2. Generate Default Configuration
@@ -68,7 +139,7 @@ with open("my_dataset.json", "w") as f:
 python -m rfcperf profile my_dataset.json balsa
 ```
 
-This creates `rfcperf.ini` with default settings. Edit this file to configure your classifiers.
+This creates `rfcperf.ini` with default settings. Edit this file to configure your classifiers. You need to install sklearn in your python environment and download and built ranger a cpp implementation of the random forest classifier concept (https://github.com/imbs-hl/ranger).
 
 ### 3. Configure Classifiers
 
@@ -80,25 +151,29 @@ run_dir = run
 
 [balsa]
 driver = balsa
-balsa_train = /path/to/balsa_train
-balsa_classify = /path/to/balsa_classify
-balsa_measure = /path/to/balsa_measure
+path = /path/to/dir/that/contains/balsa/binaries
+
+[ranger]
+driver = ranger
+path = /path/to/dir/that/contains/ranger/binary
 
 [sklearn]
 driver = sklearn
-# sklearn-specific options...
+python = /path/to/python/interpreter
+
 ```
 
 ### 4. Run Profiling
 ```bash
-python -m rfcperf profile my_dataset.json balsa sklearn \
-    -n 1000,5000,10000,50000 \
+mkdir run cache
+python -m rfcperf profile my_dataset.json balsa sklearn ranger \
+    -n 1000,2500000,5000000,7500000,10000000 \
     -e 150 \
-    -t 4 \
+    -t 16 \
     -p 33
 ```
 
-This profiles both Balsa and scikit-learn on datasets of 1K, 5K, 10K, and 50K samples, using 150 trees, 4 threads, and a 33% test split.
+This profiles Balsa, scikit-learn and the ranger library on datasets of 1K, 2.5M, 5M, 7.5M, and 10M samples, using 150 trees, 16 threads, and a 33% test split. This will take some time if you want to speed it up reduce the dataset size.
 
 ### 5. View Results
 
@@ -110,10 +185,10 @@ run/2025-01-15T10:30:00/
 ├── all.pdf             # Combined comparison report
 ├── balsa/              # Detailed logs and output
 │   ├── 1000/
-│   ├── 5000/
+│   ├── 2500000/
 │   └── ...
 └── sklearn/
-    ├── 1000/
+    ├── 2500000/
     └── ...
 ```
 
@@ -181,13 +256,13 @@ python -m rfcperf sample DATA_INPUT_FILE DATA_OUTPUT_FILE [LABEL_OUTPUT_FILE] [O
 **Examples:**
 ```bash
 # Convert JSON to Balsa format
-python -m rfcperf sample data.json data.balsa labels.balsa -f balsa
+python -m rfcperf sample my_dataset.json data.balsa labels.balsa -f balsa
 
 # Draw 1000 random samples to CSV
-python -m rfcperf sample data.json sample.csv -f csv -n 1000 -s 42
+python -m rfcperf sample my_dataset.json sample.csv -f csv -n 1000 -s 42
 
 # Oversample with replacement
-python -m rfcperf sample small_data.json large_data.bin large_labels.bin \
+python -m rfcperf sample my_dataset.json large_data.bin large_labels.bin \
     -n 100000 -r
 ```
 
@@ -230,7 +305,7 @@ rfcperf measures and reports:
 - **DOR**: Diagnostic odds ratio
 - **Confusion matrix**: Full classification breakdown
 
-See [core/README.md](../core/README.md#performancemetrics) for detailed metric definitions.
+See [core/README.md](../../core/README.md) for detailed metric definitions.
 
 ## Output Structure
 
