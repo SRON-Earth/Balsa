@@ -170,7 +170,9 @@ python -m rfcperf profile my_dataset.json balsa sklearn ranger \
     -n 1000,2500000,5000000,7500000,10000000 \
     -e 150 \
     -t 16 \
-    -p 33
+    -p 33 \
+    -f 2 \
+    -d 50
 ```
 
 This profiles Balsa, scikit-learn and the ranger library on datasets of 1K, 2.5M, 5M, 7.5M, and 10M samples, using 150 trees, 16 threads, and a 33% test split. This will take some time if you want to speed it up reduce the dataset size.
