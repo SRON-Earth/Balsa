@@ -33,6 +33,7 @@ This tool is particularly useful for:
 - NumPy
 - matplotlib
 - jsonpickle
+- GNU time command
 
 
 ## Quick Start
