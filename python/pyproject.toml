@@ -3,7 +3,7 @@ requires = ["scikit-build-core>=0.5", "numpy>=1.25"]
 build-backend = "scikit_build_core.build"
 
 [project]
-name = "balsa"
+name = "balsa_rfc"
 dynamic = ["version"]
 dependencies = [
   "numpy>=1.25"
@@ -25,11 +25,11 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/borsdorff/Balsa"
-Documentation = "https://github.com/borsdorff/Balsa/blob/main/README.md"
-Repository = "https://github.com/borsdorff/Balsa"
-Issues = "https://github.com/borsdorff/Balsa/issues"
+Homepage = "https://github.com/SRON-Eath/Balsa"
+Documentation = "https://github.com/SRON-Eath/Balsa/blob/main/README.md"
+Repository = "https://github.com/SRON-Eath/Balsa"
+Issues = "https://github.com/SRON-Eath/Balsa/issues"
 
 [tool.scikit-build.metadata.version]
 provider = "scikit_build_core.metadata.regex"
-input = "src/balsa/__init__.py"
+input = "src/balsa_rfc/__init__.py"

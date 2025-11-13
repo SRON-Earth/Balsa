@@ -33,4 +33,4 @@ set_target_properties(c_extension PROPERTIES OUTPUT_NAME "_balsa")
 target_link_libraries(c_extension PRIVATE balsa-static Python::NumPy)
 
 # Install the C extension with the balsa package Python code.
-install(TARGETS c_extension LIBRARY DESTINATION balsa)
+install(TARGETS c_extension LIBRARY DESTINATION balsa_rfc)
