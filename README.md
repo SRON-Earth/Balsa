@@ -35,7 +35,7 @@ This repository contains three main components:
 cd core && mkdir build && cd build
 cmake .. && make && sudo make install
 ```
-See [core/README.md](core/README.md#installation) for details.
+See [core/README.md](core/README.md#installation) for details (e.g. using a custom installation path).
 
 ### Python
 ```bash
