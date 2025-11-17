@@ -1,7 +1,19 @@
-# ABOUT #
+![Balsa Logo](../core/Images/BalsaLogo.png)
 
-This repository contains tools to quantify the performance of random forest
-classifiers.
+# Tools
+
+This folder contains command-line tools for the **Balsa** project.
+
+## Available Tool
+
+Currently, the only available tool is:
+
+- **rfcperf** – A Random Forest classifier benchmarking and profiling tool.  
+  See [rfcperf README](./rfcperf/README.md) for detailed instructions and usage.
+
+## Future Tools
+
+Additional tools for data processing, evaluation, and analysis will be added in future releases.
 
 # SUPPORT #
 
