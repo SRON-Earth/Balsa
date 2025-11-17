@@ -2,7 +2,7 @@
 
 # Tools
 
-This folder contains command-line tools for the **Balsa** project.
+This folder contains tools for the **Balsa** project.
 
 ## Available Tool
 
