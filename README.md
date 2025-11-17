@@ -1,6 +1,6 @@
 ![](core/Images/BalsaLogo.png)
 
-# Balsa-RFC: A Fast Random Forest Classifier
+# Balsa: A Fast Random Forest Classifier
 
 Balsa is a fast and memory-efficient implementation of the Random Forest classification algorithm, optimized for low memory usage and high speed during both training and classification.
 
