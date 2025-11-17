@@ -15,6 +15,6 @@ Currently, the only available tool is:
 
 Additional tools for data processing, evaluation, and analysis will be added in future releases.
 
-# SUPPORT #
+## SUPPORT #
 
 Support queries may be directed at info@jigsaw.nl
