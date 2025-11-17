@@ -37,6 +37,13 @@ cmake .. && make && sudo make install
 ```
 See [core/README.md](core/README.md#installation) for details (e.g. using a custom installation path).
 
+### Running the unit tests
+After building Balsa, you can verify the installation by running the unit tests:
+
+```bash
+balsa_test
+```
+
 ### Python
 ```bash
 cd python && pip install .

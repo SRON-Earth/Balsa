@@ -75,6 +75,7 @@ The Balsa package provides the following command-line tools:
 * **balsa\_measure** calculates metrics to assess the performance of a model.
 * **balsa\_featureimportance** performs permutation feature importance analysis on a Balsa model.
 * **balsa\_merge** merges multiple trained Random Forest model files into a single model.
+* **balsa\_test** runs internal tests to check installation and funtionality
 
 These tools are built and installed as part of a standard [Balsa installation process](#installation).
 
@@ -229,6 +230,11 @@ After building the software, it can be installed using `make install` (UNIX) or 
 ```
 export PATH=<install_path>/bin:$PATH
 export LD_LIBRARY_PATH=<install_path>/lib:$LD_LIBRARY_PATH
+```
+After building Balsa, you can verify the installation by running the unit tests:
+
+```
+balsa_test
 ```
 
 <a name="balsacommandline"></a>
