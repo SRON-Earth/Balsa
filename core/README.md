@@ -207,7 +207,7 @@ The following optional prerequisites apply:
 <a name="buildandinstall"></a>
 ### Building and Installing Balsa [(top)](#tableofcontents)
 
-On UNIX systems (Mac, Linux) run the following commands from the top-level source directory to build Balsa:
+On UNIX systems (Mac, Linux) run the following commands from the core souce directory to build Balsa:
 
 ```
 mkdir build
@@ -216,7 +216,7 @@ cmake ..
 make
 ```
 
-The equivalent procedure for Windows (using NMake) is to open a Visual Studio Command Prompt in the top-level source directory, and to execute the following commands:
+The equivalent procedure for Windows (using NMake) is to open a Visual Studio Command Prompt in the core source directory, and to execute the following commands:
 
 ```
 mkdir build
