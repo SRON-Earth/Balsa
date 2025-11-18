@@ -230,7 +230,7 @@ python -m rfcperf profile TRAIN_DATA_FILE CLASSIFIER [CLASSIFIER ...] [OPTIONS]
 **Example:**
 ```bash
 # Profile Balsa with different thread counts
-python -m rfcperf profile data.json balsa \
+python -m rfcperf profile my_dataset.json balsa \
     -n 10000,50000,100000 \
     -e 200 \
     -d 30 \
@@ -238,7 +238,7 @@ python -m rfcperf profile data.json balsa \
     -s 42
 
 # Compare multiple classifiers
-python -m rfcperf profile data.json balsa sklearn ranger \
+python -m rfcperf profile my_dataset.json balsa sklearn ranger \
     -n 5000,10000,20000 \
     -p 25 \
     -e 150
