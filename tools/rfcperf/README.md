@@ -44,22 +44,28 @@ This tool is particularly useful for:
 
 First, create a dataset specification file named `fruit.conf`:
 ```
-multisource(4)
+multisource(7)
 {
     source(78)
     {
-        gaussian(122, 11  );
-        gaussian(40 , 9   );
-        gaussian(13 , 12  );
-        uniform( 100, 150 );
-    }
+        gaussian(0.16596016, 0.16781704);
+        gaussian(30.953608, 18.591196);
+        gaussian(12.02204, 46.754826);
+        gaussian(91839.86, 11728.834);
+        gaussian(0.5906968, 0.089086026);
+        gaussian(0.6995243, 0.19331227);
+        gaussian(0.53668684, 0.0888503);
+}
     source(22)
     {
-        gaussian(100, 10  );
-        gaussian(100, 10  );
-        gaussian( 20, 10  );
-        uniform( 110, 155 );
-    }
+        gaussian(0.22127023, 0.19662453);
+        gaussian(26.177174, 16.360184);
+        gaussian(0.29663125, 49.04709);
+        gaussian(90820.484, 11894.523);
+        gaussian(0.606064, 0.0975867);
+        gaussian(0.86118674, 0.07939516);
+        gaussian(0.56880575, 0.09053809);
+}
 }
 ```
 
