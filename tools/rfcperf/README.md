@@ -42,11 +42,11 @@ This tool is particularly useful for:
 
 #### Create Dataset Specification
 
-First, create a dataset specification file named `fruit.conf`:
+First, create a dataset specification file named `tropomi.conf`:
 ```
 multisource(7)
 {
-    source(78)
+    source(50)
     {
         gaussian(0.16596016, 0.16781704);
         gaussian(30.953608, 18.591196);
@@ -56,7 +56,7 @@ multisource(7)
         gaussian(0.6995243, 0.19331227);
         gaussian(0.53668684, 0.0888503);
 }
-    source(22)
+    source(50)
     {
         gaussian(0.22127023, 0.19662453);
         gaussian(26.177174, 16.360184);
@@ -69,18 +69,18 @@ multisource(7)
 }
 ```
 
-This specification defines a binary classification problem with 4 features per data point. The two sources represent different classes (e.g., apples and oranges) with a 78:22 distribution ratio.
+This specification defines a binary classification problem with 7 features per data point. The two sources represent different classes (e.g., cloudy and clear-sky satellite measurements of TROPOMI) with a 50:50 distribution ratio.
 
 #### Generate Dataset Using balsa_generate
 
 Use the `balsa_generate` tool to create structured random test data:
 ```bash
-# Generate 30 million data points based on fruit.conf specification
-balsa_generate -p 30000000 fruit.conf fruit-points.balsa fruit-labels.balsa
+# Generate 3 million data points based on tropomi.conf specification
+balsa_generate -p 3000000 tropomi.conf tropomi-points.balsa tropomi-labels.balsa
 
 # Convert binary format to readable text files
-balsa_print fruit-points.balsa > fpoints.txt
-balsa_print fruit-labels.balsa > flabels.txt
+balsa_print tropomi-points.balsa > fpoints.txt
+balsa_print tropomi-labels.balsa > flabels.txt
 ```
 
 #### Convert to JSON Format
@@ -174,9 +174,9 @@ python = /path/to/python/interpreter
 ```bash
 mkdir run cache
 python -m rfcperf profile my_dataset.json balsa sklearn ranger \
-    -n 1000,2500000,5000000,7500000,10000000 \
+    -n 1000,250000,500000,750000,1000000 \
     -e 150 \
-    -t 16 \
+    -t 8 \
     -p 33 \
     -f 2 \
     -d 50
