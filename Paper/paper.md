@@ -1,5 +1,5 @@
 ---
-title: 'Balsa: A Fast C++ Random Forest Classifier with Commandline and Python Interface'
+title: 'Balsa: A Fast C++ Random Forest Classifier with Command-line and Python Interface'
 tags:
   - Python
   - C++
@@ -11,155 +11,192 @@ authors:
    - name: Tobias Borsdorff
      corresponding: true
      orcid: 0000-0002-4421-0187
-     equal-contribution: true
      affiliation: "1"
 
    - given-names: Denis 
      dropping-particle: de
      surname: Leeuw Duarte
-     equal-contribution: true
      affiliation: "2"
 
    - given-names: Joris
      dropping-particle: van
      surname: Zwieten
-     equal-contribution: true
      affiliation: "2"
 
    - name: Soumyajit Mandal
-     corresponding: true
      orcid: 0000-0002-2669-4798
-     equal-contribution: true
      affiliation: "1"
 
    - name: Jochen Landgraf
      orcid: 0000-0002-6069-0598
-     equal-contribution: true
      affiliation: "1"
 
-
-#  - name: Adrian M. Price-Whelan
-#    orcid: 0000-0000-0000-0000
-#    equal-contrib: true
-#    affiliation: "1, 2" # (Multiple affiliations must be quoted)
-#  - name: Author Without ORCID
-#    equal-contrib: true # (This is how you can denote equal contributions between multiple authors)
-#    affiliation: 2
-#  - name: Author with no affiliation
-#    corresponding: true # (This is how to denote the corresponding author)
-#    affiliation: 3
-#  - given-names: Ludwig
-#    dropping-particle: van
-#    surname: Beethoven
-#    affiliation: 3
 affiliations:
-  - name: SRON Netherlands Institute for Space Research, The Netherlands
+  - name: SRON Space Research Organization Netherlands
     index: 1
 
   - name: Jigsaw B.V., The Netherlands
     index: 2
 
-# - name: Lyman Spitzer, Jr. Fellow, Princeton University, United States
-#   index: 1
-#   ror: 00hx57361
-# - name: Institution Name, Country
-#   index: 2
-# - name: Independent Researcher, Country
-#   index: 3
-date: 10 Debember 2024
+date: 10 December 2024
 bibliography: paper.bib
-
-# Optional fields if submitting to a AAS journal too, see this blog post:
-# https://blog.joss.theoj.org/2018/12/a-new-collaboration-with-aas-publishing
-#aas-doi: 10.3847/xxxxx <- update this with the DOI from AAS once you know it.
-#aas-journal: Astrophysical Journal <- The name of the AAS journal.
 
 ---
 
 # Summary
 
-A Random Forest classifier is a widely used machine learning method. It builds
-on the strengths of decision trees [@Pedregosa:2011] which are simple,
-intuitive models to classify input data into subsets based on the values of
-specific features. They form hierarchical structures with decision nodes
-leading to prediction [@Breiman:2001]. Combining the output of multiple
-decision trees improves its predictive accuracy, reduces the risk of
-overfitting, and effectively identifies outliers within data sets.  Balsa is a
-highly efficient C++ implementation of the Random Forest classifier concept,
-built with a focus on runtime and memory performance as key design priorities.
-Balsa provides multithreaded and distributed training capabilities, allowing
-users to scale machine learning processes across multiple computing cores or
-distributed systems by training separate Random Forests and combining them at
-the end. It supports both binary classification tasks and multi-label
-classification, expanding its use for a variety of machine learning challenges.
-Furthermore, Balsa includes comprehensive tools to assess the importance of
-features, prediction performance metrics, and statistical analysis, allowing
-users to gain insight into their data and model performance. To ensure ease of
-use, Balsa uses a compact and storage-efficient binary format to save trained
-Random Forests. This allows models to be quickly reloaded for future
-predictions. Designed to fit seamlessly into existing C++ development
-workflows, Balsa can be easily integrated into custom machine learning
-pipelines. Alternatively, users can employ Balsa through a command line
-interface or via a versatile Python interface, the latter can be easily
-installed with pip. This design provides flexibility for users working in
-diverse programming environments and across a wide range of machine learning
-use cases. Balsa performance, flexibility, and ease of integration make it a
-reliable choice for researchers and developers who require fast, scalable, and
-efficient Random Forest implementation for a variety of machine-learning tasks.
-The Balsa package is an open-source software hosted on GitHub and is
-accompanied by a comprehensive user guide. This guide includes detailed
-installation instructions and multiple examples that demonstrate various use
-cases [@balsagit].
+Random Forest classifiers are widely used machine learning methods that combine
+multiple decision trees to improve predictive accuracy and reduce overfitting
+[@Breiman:2001]. While implementations like scikit-learn [@Pedregosa:2011] are
+popular in the Python ecosystem, operational processing environments often
+require high-performance C++ implementations that can handle large datasets
+efficiently while maintaining low memory footprints.
 
-# Statement of need Balsa has been developed by SRON Netherlands Institute for
-Space Research and Jigsaw B.V., The Netherlands,in support of the operational
-processing of Copernicus Sentinel-5 Precursor (S5P) methane data
-[@Lorente:2021; @Lorente:2023]. The processing requires strict clearing of the
-measurement data regarding cloud interference, leading to a classification
-problem [@Borsdorff:2024_paper]. During the beta phase of software development,
-we utilized the scikit-learn (sklearn) implementation [@Pedregosa:2011] of the
-Random Forest classifier concept. Integrating into an operational processing
-framework required a C++ implementation with improved run-time and memory
-efficiency. This led to the development of Balsa, which is designed to build on
-the sklearn implementation, addressing the performance demands of the satellite
-mission. Balsa is fully operational within ESA's data processing framework
-[@Borsdorff:2024_atbd; @Borsdorff:2024_pum]. Future applications of Balsa will
-focus on the key challenge of managing multiple Random Forests simultaneously
-in memory to optimize efficiency. In addition, Balsa will play a crucial role
-in supporting the upcoming near real-time S5P methane product, which requires
-fast and efficient data classification to meet strict processing time
-constraints. Although Balsa was developed for S5P methane processing, it is
-designed to be a Random Forest classifier independent of any specific
-application. It serves as a universal machine learning toolbox that can be
-applied in a variety of use cases beyond the S5P data processing. Its
-flexibility, high performance, and ease of integration make it an invaluable
-tool for any application that requires efficient and scalable Random
-Forest-based machine learning.
+Balsa is a high-performance, open-source (BSD 3-Clause License) C++
+implementation of the Random Forest classifier, designed with runtime
+efficiency and memory optimization as core design priorities. The
+implementation follows the modern C++17 standard and a complete API
+documentation is provided with the package. Originally developed for the
+cloud-clearing classification 
+in the operational processing of
+Copernicus Sentinel-5 Precursor (S5P) methane data [@Lorente:2021;
+@Lorente:2023], Balsa addresses the strict performance requirements for
+ satellite data processing
+[@Borsdorff:2024_paper]. The library has been successfully integrated into ESA's
+operational data processing framework [@Borsdorff:2024_atbd;
+@Borsdorff:2024_pum], where it currently runs in both the offline and near
+real-time S5P methane products, processing large volumes of satellite
+observations with stringent latency requirements.
 
-We conducted a performance analysis and comparison of the Balsa implementation
-against the Python-based SKLearn library and the C++-based Ranger
-implementation. This comparison, detailed in the Balsa ATBD
-[@Borsdorff:2024_atbd], focuses on both memory usage and runtime during the
-training and prediction phases of the Random Forest Classifier (RFC).  We found
-that the accuracy of the prediction across all three implementations (Balsa,
-SKLearn, and Ranger) is essentially the same, ensuring that any observed
-differences in performance are due to optimizations in memory usage and
-runtime, rather than model accuracy.  Figure \autoref{fig:balsa_memory}
-illustrates that Balsa outperforms both SKLearn and Ranger in terms of memory
-usage during both the training and prediction phases. Specifically, Balsa
-consistently shows a lower memory footprint making it particularly advantageous
-for handling larger datasets. Figure \autoref{fig:balsa_memory} presents the
-total runtime for RFC training and prediction. As shown, Balsa exhibits a
-comparable runtime to SKLearn and Ranger during training. However, Balsa excels
-in the prediction phase, where it delivers superior performance in terms of
-wall-clock time. This is particularly significant, as prediction speed is the
-final product in many machine learning workflows, making Balsa a promising
-choice for operational integration. 
+# Statement of Need
 
-![Memory usage during RFC training (left) and prediction (right) for SKLearn (green), Ranger (orange), and Balsa (blue) as a function of dataset size.\label{fig:balsa_memory}](figures/fig1.png)
+Balsa was developed by SRON Netherlands Institute for Space Research in
+cooperation with Jigsaw B.V. to meet the demanding performance requirements of
+operational satellite data processing. During initial development phases, the
+scikit-learn implementation [@Pedregosa:2011] was used, but operational
+integration required a C++ implementation with significantly improved runtime
+and memory efficiency. The transition to near real-time processing for S5P
+methane data further emphasized the need for a solution that could handle
+millions of data points with minimal latency and memory overhead. While Balsa
+was developed for S5P methane processing, it is designed as a general-purpose
+Random Forest classifier applicable to diverse machine learning tasks beyond
+satellite data processing.
 
-![Runtime of RFC training (left) and prediction (right) as a function of dataset size.\label{fig:balsa_runtime}](figures/fig2.png)
+Balsa offers several key advantages over existing implementations:
 
+- **Performance**: Balsa demonstrates superior runtime performance during the
+  training and prediction phase compared to both scikit-learn and the C++-based Ranger
+implementation [@Wright:2017]
+(\autoref{fig:balsa_runtime}). This advantage is particularly critical for
+operational applications where classification speed directly impacts processing
+throughput.
+- **Memory efficiency**: Balsa consistently shows lower memory footprint during
+  both training and prediction phases, making it particularly suitable for
+processing large datasets (\autoref{fig:balsa_memory}). Benchmarks demonstrate
+scalability to datasets with millions of data points.
+- **Accuracy**: All three implementations (Balsa, scikit-learn, and Ranger)
+  produce essentially identical prediction accuracy
+(\autoref{fig:balsa_accuracy}), ensuring performance improvements stem from
+optimization rather than algorithmic compromises.
+- **Flexible integration**: Balsa's compact binary format enables seamless
+  workflows where models trained in Python can be efficiently loaded and used in
+operational C++ environments.
+- **Distributed training**: Multiple machines can train Random Forest models
+  independently on the same or different datasets, with trained models easily
+merged to create stronger classifiers without requiring centralized
+coordination.
+
+The performance comparisons presented in \autoref{fig:balsa_runtime},
+\autoref{fig:balsa_memory}, and \autoref{fig:balsa_accuracy} were conducted
+using the TROPOMI cloud-clearing classification problem as a real-world
+benchmark, with datasets derived from TROPOMI satellite measurements as
+described in Borsdorff et al. [@Borsdorff:2024_paper].
+
+The library provides three levels of user interaction: a comprehensive C++ API
+for direct integration into applications, command-line tools for standalone
+training and classification tasks, and Python bindings installable via pip that
+simplify development while maintaining access to the high-performance C++ core.
+Balsa is cross-platform, supporting Linux, macOS, and Windows environments. This
+multi-layered approach supports both rapid prototyping in Python and deployment
+in performance-critical production environments. Balsa supports both single-
+and double-precision arithmetic, allowing memory optimization as needed. 
+
+# Key Features
+
+Balsa provides a complete ecosystem for Random Forest classification:
+
+**Core Library**: The C++ library supports both binary and multi-class
+classification with multithreaded training capabilities. Models can be trained
+in parallel across multiple cores and even across multiple independent machines,
+with the resulting forests merged to create stronger classifiers. The library
+uses an efficient binary format for model storage, enabling fast loading and
+minimal disk usage.
+
+**Command-Line Tools**: The package includes utilities for the complete machine
+learning workflow: `balsa_generate` creates synthetic datasets for testing,
+`balsa_train` trains models with configurable parameters, `balsa_classify`
+performs batch classification, `balsa_measure` calculates comprehensive
+performance metrics (including accuracy, precision, recall, F-scores, P4 metric,
+diagnostic odds ratio, and confusion matrices), `balsa_featureimportance`
+analyzes feature contributions following a permutation based method, `balsa_merge` combines independently trained
+models for distributed training workflows, and `balsa_test` runs unit tests to
+verify installation and functionality.
+
+**Python Interface**: Python bindings provide NumPy integration and a familiar
+interface for Python developers, while maintaining the performance benefits of
+the underlying C++ implementation. The package is easily installable via pip,
+making it readily accessible to the Python machine learning community. Models
+trained via Python can be directly used by the C++ tools and vice versa,
+facilitating hybrid workflows where development occurs in Python and deployment
+in high-performance C++ environments.
+
+**Performance Analysis Tool**: The `rfcperf` benchmarking utility enables
+systematic comparison of Random Forest implementations across different dataset
+sizes, ranging from thousands to millions of samples. It measures system
+performance (CPU time, memory usage, wall-clock time) and classification quality
+(accuracy, precision, recall, F-scores) while generating comparative
+visualization reports. This tool was used to generate the performance
+comparisons presented in \autoref{fig:balsa_runtime},
+\autoref{fig:balsa_memory}, and \autoref{fig:balsa_accuracy}, and allows users
+to reproduce these benchmarks on their own systems and datasets.
+
+**Comprehensive Documentation**: The package includes detailed documentation
+covering installation, theoretical background, optimization guidelines, and
+extensive examples for both command-line and programmatic usage.
+
+![Runtime comparison during RFC training (left) and prediction (right) for
+scikit-learn (orange), Ranger (green), and Balsa (blue) as a function of dataset
+size, evaluated on TROPOMI cloud-clearing data. Balsa demonstrates superior
+prediction performance, which is critical for operational applications including
+near real-time processing.\label{fig:balsa_runtime}](figures/fig1.png)
+
+![Memory usage during RFC training (left) and prediction (right) for
+scikit-learn (orange), Ranger (green), and Balsa (blue) as a function of dataset
+size, evaluated on TROPOMI cloud-clearing data. Balsa maintains consistently
+lower memory footprint across dataset sizes ranging from thousands to millions
+of samples, enabling processing of larger datasets in memory-constrained
+environments.\label{fig:balsa_memory}](figures/fig2.png)
+
+![Classification accuracy for scikit-learn (orange), Ranger (green), and Balsa
+(blue) as a function of dataset size, evaluated on TROPOMI cloud-clearing data.
+All three implementations achieve comparable accuracy, confirming that Balsa's
+performance gains do not compromise prediction
+quality.\label{fig:balsa_accuracy}](figures/fig3.png)
+
+# Availability
+Balsa is publicly available under the BSD 3-Clause License at 
+[Balsa GitHub Repository](https://github.com/SRON-Earth/Balsa)
+
+
+# Authors Contribution
+T. Borsdorff led the project and coordinated the overall development. He
+contributed to the conceptual design of the software, performed the
+verification and validation activities together with J. Landgraf and S. Mandal,
+and wrote the manuscript.  J. van Zwieten and D. de Leeuw Duarte were
+responsible for the main implementation of the Balsa library, including the
+core C++ codebase and associated tools.  All authors contributed to
+discussions, refinement of the software, and preparation of the manuscript, and
+all agree on the order of authorship.
 
 # Acknowledgements
 
