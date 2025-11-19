@@ -6,7 +6,7 @@ using namespace balsa;
 int main( int, char ** )
 {
     // Load data and labels.
-    auto dataSet      = readTableAs<double>( "fruit-data.balsa" );
+    auto dataSet      = readTableAs<double>( "fruit-points.balsa" );
     auto labels       = readTableAs<Label>( "fruit-labels.balsa" );
     auto featureCount = dataSet.getColumnCount();
 

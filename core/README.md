@@ -468,7 +468,7 @@ The following complete example shows how a Balsa data model can be loaded and tr
     int main( int, char ** )
     {
         // Load data and labels.
-        auto dataSet = readTableAs<double>( "fruit-data.balsa" );
+        auto dataSet = readTableAs<double>( "fruit-points.balsa" );
         auto labels  = readTableAs<Label>( "fruit-labels.balsa" );
         auto featureCount = dataSet.getColumnCount();
 
@@ -501,7 +501,7 @@ The following complete example shows how a data set can be classified from withi
     int main( int, char ** )
     {
         // Read (and possibly convert) the data.
-        auto dataSet = readTableAs<double>( "fruit-data.balsa" );
+        auto dataSet = readTableAs<double>( "fruit-points.balsa" );
 
         // Classify the data.
         Table<Label>           labels( dataSet.getRowCount(), 1 );
