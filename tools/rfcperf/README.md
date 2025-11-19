@@ -69,12 +69,9 @@ multisource(7)
 }
 ```
 
-This specification defines a binary classification problem with 7 features per data point. The two sources represent different classes (e.g., cloudy and clear-sky satellite measurements of TROPOMI) with a 50:50 distribution ratio.
-
-
 This specification defines a binary classification problem with 7 features per data point, derived from TROPOMI satellite measurements. Each `source` block represents one class (e.g., cloudy vs. clear-sky observations) with a 50:50 distribution ratio.
 The Gaussian parameters correspond to the means and standard deviations of each feature, calculated from TROPOMI data used for cloud-clearing in the context of VIIRS cloud detection as presented by Borsdorff et al (2024) [https://www.mdpi.com/2072-4292/16/7/1208](https://www.mdpi.com/2072-4292/16/7/1208)
-This dataset can be used to train and test machine learning models for **cloud classification tasks**, providing a reproducible example for users.  
+This dataset can be used to train and test machine learning models for cloud classification tasks, providing a reproducible example for users.  
 
 
 #### Generate Dataset Using balsa_generate
