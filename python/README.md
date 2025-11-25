@@ -66,10 +66,10 @@ The trainer has several options that can be accessed through the constructor and
 ```
 balsa_rfc.train(dataset, labels, "model.balsa",
             features_to_consider = 0,
-            max_depth = 4294967295,
+            max_depth = 50,
             min_purity = 1.0,
             tree_count = 150,
-            concurrent_trainers = 1)
+            concurrent_trainers = 8)
 ```
 
 The purpose of these parameters is described in the docstring of `balsa.train`,
@@ -86,7 +86,7 @@ Options for classification are passed to the classifier constructor:
 
 ```
 classifier = balsa_rfc.RandomForestClassifier("model.balsa",
-                                          max_threads = 0,
+                                          max_threads = 8,
                                           max_preload = 1)
 ```
 
