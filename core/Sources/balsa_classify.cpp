@@ -175,6 +175,11 @@ int main( int argc, char ** argv )
             std::cout << "Dataset loaded: " << dataSet.getColumnCount() << " features x " << dataSet.getRowCount() << " points." << std::endl;
             dataLoadTime += watch.getElapsedTime();
 
+            if ( dataSet.getColumnCount() != classifier.getFeatureCount() )
+                throw ClientError( "Feature count mismatch: data has "
+                    + std::to_string( dataSet.getColumnCount() ) + " features, model expects "
+                    + std::to_string( classifier.getFeatureCount() ) + "." );
+
             // Classify the data.
             watch.start();
             Table<Label> labels( dataSet.getRowCount(), 1 );
