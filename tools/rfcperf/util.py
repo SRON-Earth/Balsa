@@ -2,11 +2,27 @@ import numpy as np
 import pathlib
 import re
 import subprocess
+import platform
+import shutil
+
+
+def _get_time_command():
+    """Return the GNU time command for the current platform."""
+    if platform.system() == "Darwin":
+        # macOS: GNU time is typically installed as 'gtime' via Homebrew
+        if shutil.which("gtime"):
+            return "gtime"
+        raise RuntimeError(
+            "GNU time is required but not found. "
+            "Install it with: brew install gnu-time"
+        )
+    return "time"
 
 def run_program(program, *args, log=False, log_prefix=None, time_file=None, timeout=None, cwd=None):
 
     if time_file is not None:
-        result = subprocess.run(["time", "-v", "-o", time_file, str(program), *args], capture_output=True, text=True,
+        time_cmd = _get_time_command()
+        result = subprocess.run([time_cmd, "-v", "-o", time_file, str(program), *args], capture_output=True, text=True,
                                 timeout=timeout, cwd=cwd)
     else:
         result = subprocess.run([str(program), *args], capture_output=True, text=True, timeout=timeout, cwd=cwd)
