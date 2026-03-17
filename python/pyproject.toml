@@ -25,10 +25,10 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/SRON-Eath/Balsa"
-Documentation = "https://github.com/SRON-Eath/Balsa/blob/main/README.md"
-Repository = "https://github.com/SRON-Eath/Balsa"
-Issues = "https://github.com/SRON-Eath/Balsa/issues"
+Homepage = "https://github.com/SRON-Earth/Balsa"
+Documentation = "https://github.com/SRON-Earth/Balsa/blob/main/README.md"
+Repository = "https://github.com/SRON-Earth/Balsa"
+Issues = "https://github.com/SRON-Earth/Balsa/issues"
 
 [tool.scikit-build.metadata.version]
 provider = "scikit_build_core.metadata.regex"
