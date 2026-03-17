@@ -35,6 +35,11 @@ This repository contains three main components:
 cd core && mkdir build && cd build
 cmake .. && make && sudo make install
 ```
+On Linux/WSL, after installing libraries, the dynamic linker cache must be updated. 
+```bash
+sudo ldconfig
+```
+This is step is not needed for macOSX.
 See [core/README.md](core/README.md#installation) for details (e.g. using a custom installation path).
 
 ### Running the unit tests
