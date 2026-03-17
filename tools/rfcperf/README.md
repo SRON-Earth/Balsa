@@ -38,6 +38,11 @@ This tool is particularly useful for:
 
 ## Quick Start
 
+**Note:** All `rfcperf` commands should be run from the `tools/` directory:
+```bash
+cd /path/to/Balsa/tools
+```
+
 ### 1. Prepare Your Dataset
 
 #### Create Dataset Specification
@@ -146,7 +151,7 @@ print(f"Labels shape: {labels.shape}")
 
 ### 2. Generate Default Configuration
 ```bash
-python -m rfcperf profile my_dataset.json balsa
+python -m rfcperf profile rfcperf/my_dataset.json balsa
 ```
 
 This creates `rfcperf.ini` with default settings. Edit this file to configure your classifiers. You need to install sklearn in your python environment and download and built ranger a cpp implementation of the random forest classifier concept (https://github.com/imbs-hl/ranger).
@@ -176,7 +181,7 @@ python = /path/to/python/interpreter
 ### 4. Run Profiling
 ```bash
 mkdir run cache
-python -m rfcperf profile my_dataset.json balsa sklearn ranger \
+python -m rfcperf profile rfcperf/my_dataset.json balsa sklearn ranger \
     -n 1000,250000,500000,750000,1000000 \
     -e 150 \
     -t 8 \
@@ -233,7 +238,7 @@ python -m rfcperf profile TRAIN_DATA_FILE CLASSIFIER [CLASSIFIER ...] [OPTIONS]
 **Example:**
 ```bash
 # Profile Balsa with different thread counts
-python -m rfcperf profile my_dataset.json balsa \
+python -m rfcperf profile rfcperf/my_dataset.json balsa \
     -n 10000,50000,100000 \
     -e 200 \
     -d 30 \
@@ -241,7 +246,7 @@ python -m rfcperf profile my_dataset.json balsa \
     -s 42
 
 # Compare multiple classifiers
-python -m rfcperf profile my_dataset.json balsa sklearn ranger \
+python -m rfcperf profile rfcperf/my_dataset.json balsa sklearn ranger \
     -n 5000,10000,20000 \
     -p 25 \
     -e 150
@@ -268,13 +273,13 @@ python -m rfcperf sample DATA_INPUT_FILE DATA_OUTPUT_FILE [LABEL_OUTPUT_FILE] [O
 **Examples:**
 ```bash
 # Convert JSON to Balsa format
-python -m rfcperf sample my_dataset.json data.balsa labels.balsa -f balsa
+python -m rfcperf sample rfcperf/my_dataset.json data.balsa labels.balsa -f balsa
 
 # Draw 1000 random samples to CSV
-python -m rfcperf sample my_dataset.json sample.csv -f csv -n 1000 -s 42
+python -m rfcperf sample rfcperf/my_dataset.json sample.csv -f csv -n 1000 -s 42
 
 # Oversample with replacement
-python -m rfcperf sample my_dataset.json large_data.bin large_labels.bin \
+python -m rfcperf sample rfcperf/my_dataset.json large_data.bin large_labels.bin \
     -n 100000 -r
 ```
 
