@@ -154,7 +154,13 @@ print(f"Labels shape: {labels.shape}")
 python -m rfcperf profile rfcperf/my_dataset.json balsa
 ```
 
-This creates `rfcperf.ini` with default settings. Edit this file to configure your classifiers. You need to install sklearn in your python environment and download and built ranger a cpp implementation of the random forest classifier concept (https://github.com/imbs-hl/ranger).
+This creates `rfcperf.ini` with default settings. Edit this file to configure your classifiers.
+
+**Classifier dependencies:**
+- **scikit-learn** (optional): `pip install scikit-learn`
+- **Ranger** (optional): A C++ Random Forest implementation requiring a separate build — see [Setting up Ranger](#setting-up-ranger) below.
+
+The Balsa vs. scikit-learn comparison is fully self-contained within this repository. Ranger is an optional third comparison used in the paper's benchmarks.
 
 ### 3. Configure Classifiers
 
@@ -168,14 +174,43 @@ run_dir = run
 driver = balsa
 path = /path/to/dir/that/contains/balsa/binaries
 
-[ranger]
-driver = ranger
-path = /path/to/dir/that/contains/ranger/binary
-
 [sklearn]
 driver = sklearn
 python = /path/to/python/interpreter
 
+[ranger]
+driver = ranger
+path = /path/to/dir/that/contains/ranger/binary
+```
+
+### Setting up Ranger
+
+Ranger is an optional C++ Random Forest implementation used as a third comparison in the paper's benchmarks. It must be built from source. The benchmarks were produced using Ranger **v0.17.1**.
+
+**Requirements:** A C++14-capable compiler (GCC ≥ 5 or Clang ≥ 3.4) and CMake.
+
+**Linux / macOS:**
+```bash
+git clone https://github.com/imbs-hl/ranger.git
+cd ranger/cpp_version
+mkdir build
+cd build
+cmake ..
+make
+```
+
+After compilation, the `ranger` executable will be in the `build` directory. To verify:
+```bash
+./ranger --help
+```
+
+> **Note:** Running Ranger on Windows requires cross-compilation or a pre-built binary — see the [Ranger repository](https://github.com/imbs-hl/ranger) for details.
+
+Set the `path` in `rfcperf.ini` to the directory containing the `ranger` binary:
+```ini
+[ranger]
+driver = ranger
+path = /path/to/ranger/cpp_version/build
 ```
 
 ### 4. Run Profiling
