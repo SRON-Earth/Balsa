@@ -156,6 +156,11 @@ def get_classification_scores(predicted_labels, labels, *, target_dict=None, key
 
     predicted_labels, labels = np.asarray(predicted_labels), np.asarray(labels)
 
+    unique_labels = np.unique(labels)
+    if not np.array_equal(unique_labels, [0.0, 1.0]):
+        raise ValueError(f"rfcperf currently only supports binary classification "
+                     f"(labels 0 and 1). Found labels: {unique_labels}")
+
     num_true_positives  = np.sum((predicted_labels == 1.0) & (labels == 1.0))
     num_false_positives = np.sum((predicted_labels == 1.0) & (labels == 0.0))
     num_true_negatives  = np.sum((predicted_labels == 0.0) & (labels == 0.0))

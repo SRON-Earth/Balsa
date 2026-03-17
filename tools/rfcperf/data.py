@@ -327,7 +327,11 @@ def generate_datasets(train_data_filename, data_sizes, *, use_cache=True, test_p
         if data_points is None:
             assert labels is None
             data_points, labels = load_labelled_dataset_json(train_data_filename)
-            assert np.sum(labels == 0.0) + np.sum(labels == 1.0) == labels.size
+
+            unique_labels = np.unique(labels)
+            if not np.array_equal(unique_labels, [0.0, 1.0]):
+                raise ValueError(f"rfcperf currently only supports binary classification "
+                             f"(labels 0 and 1). Found labels: {unique_labels}")
 
         test_size = 0 if test_percentage is None else round(test_percentage * data_size / 100.0)
         new_data_points, new_labels = sample_dataset(data_points, labels, data_size + test_size, random_generator=random_generator)
