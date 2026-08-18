@@ -66,6 +66,22 @@ See [python/README.md](python/README.md#installation) for details.
 - Feature importance analysis
 - Efficient handling of large datasets
 
+## Citation
+
+If you use Balsa in your research, please cite the JOSS paper:
+
+```bibtex
+@article{Borsdorff2026,
+  doi = {10.21105/joss.08778},
+  url = {https://doi.org/10.21105/joss.08778},
+  year = {2026},
+  publisher = {The Open Journal},
+  author = {Tobias Borsdorff and Denis de Leeuw Duarte and Joris van Zwieten and Soumyajit Mandal and Jochen Landgraf},
+  title = {Balsa: A Fast C++ Random Forest Classifier with Command-line and Python Interface},
+  journal = {Journal of Open Source Software}
+}
+```
+
 ## Support
 
 Developed for [SRON Netherlands Institute for Space Research](https://www.sron.nl) by [Jigsaw B.V.](https://www.jigsaw.nl) with funding from [ESA](https://www.esa.int).

@@ -1,0 +1,34 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "Balsa: A Fast C++ Random Forest Classifier with Command-line and Python Interface"
+authors:
+  - family-names: "Borsdorff"
+    given-names: "Tobias"
+  - family-names: "de Leeuw Duarte"
+    given-names: "Denis"
+  - family-names: "van Zwieten"
+    given-names: "Joris"
+  - family-names: "Mandal"
+    given-names: "Soumyajit"
+  - family-names: "Landgraf"
+    given-names: "Jochen"
+license: BSD-3-Clause
+repository-code: "https://github.com/SRON-Earth/Balsa"
+preferred-citation:
+  type: article
+  authors:
+    - family-names: "Borsdorff"
+      given-names: "Tobias"
+    - family-names: "de Leeuw Duarte"
+      given-names: "Denis"
+    - family-names: "van Zwieten"
+      given-names: "Joris"
+    - family-names: "Mandal"
+      given-names: "Soumyajit"
+    - family-names: "Landgraf"
+      given-names: "Jochen"
+  title: "Balsa: A Fast C++ Random Forest Classifier with Command-line and Python Interface"
+  journal: "Journal of Open Source Software"
+  year: 2026
+  doi: "10.21105/joss.08778"
+  url: "https://doi.org/10.21105/joss.08778"
