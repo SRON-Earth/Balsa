@@ -2,6 +2,8 @@
 
 # Balsa: A Fast Random Forest Classifier
 
+[![DOI](https://joss.theoj.org/papers/10.21105/joss.08778/status.svg)](https://doi.org/10.21105/joss.08778)
+
 Balsa is a fast and memory-efficient implementation of the Random Forest classification algorithm, optimized for low memory usage and high speed during both training and classification.
 
 ## Repository Structure
