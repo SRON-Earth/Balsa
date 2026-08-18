@@ -110,7 +110,7 @@ The performance comparisons presented in \autoref{fig:balsa_runtime},
 \autoref{fig:balsa_memory}, and \autoref{fig:balsa_accuracy} were conducted
 using the TROPOMI cloud-clearing classification problem as a real-world
 benchmark, with datasets derived from TROPOMI satellite measurements as
-described in Borsdorff et al. [@Borsdorff:2024_paper].
+described by @Borsdorff:2024_paper.
 
 The library provides three levels of user interaction: a comprehensive C++ API
 for direct integration into applications, command-line tools for standalone
@@ -188,7 +188,7 @@ Balsa is publicly available under the BSD 3-Clause License at
 [Balsa GitHub Repository](https://github.com/SRON-Earth/Balsa)
 
 
-# Authors Contribution
+# Author contributions
 T. Borsdorff led the project and coordinated the overall development. He
 contributed to the conceptual design of the software, performed the
 verification and validation activities together with J. Landgraf and S. Mandal,
@@ -200,6 +200,7 @@ all agree on the order of authorship.
 
 # Acknowledgements
 
-Balsa development was funded by the European Space Agency.
+Balsa development was funded by the European Space Agency under KNMI contract
+KNMI-2023/7396, with SRON as subcontractor.
 
 # References
