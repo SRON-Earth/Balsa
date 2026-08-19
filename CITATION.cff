@@ -1,34 +1,57 @@
-cff-version: 1.2.0
-message: "If you use this software, please cite it as below."
-title: "Balsa: A Fast C++ Random Forest Classifier with Command-line and Python Interface"
+cff-version: "1.2.0"
 authors:
-  - family-names: "Borsdorff"
-    given-names: "Tobias"
-  - family-names: "de Leeuw Duarte"
-    given-names: "Denis"
-  - family-names: "van Zwieten"
-    given-names: "Joris"
-  - family-names: "Mandal"
-    given-names: "Soumyajit"
-  - family-names: "Landgraf"
-    given-names: "Jochen"
-license: BSD-3-Clause
-repository-code: "https://github.com/SRON-Earth/Balsa"
+- family-names: Borsdorff
+  given-names: Tobias
+  orcid: "https://orcid.org/0000-0002-4421-0187"
+- family-names: Leeuw Duarte
+  given-names: Denis
+  name-particle: de
+- family-names: Zwieten
+  given-names: Joris
+  name-particle: van
+- family-names: Mandal
+  given-names: Soumyajit
+  orcid: "https://orcid.org/0000-0002-2669-4798"
+- family-names: Landgraf
+  given-names: Jochen
+  orcid: "https://orcid.org/0000-0002-6069-0598"
+contact:
+- family-names: Borsdorff
+  given-names: Tobias
+  orcid: "https://orcid.org/0000-0002-4421-0187"
+doi: 10.5281/zenodo.21241837
+message: If you use this software, please cite our article in the
+  Journal of Open Source Software.
 preferred-citation:
-  type: article
   authors:
-    - family-names: "Borsdorff"
-      given-names: "Tobias"
-    - family-names: "de Leeuw Duarte"
-      given-names: "Denis"
-    - family-names: "van Zwieten"
-      given-names: "Joris"
-    - family-names: "Mandal"
-      given-names: "Soumyajit"
-    - family-names: "Landgraf"
-      given-names: "Jochen"
-  title: "Balsa: A Fast C++ Random Forest Classifier with Command-line and Python Interface"
-  journal: "Journal of Open Source Software"
-  year: 2026
-  doi: "10.21105/joss.08778"
-  url: "https://doi.org/10.21105/joss.08778"
+  - family-names: Borsdorff
+    given-names: Tobias
+    orcid: "https://orcid.org/0000-0002-4421-0187"
+  - family-names: Leeuw Duarte
+    given-names: Denis
+    name-particle: de
+  - family-names: Zwieten
+    given-names: Joris
+    name-particle: van
+  - family-names: Mandal
+    given-names: Soumyajit
+    orcid: "https://orcid.org/0000-0002-2669-4798"
+  - family-names: Landgraf
+    given-names: Jochen
+    orcid: "https://orcid.org/0000-0002-6069-0598"
+  date-published: 2026-08-18
+  doi: 10.21105/joss.08778
+  issn: 2475-9066
+  issue: 124
+  journal: Journal of Open Source Software
+  publisher:
+    name: Open Journals
+  start: 8778
+  title: "Balsa: A Fast C++ Random Forest Classifier with Command-line
+    and Python Interface"
+  type: article
+  url: "https://joss.theoj.org/papers/10.21105/joss.08778"
+  volume: 11
+title: "Balsa: A Fast C++ Random Forest Classifier with Command-line and
+  Python Interface"
+
